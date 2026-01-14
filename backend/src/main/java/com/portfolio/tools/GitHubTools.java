@@ -38,6 +38,13 @@ public class GitHubTools {
                         forkCount
                         isArchived
                         primaryLanguage { name color }
+                        languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
+                          totalSize
+                          edges {
+                            size
+                            node { name color }
+                          }
+                        }
                       }
                     }
                     followers { totalCount }
@@ -61,17 +68,6 @@ public class GitHubTools {
                         }
                       }
                     }
-                    repositories(first: 100) {
-                      nodes {
-                        languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
-                          totalSize
-                          edges {
-                            size
-                            node { name color }
-                          }
-                        }
-                      }
-                    }
                   }
                 }
                 """;
@@ -83,7 +79,16 @@ public class GitHubTools {
                     .block();
             
             JsonNode root = objectMapper.readTree(response);
+            
+            // Check for errors
+            if (root.has("errors")) {
+                return Map.of("error", "GraphQL error: " + root.get("errors").toString());
+            }
+            
             JsonNode viewer = root.path("data").path("viewer");
+            if (viewer.isMissingNode()) {
+                return Map.of("error", "No viewer data in response");
+            }
             
             // Parse repositories
             JsonNode repos = viewer.path("repositories");
@@ -108,7 +113,7 @@ public class GitHubTools {
             // Parse languages
             Map<String, Long> langMap = new HashMap<>();
             long totalBytes = 0;
-            for (JsonNode repo : viewer.path("repositories").path("nodes")) {
+            for (JsonNode repo : repos.path("nodes")) {
                 for (JsonNode edge : repo.path("languages").path("edges")) {
                     String name = edge.path("node").path("name").asText();
                     long size = edge.path("size").asLong(0);

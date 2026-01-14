@@ -87,7 +87,11 @@ matrix
 1. 用户输入 `matrix` 命令并回车
 2. **立即触发**:
    - 绿色字符雨立即覆盖整个屏幕
-   - 终端显示 `>> Matrix running...`
+   - **同时显示所有提示信息**:
+     ```
+     >> Entering the Matrix...
+     >> (Auto-exit in 5 seconds or press any key to exit)
+     ```
    - **输入框消失**，进入阻塞状态
 3. **运行中体验**:
    - 14px 字符，清晰可见
@@ -99,7 +103,6 @@ matrix
    - **无法输入新命令**（阻塞感）
 4. **5秒后自动结束**:
    - 字符雨消失
-   - 系统消息更新为 `>> Entering the Matrix... (Auto-exit in 5 seconds or press any key to exit)`
    - **输入框重新出现**
    - 可以继续输入新命令
 5. 用户也可按任意键/点击立即退出

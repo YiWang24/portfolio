@@ -225,31 +225,20 @@ export default function TerminalPanel() {
 
       if (action === 'matrix-trigger') {
         // 触发 Matrix 数字雨特效 - 阻塞效果
-        // 立即显示特效，但不添加系统消息
+        // 立即显示特效和所有提示信息
         setMatrixActive(true);
 
-        // 显示运行中的提示
+        // 显示所有提示信息（包括运行中和退出提示）
         const runningMsgId = createMessageId("system");
         setMessages((prev) => [
           ...prev,
           {
             id: runningMsgId,
             role: "system",
-            content: ">> Matrix running...",
+            content: localResponse.content, // 直接显示完整的提示信息
             status: "completed" as MessageStatus,
           },
         ]);
-
-        // 5秒后特效结束时，更新系统响应消息
-        setTimeout(() => {
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === runningMsgId
-                ? { ...msg, content: localResponse.content }
-                : msg
-            )
-          );
-        }, 5000);
         return;
       }
 

@@ -12,6 +12,47 @@ import static org.junit.jupiter.api.Assertions.*;
 class ToolsTest {
 
     @Test
+    void testGetGitHubStats() {
+        Map<String, Object> stats = GitHubTools.getGitHubStats();
+        System.out.println("GitHub Stats: " + stats);
+        
+        assertNotNull(stats);
+        if (!stats.containsKey("error")) {
+            // Verify all required fields exist
+            assertTrue(stats.containsKey("totalStars"), "Missing totalStars");
+            assertTrue(stats.containsKey("totalForks"), "Missing totalForks");
+            assertTrue(stats.containsKey("followers"), "Missing followers");
+            assertTrue(stats.containsKey("repositoryCount"), "Missing repositoryCount");
+            assertTrue(stats.containsKey("ytdCommits"), "Missing ytdCommits");
+            assertTrue(stats.containsKey("mergedPRs"), "Missing mergedPRs");
+            assertTrue(stats.containsKey("codeReviews"), "Missing codeReviews");
+            assertTrue(stats.containsKey("currentStreak"), "Missing currentStreak");
+            assertTrue(stats.containsKey("longestStreak"), "Missing longestStreak");
+            assertTrue(stats.containsKey("languages"), "Missing languages");
+            assertTrue(stats.containsKey("topProjects"), "Missing topProjects");
+            
+            // Verify data types
+            assertTrue(stats.get("totalStars") instanceof Integer);
+            assertTrue(stats.get("repositoryCount") instanceof Integer);
+            assertTrue(stats.get("languages") instanceof List);
+            assertTrue(stats.get("topProjects") instanceof List);
+            
+            // Repository count should be > 0 for YiWang24
+            int repoCount = (Integer) stats.get("repositoryCount");
+            assertTrue(repoCount > 0, "Repository count should be > 0, got: " + repoCount);
+            
+            System.out.println("  ✅ Total Stars: " + stats.get("totalStars"));
+            System.out.println("  ✅ Repository Count: " + stats.get("repositoryCount"));
+            System.out.println("  ✅ YTD Commits: " + stats.get("ytdCommits"));
+            System.out.println("  ✅ Current Streak: " + stats.get("currentStreak") + " days");
+            System.out.println("  ✅ Languages: " + stats.get("languages"));
+            System.out.println("  ✅ Top Projects: " + stats.get("topProjects"));
+        } else {
+            fail("GitHub stats returned error: " + stats.get("error"));
+        }
+    }
+
+    @Test
     void testGetDeveloperProfile() {
         Map<String, Object> profile = GitHubTools.getDeveloperProfile();
         System.out.println("Developer Profile: " + profile);

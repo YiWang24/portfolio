@@ -1,0 +1,26 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_USERNAME=${GITHUB_USERNAME}
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+      - CONTACT_EMAIL=${CONTACT_EMAIL}
+      - LINKEDIN_URL=${LINKEDIN_URL}
+      - CALENDLY_URL=${CALENDLY_URL}
+    volumes:
+      - ./content:/app/content:ro
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8080
+    depends_on:
+      - backend
+    restart: unless-stopped

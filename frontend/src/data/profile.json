@@ -1,0 +1,53 @@
+{
+  "hero": {
+    "name": "Yi Wang",
+    "role": "FULL STACK AGENT ENGINEER",
+    "intro": "Engineering the neural layer of the web. I bridge the gap between robust backend systems (Java/Spring) and adaptive AI agents. You are talking to my digital twin — go ahead, inspect my code.",
+    "avatar": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=cyber&backgroundColor=0a0a0a",
+    "status": "System Online",
+    "github": "YiWang24",
+    "techStack": {
+      "languages": ["Java", "TypeScript", "Python", "C"],
+      "frameworks": ["Spring", "Next.js", "React", "Node.js"],
+      "cloud": ["AWS", "Docker", "Kubernetes", "PostgreSQL"],
+      "tools": ["Git", "Linux", "Nginx", "Redis"]
+    }
+  },
+  "education": [
+    {
+      "school": "York University",
+      "degree": "B.S. Computer Science",
+      "period": "2018 - 2022",
+      "highlights": ["GPA 3.8/4.0", "AI Lab Research Assistant"]
+    }
+  ],
+  "experience": [
+    {
+      "company": "Company Name",
+      "title": "Software Engineer",
+      "period": "2022 - Present",
+      "achievements": ["Led platform migration", "Reduced latency by 35%"]
+    }
+  ],
+  "projects": [
+    {
+      "title": "Project Name",
+      "summary": "A short summary describing impact and scope.",
+      "tech": ["React", "TypeScript", "Spring Boot"],
+      "links": {
+        "demo": "https://example.com",
+        "repo": "https://github.com/user/repo"
+      },
+      "metrics": {
+        "stars": "120",
+        "users": "3k"
+      }
+    }
+  ],
+  "techStack": [
+    {
+      "category": "Frontend",
+      "items": ["React", "Next.js", "Tailwind CSS"]
+    }
+  ]
+}

@@ -43,9 +43,6 @@ export default function Home() {
 
         {/* 4. 环境色彩 - 右下翠绿氛围 */}
         <div className="absolute bottom-0 right-0 h-[500px] w-[500px] bg-emerald-500/10 blur-[120px] rounded-full mix-blend-screen pointer-events-none" />
-
-        {/* 5. 网格 + 遮罩 - 中心清晰，四周淡出 */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
       </div>
 
       {/* === Desktop Navbar (仅桌面端) === */}

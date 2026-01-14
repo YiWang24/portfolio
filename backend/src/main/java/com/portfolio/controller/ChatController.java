@@ -30,14 +30,16 @@ public class ChatController {
     @PostMapping("/message")
     public ResponseEntity<Map<String, String>> sendMessage(@RequestBody ChatRequest request) {
         String sessionId = request.getSessionId() != null ? request.getSessionId() : "session-" + System.currentTimeMillis();
-        String response = agentService.processMessage(sessionId, request.getMessage());
+        String message = truncateMessage(request.getMessage());
+        String response = agentService.processMessage(sessionId, message);
         return ResponseEntity.ok(Map.of("sessionId", sessionId, "response", response));
     }
 
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> streamMessage(@RequestBody ChatRequest request) {
         String sessionId = request.getSessionId() != null ? request.getSessionId() : "session-" + System.currentTimeMillis();
-        return streamMessageInternal(sessionId, request.getMessage());
+        String message = truncateMessage(request.getMessage());
+        return streamMessageInternal(sessionId, message);
     }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -45,7 +47,15 @@ public class ChatController {
             @RequestParam("message") String message,
             @RequestParam(value = "sessionId", required = false) String sessionId) {
         String resolvedSessionId = sessionId != null ? sessionId : "session-" + System.currentTimeMillis();
-        return streamMessageInternal(resolvedSessionId, message);
+        String truncatedMessage = truncateMessage(message);
+        return streamMessageInternal(resolvedSessionId, truncatedMessage);
+    }
+    
+    private String truncateMessage(String message) {
+        if (message == null) return "";
+        if (message.length() <= 500) return message;
+        log.warn("Message truncated from {} to 500 characters", message.length());
+        return message.substring(0, 500);
     }
 
     private Flux<String> streamMessageInternal(String sessionId, String message) {

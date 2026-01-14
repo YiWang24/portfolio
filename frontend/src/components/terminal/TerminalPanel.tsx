@@ -7,14 +7,11 @@ import { streamChat } from "../../services/sse";
 import { createMessageId } from "../../utils/terminal";
 import { processLocalCommand, getCommandAction } from "../../lib/command-processor";
 import ThinkingChain from "./ThinkingChain";
-import TerminalHero from "./TerminalHero";
 import { StatusBar } from "./StatusBar";
 import { TerminalInput, TerminalInputRef } from "./TerminalInput";
 import ContactModal from "./ContactModal";
 import type {
   TerminalMessage,
-  FunctionStep,
-  ThoughtLog,
   MessageStatus,
   ItemStatus,
 } from "@/types/message";
@@ -39,6 +36,7 @@ export default function TerminalPanel() {
   const [error, setError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(true);
   const [isContactOpen, setIsContactOpen] = useState(false);
+  const [userIp, setUserIp] = useState("...");
   const streamingIdRef = useRef<string | null>(null);
   const inputRef = useRef<TerminalInputRef>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -47,6 +45,14 @@ export default function TerminalPanel() {
     if (contentRef.current) {
       contentRef.current.scrollTop = contentRef.current.scrollHeight;
     }
+  }, []);
+
+  // Fetch user IP on mount
+  useEffect(() => {
+    fetch("https://api.ipify.org?format=json")
+      .then((res) => res.json())
+      .then((data) => setUserIp(data.ip))
+      .catch(() => setUserIp("127.0.0.1"));
   }, []);
 
   useEffect(() => {
@@ -175,72 +181,6 @@ export default function TerminalPanel() {
     );
   }, []);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!input.trim() || isStreaming) return;
-    const trimmed = input.trim();
-    setInput("");
-    setError(null);
-
-    const userId = createMessageId("user");
-    const agentId = createMessageId("agent");
-    streamingIdRef.current = agentId;
-
-    setMessages((prev) => [
-      ...prev,
-      { id: userId, role: "user", content: trimmed, status: "completed" },
-      {
-        id: agentId,
-        role: "agent",
-        content: "",
-        status: "thinking",
-        functionSteps: [],
-      },
-    ]);
-
-    setIsStreaming(true);
-
-    await streamChat(trimmed, sessionId, {
-      onStatus: handleStatus,
-      onFunctionCall: handleFunctionCall,
-      onThought: handleThought,
-      onThinkingComplete: handleThinkingComplete,
-      onToken: handleToken,
-      onComplete: () => {
-        const id = streamingIdRef.current;
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === id
-              ? {
-                  ...msg,
-                  status: "completed" as MessageStatus,
-                  functionSteps: undefined,
-                }
-              : msg
-          )
-        );
-        setIsStreaming(false);
-        streamingIdRef.current = null;
-      },
-      onError: (message: string) => {
-        const id = streamingIdRef.current;
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === id
-              ? {
-                  ...msg,
-                  status: "error" as MessageStatus,
-                  functionSteps: undefined,
-                }
-              : msg
-          )
-        );
-        setIsStreaming(false);
-        setError(message);
-        streamingIdRef.current = null;
-      },
-    });
-  };
 
   // Handler for TerminalInput component
   const handleSendMessage = async (message: string) => {
@@ -249,7 +189,7 @@ export default function TerminalPanel() {
     setError(null);
 
     // 1. 检查是否是本地命令
-    const localResponse = processLocalCommand(trimmed);
+    const localResponse = processLocalCommand(trimmed, { userIp });
 
     if (localResponse) {
       // 添加用户消息

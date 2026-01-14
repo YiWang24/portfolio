@@ -1,5 +1,10 @@
 import type { TerminalMessage } from "@/types/message";
 
+// 命令上下文
+export interface CommandContext {
+  userIp?: string;
+}
+
 // 虚拟文件系统
 const FILE_SYSTEM: Record<string, { content: string; type: 'file' | 'folder' }> = {
   'README.md': {
@@ -86,9 +91,10 @@ drwxr-xr-x  root  root    320 Jan 13 09:00 ..
 /**
  * 处理本地命令
  * @param input 用户输入
+ * @param context 命令上下文（包含用户IP等信息）
  * @returns 如果是本地命令，返回系统消息；否则返回 null
  */
-export function processLocalCommand(input: string): TerminalMessage | null {
+export function processLocalCommand(input: string, context?: CommandContext): TerminalMessage | null {
   const parts = input.trim().split(' ');
   const command = parts[0].toLowerCase();
   const args = parts.slice(1);
@@ -173,8 +179,9 @@ Available Commands:
       return createSystemMsg(`cd: ${args[0]}: No such file or directory`, 'error');
 
     case 'whoami':
-      const ip = Math.floor(Math.random() * 255);
-      return createSystemMsg(`visitor@${ip}.x.x.x (Guest User)\nSession: terminal-session-${Math.floor(Math.random() * 1000)}`);
+      // 使用真实的IP地址，如果有的话
+      const displayIp = context?.userIp || `${Math.floor(Math.random() * 255)}.x.x.x`;
+      return createSystemMsg(`visitor@${displayIp} (Guest User)\nSession: terminal-session-${Math.floor(Math.random() * 1000)}\nShell: zsh\nTerminal: cli-terminal-v1.0`);
 
     case 'date':
       return createSystemMsg(new Date().toUTCString() + '\nUTC timezone');

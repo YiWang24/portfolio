@@ -5,6 +5,14 @@ export interface CommandContext {
   userIp?: string;
 }
 
+// 命令动作类型
+export type CommandAction = 'contact-modal' | 'resume-download' | 'clear-screen' | 'matrix-trigger' | null;
+
+// 系统消息（带特殊动作）
+interface SystemMessageWithAction extends TerminalMessage {
+  action?: CommandAction;
+}
+
 // 虚拟文件系统
 const FILE_SYSTEM: Record<string, { content: string; type: 'file' | 'folder' }> = {
   'README.md': {
@@ -94,17 +102,18 @@ drwxr-xr-x  root  root    320 Jan 13 09:00 ..
  * @param context 命令上下文（包含用户IP等信息）
  * @returns 如果是本地命令，返回系统消息；否则返回 null
  */
-export function processLocalCommand(input: string, context?: CommandContext): TerminalMessage | null {
+export function processLocalCommand(input: string, context?: CommandContext): SystemMessageWithAction | null {
   const parts = input.trim().split(' ');
   const command = parts[0].toLowerCase();
   const args = parts.slice(1);
 
   // 创建系统消息
-  const createSystemMsg = (content: string, status: 'completed' | 'error' = 'completed'): TerminalMessage => ({
+  const createSystemMsg = (content: string, status: 'completed' | 'error' = 'completed', action?: CommandAction): SystemMessageWithAction => ({
     id: `sys-${Date.now()}-${Math.random()}`,
     role: 'system',
     content,
     status,
+    action,
   });
 
   switch (command) {
@@ -127,6 +136,7 @@ Available Commands:
     rm -rf /        Try to delete everything
     vi, vim, nano   Try to open editor
     clear           Clear terminal screen
+    matrix          Enter the Matrix 🕶️
 
   Examples:
     ls              List files in current directory
@@ -135,6 +145,7 @@ Available Commands:
     cat .secrets    Reveal hidden secrets
     whoami          Who are you?
     clear           Clear the terminal
+    matrix          Wake up, Neo...
 `);
 
     case 'ls':
@@ -220,7 +231,11 @@ Try "cat <file>" to view file contents instead.`);
 
     case 'clear':
       // 返回特殊标记，让组件知道要清屏
-      return createSystemMsg('CLEAR_SCREEN_TRIGGER');
+      return createSystemMsg('CLEAR_SCREEN_TRIGGER', 'completed', 'clear-screen');
+
+    case 'matrix':
+      // 触发 Matrix 数字雨特效
+      return createSystemMsg('>> Entering the Matrix...\n>> (Auto-exit in 5 seconds or press any key to exit)', 'completed', 'matrix-trigger');
 
     default:
       return null; // 不是本地命令，交给 AI 处理
@@ -230,8 +245,11 @@ Try "cat <file>" to view file contents instead.`);
 /**
  * 检查命令是否需要触发特殊操作
  */
-export function getCommandAction(message: TerminalMessage): 'contact-modal' | 'resume-download' | 'clear-screen' | null {
+export function getCommandAction(message: TerminalMessage): CommandAction {
   if (message.role !== 'system') return null;
+
+  const msgWithAction = message as SystemMessageWithAction;
+  if (msgWithAction.action) return msgWithAction.action;
 
   if (message.content === 'CONTACT_MODAL_TRIGGER') return 'contact-modal';
   if (message.content === 'RESUME_DOWNLOAD_TRIGGER') return 'resume-download';

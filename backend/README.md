@@ -189,6 +189,7 @@ data:{"type":"complete"}
 
 | Tool | 功能 |
 |------|------|
+| `getGitHubStats` | 获取综合 GitHub 统计数据 (stars, commits, streaks, languages, top projects) |
 | `getDeveloperProfile` | 获取开发者统计 (stars, languages, repos) |
 | `listAllRepos` | 列出所有仓库 |
 | `searchProjects` | 按关键词搜索项目 |

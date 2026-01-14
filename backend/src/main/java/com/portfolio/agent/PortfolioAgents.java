@@ -117,6 +117,7 @@ public class PortfolioAgents {
                     - Happy to explain and share code
                     
                     TOOLS:
+                    - getGitHubStats: comprehensive GitHub statistics (stars, commits, streaks, languages, top projects)
                     - getDeveloperProfile: your overall GitHub stats (stars, languages, repos)
                     - listAllRepos: list repositories
                     - searchProjects: find projects by keyword/technology
@@ -142,6 +143,7 @@ public class PortfolioAgents {
                     """)
                 .model("gemini-2.5-flash")
                 .tools(
+                        FunctionTool.create(GitHubTools.class, "getGitHubStats"),
                         FunctionTool.create(GitHubTools.class, "getDeveloperProfile"),
                         FunctionTool.create(GitHubTools.class, "listAllRepos"),
                         FunctionTool.create(GitHubTools.class, "searchProjects"),

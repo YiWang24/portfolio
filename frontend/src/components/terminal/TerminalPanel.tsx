@@ -10,6 +10,7 @@ import ThinkingChain from "./ThinkingChain";
 import { StatusBar } from "./StatusBar";
 import { TerminalInput, TerminalInputRef } from "./TerminalInput";
 import ContactModal from "./ContactModal";
+import { useUIStore } from "@/store/ui-store";
 import type {
   TerminalMessage,
   MessageStatus,
@@ -40,6 +41,8 @@ export default function TerminalPanel() {
   const streamingIdRef = useRef<string | null>(null);
   const inputRef = useRef<TerminalInputRef>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const setMatrixActive = useUIStore((state) => state.setMatrixActive);
+  const isMatrixActive = useUIStore((state) => state.isMatrixActive);
 
   const scrollToBottom = useCallback(() => {
     if (contentRef.current) {
@@ -217,6 +220,36 @@ export default function TerminalPanel() {
       if (action === 'resume-download') {
         // 触发下载（可以在这里添加实际的下载逻辑）
         window.open('/resume.pdf', '_blank');
+        return;
+      }
+
+      if (action === 'matrix-trigger') {
+        // 触发 Matrix 数字雨特效 - 阻塞效果
+        // 立即显示特效，但不添加系统消息
+        setMatrixActive(true);
+
+        // 显示运行中的提示
+        const runningMsgId = createMessageId("system");
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: runningMsgId,
+            role: "system",
+            content: ">> Matrix running...",
+            status: "completed" as MessageStatus,
+          },
+        ]);
+
+        // 5秒后特效结束时，更新系统响应消息
+        setTimeout(() => {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === runningMsgId
+                ? { ...msg, content: localResponse.content }
+                : msg
+            )
+          );
+        }, 5000);
         return;
       }
 
@@ -403,7 +436,7 @@ export default function TerminalPanel() {
           </div>
         )}
 
-        {!isStreaming && (
+        {!isStreaming && !isMatrixActive && (
           <TerminalInput
             ref={inputRef}
             onSend={handleSendMessage}

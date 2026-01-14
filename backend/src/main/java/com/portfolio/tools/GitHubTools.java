@@ -3,6 +3,9 @@ package com.portfolio.tools;
 import com.portfolio.config.EnvConfig;
 import com.google.adk.tools.Annotations.Schema;
 import org.springframework.web.reactive.function.client.WebClient;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDate;
 import java.util.*;
 
 public class GitHubTools {
@@ -13,6 +16,176 @@ public class GitHubTools {
             .defaultHeader("Authorization", "Bearer " + EnvConfig.get("GITHUB_TOKEN"))
             .defaultHeader("Accept", "application/vnd.github.v3+json")
             .build();
+    
+    private static final WebClient graphqlClient = WebClient.builder()
+            .baseUrl("https://api.github.com/graphql")
+            .defaultHeader("Authorization", "Bearer " + EnvConfig.get("GITHUB_TOKEN"))
+            .defaultHeader("Content-Type", "application/json")
+            .build();
+    
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Schema(description = "Get comprehensive GitHub statistics including stars, commits, streaks, languages, and top projects")
+    public static Map<String, Object> getGitHubStats() {
+        try {
+            String query = """
+                {
+                  viewer {
+                    repositories(first: 100, ownerAffiliations: OWNER) {
+                      totalCount
+                      nodes {
+                        stargazerCount
+                        forkCount
+                        isArchived
+                        primaryLanguage { name color }
+                      }
+                    }
+                    followers { totalCount }
+                    contributionsCollection {
+                      totalCommitContributions
+                      totalPullRequestContributions
+                      totalPullRequestReviewContributions
+                      contributionCalendar {
+                        weeks {
+                          contributionDays { date contributionCount }
+                        }
+                      }
+                      commitContributionsByRepository(maxRepositories: 10) {
+                        contributions { totalCount }
+                        repository {
+                          name
+                          description
+                          stargazerCount
+                          primaryLanguage { name color }
+                          pushedAt
+                        }
+                      }
+                    }
+                    repositories(first: 100) {
+                      nodes {
+                        languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
+                          totalSize
+                          edges {
+                            size
+                            node { name color }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                """;
+            
+            String response = graphqlClient.post()
+                    .bodyValue(Map.of("query", query))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            
+            JsonNode root = objectMapper.readTree(response);
+            JsonNode viewer = root.path("data").path("viewer");
+            
+            // Parse repositories
+            JsonNode repos = viewer.path("repositories");
+            int totalStars = 0, totalForks = 0, repoCount = repos.path("totalCount").asInt(0);
+            for (JsonNode repo : repos.path("nodes")) {
+                if (!repo.path("isArchived").asBoolean()) {
+                    totalStars += repo.path("stargazerCount").asInt(0);
+                    totalForks += repo.path("forkCount").asInt(0);
+                }
+            }
+            
+            // Parse contributions
+            JsonNode contrib = viewer.path("contributionsCollection");
+            int ytdCommits = contrib.path("totalCommitContributions").asInt(0);
+            int mergedPRs = contrib.path("totalPullRequestContributions").asInt(0);
+            int codeReviews = contrib.path("totalPullRequestReviewContributions").asInt(0);
+            
+            // Calculate streaks
+            JsonNode weeks = contrib.path("contributionCalendar").path("weeks");
+            int[] streaks = calculateStreaks(weeks);
+            
+            // Parse languages
+            Map<String, Long> langMap = new HashMap<>();
+            long totalBytes = 0;
+            for (JsonNode repo : viewer.path("repositories").path("nodes")) {
+                for (JsonNode edge : repo.path("languages").path("edges")) {
+                    String name = edge.path("node").path("name").asText();
+                    long size = edge.path("size").asLong(0);
+                    langMap.merge(name, size, Long::sum);
+                    totalBytes += size;
+                }
+            }
+            
+            List<Map<String, Object>> languages = new ArrayList<>();
+            final long total = totalBytes;
+            langMap.entrySet().stream()
+                    .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
+                    .limit(10)
+                    .forEach(e -> languages.add(Map.of(
+                            "name", e.getKey(),
+                            "percent", (int) Math.round((e.getValue() * 100.0) / total)
+                    )));
+            
+            // Top projects
+            List<Map<String, Object>> topProjects = new ArrayList<>();
+            contrib.path("commitContributionsByRepository").forEach(node -> {
+                JsonNode repo = node.path("repository");
+                topProjects.add(Map.of(
+                        "name", repo.path("name").asText(),
+                        "description", repo.path("description").asText(""),
+                        "stars", repo.path("stargazerCount").asInt(0),
+                        "language", repo.path("primaryLanguage").path("name").asText("Unknown"),
+                        "recentCommits", node.path("contributions").path("totalCount").asInt(0)
+                ));
+            });
+            topProjects.sort((a, b) -> Integer.compare((int) b.get("recentCommits"), (int) a.get("recentCommits")));
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("totalStars", totalStars);
+            result.put("totalForks", totalForks);
+            result.put("followers", viewer.path("followers").path("totalCount").asInt(0));
+            result.put("repositoryCount", repoCount);
+            result.put("ytdCommits", ytdCommits);
+            result.put("mergedPRs", mergedPRs);
+            result.put("codeReviews", codeReviews);
+            result.put("currentStreak", streaks[0]);
+            result.put("longestStreak", streaks[1]);
+            result.put("languages", languages.subList(0, Math.min(5, languages.size())));
+            result.put("topProjects", topProjects.subList(0, Math.min(3, topProjects.size())));
+            return result;
+        } catch (Exception e) {
+            return Map.of("error", "Failed to fetch GitHub stats: " + e.getMessage());
+        }
+    }
+    
+    private static int[] calculateStreaks(JsonNode weeks) {
+        int currentStreak = 0, longestStreak = 0;
+        boolean inCurrent = true;
+        LocalDate today = LocalDate.now();
+        List<JsonNode> weekList = new ArrayList<>();
+        weeks.forEach(weekList::add);
+        
+        for (int i = weekList.size() - 1; i >= 0; i--) {
+            for (JsonNode day : weekList.get(i).path("contributionDays")) {
+                LocalDate date = LocalDate.parse(day.path("date").asText());
+                int count = day.path("contributionCount").asInt(0);
+                if (date.isAfter(today)) continue;
+                
+                if (inCurrent && count > 0) {
+                    currentStreak++;
+                } else if (inCurrent && date.isBefore(today)) {
+                    inCurrent = false;
+                }
+                
+                if (count > 0) {
+                    int temp = 1;
+                    longestStreak = Math.max(longestStreak, temp);
+                }
+            }
+        }
+        return new int[]{currentStreak, longestStreak};
+    }
 
     @Schema(description = "List all public repositories with basic info")
     public static List<Map<String, Object>> listAllRepos(

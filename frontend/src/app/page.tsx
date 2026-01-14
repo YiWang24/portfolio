@@ -5,6 +5,7 @@ import TimelineList from "../components/TimelineList";
 import ProjectGrid from "../components/ProjectGrid";
 import TechStack from "../components/TechStack";
 import TerminalPanel from "../components/terminal/TerminalPanel";
+import { MatrixRain } from "../components/effects/MatrixRain";
 
 const education = profile.education.map((item) => ({
   heading: item.school,
@@ -23,6 +24,9 @@ const experience = profile.experience.map((item) => ({
 export default function Home() {
   return (
     <>
+      {/* === Matrix Rain Effect === */}
+      <MatrixRain />
+
       {/* === 背景层：光影层次与纵深感 === */}
       <div className="fixed inset-0 z-[-1] h-full w-full bg-[#020202]">
         {/* 1. 顶部圣光 (Next.js 风格) */}

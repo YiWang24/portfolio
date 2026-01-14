@@ -4,6 +4,7 @@
 # Env
 .env
 .env.*
+!.env.example
 
 # Editors
 .idea/
@@ -12,3 +13,5 @@
 # Worktrees/history
 .worktrees/
 .history/
+content/
+.claude/

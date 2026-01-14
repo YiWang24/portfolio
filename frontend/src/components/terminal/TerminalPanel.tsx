@@ -2,9 +2,15 @@
 
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
-import { streamChat } from "../services/sse";
-import { createMessageId } from "../utils/terminal";
+import { Mail, Download } from "lucide-react";
+import { streamChat } from "../../services/sse";
+import { createMessageId } from "../../utils/terminal";
+import { processLocalCommand, getCommandAction } from "../../lib/command-processor";
 import ThinkingChain from "./ThinkingChain";
+import TerminalHero from "./TerminalHero";
+import { StatusBar } from "./StatusBar";
+import { TerminalInput, TerminalInputRef } from "./TerminalInput";
+import ContactModal from "./ContactModal";
 import type {
   TerminalMessage,
   FunctionStep,
@@ -22,13 +28,6 @@ const ASCII_LOGO = `
 ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║
 ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝`;
 
-const BOOT_LOGS = [
-  "[init] ✓ RAG engine ready",
-  "[init] ✓ Tools connected",
-  "[success] Agent v2.4 online",
-  "─────────────────────────────────",
-];
-
 export default function TerminalPanel() {
   const sessionId = useMemo(
     () => globalThis.crypto?.randomUUID?.() ?? `session-${Date.now()}`,
@@ -39,31 +38,10 @@ export default function TerminalPanel() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(true);
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [cpuUsage, setCpuUsage] = useState(12.4);
-  const [memUsage, setMemUsage] = useState(24.1);
-  const [userIp, setUserIp] = useState("...");
+  const [isContactOpen, setIsContactOpen] = useState(false);
   const streamingIdRef = useRef<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<TerminalInputRef>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-
-  // Fetch user IP on mount
-  useEffect(() => {
-    fetch("https://api.ipify.org?format=json")
-      .then((res) => res.json())
-      .then((data) => setUserIp(data.ip))
-      .catch(() => setUserIp("127.0.0.1"));
-  }, []);
-
-  // Update time, CPU, and MEM every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-      setCpuUsage(Math.round((10 + Math.random() * 20) * 10) / 10);
-      setMemUsage(Math.round((20 + Math.random() * 15) * 10) / 10);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   const scrollToBottom = useCallback(() => {
     if (contentRef.current) {
@@ -264,6 +242,116 @@ export default function TerminalPanel() {
     });
   };
 
+  // Handler for TerminalInput component
+  const handleSendMessage = async (message: string) => {
+    if (!message.trim() || isStreaming) return;
+    const trimmed = message.trim();
+    setError(null);
+
+    // 1. 检查是否是本地命令
+    const localResponse = processLocalCommand(trimmed);
+
+    if (localResponse) {
+      // 添加用户消息
+      const userId = createMessageId("user");
+      setMessages((prev) => [
+        ...prev,
+        { id: userId, role: "user", content: trimmed, status: "completed" as MessageStatus },
+      ]);
+
+      // 检查是否需要触发特殊操作
+      const action = getCommandAction(localResponse);
+
+      if (action === 'clear-screen') {
+        // 清屏
+        setMessages([]);
+        return;
+      }
+
+      if (action === 'contact-modal') {
+        // 打开联系弹窗
+        setTimeout(() => setIsContactOpen(true), 300);
+        return;
+      }
+
+      if (action === 'resume-download') {
+        // 触发下载（可以在这里添加实际的下载逻辑）
+        window.open('/resume.pdf', '_blank');
+        return;
+      }
+
+      // 添加系统响应
+      setTimeout(() => {
+        setMessages((prev) => [
+          ...prev,
+          localResponse,
+        ]);
+      }, 100);
+
+      return;
+    }
+
+    // 2. 不是本地命令，发送给 AI
+    const userId = createMessageId("user");
+    const agentId = createMessageId("agent");
+    streamingIdRef.current = agentId;
+
+    setMessages((prev) => [
+      ...prev,
+      { id: userId, role: "user", content: trimmed, status: "completed" as MessageStatus },
+      {
+        id: agentId,
+        role: "agent",
+        content: "",
+        status: "thinking" as MessageStatus,
+        functionSteps: [],
+      },
+    ]);
+
+    setIsStreaming(true);
+
+    await streamChat(trimmed, sessionId, {
+      onStatus: handleStatus,
+      onFunctionCall: handleFunctionCall,
+      onThought: handleThought,
+      onThinkingComplete: handleThinkingComplete,
+      onToken: handleToken,
+      onComplete: () => {
+        const id = streamingIdRef.current;
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === id
+              ? {
+                  ...msg,
+                  status: "completed" as MessageStatus,
+                  functionSteps: undefined,
+                }
+              : msg
+          )
+        );
+        setIsStreaming(false);
+        streamingIdRef.current = null;
+      },
+      onError: (message: string) => {
+        const id = streamingIdRef.current;
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === id
+              ? {
+                  ...msg,
+                  status: "error" as MessageStatus,
+                  functionSteps: undefined,
+                }
+              : msg
+          )
+        );
+        setIsStreaming(false);
+        setError(message);
+        streamingIdRef.current = null;
+      },
+    });
+  };
+
   return (
     <div className="cli-terminal" onClick={handleContainerClick}>
       <div className="crt-overlay" />
@@ -274,28 +362,46 @@ export default function TerminalPanel() {
           <span className="light yellow" />
           <span className="light green" />
         </div>
-        <div className="cli-title">
-          <span className="cli-icon">■</span>
-          zsh — 80×24
+
+        <div className="cli-header-center">
+          <div className="cli-hero-badge">
+            <span className="cli-status-dot-inline" />
+            <span>Full Stack Agent Engineer</span>
+          </div>
         </div>
+
         <div className="cli-header-spacer" />
+        <div className="cli-header-actions">
+          <button
+            type="button"
+            className="cli-btn cli-btn-primary cli-btn-small"
+            onClick={() => setIsContactOpen(true)}
+          >
+            <Mail size={14} />
+            <span>Contact</span>
+          </button>
+          <button
+            type="button"
+            className="cli-btn cli-btn-secondary cli-btn-small"
+          >
+            <Download size={14} />
+            <span>Resume</span>
+          </button>
+        </div>
       </div>
 
       <div className="cli-content" ref={contentRef}>
+        {/* ASCII Logo */}
         <pre className="cli-ascii-logo">{ASCII_LOGO}</pre>
 
-        <div className="cli-boot-logs">
-          {BOOT_LOGS.map((log, i) => (
-            <div key={i} className="cli-boot-line">
-              {log.includes("[success]") ? (
-                <span className="terminal-text text-green-400">{log}</span>
-              ) : log.includes("[init]") ? (
-                <span className="text-gray-500">{log}</span>
-              ) : (
-                <span className="text-gray-400">{log}</span>
-              )}
-            </div>
-          ))}
+        {/* Terminal Hero - MOTD Section */}
+        <div className="cli-motd">
+          {/* Bio */}
+          <p className="cli-hero-bio">
+            Building AI-powered interfaces and backend systems. Passionate about
+            clean code, elegant solutions, and the intersection of design and
+            engineering.
+          </p>
         </div>
 
         {messages.map((msg) => (
@@ -358,53 +464,20 @@ export default function TerminalPanel() {
         )}
 
         {!isStreaming && (
-          <form onSubmit={handleSubmit} className="cli-input-line">
-            <span className="cli-arrow">➜</span>
-            <span className="cli-path">~</span>
-            <div className="cli-input-wrapper">
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                className="cli-input"
-                autoFocus
-                autoComplete="off"
-                spellCheck={false}
-                aria-label="Terminal command input"
-                placeholder=""
-              />
-              {isFocused && input === "" && (
-                <span className="cli-block-cursor" />
-              )}
-            </div>
-          </form>
+          <TerminalInput
+            ref={inputRef}
+            onSend={handleSendMessage}
+            isStreaming={isStreaming}
+            onFocusChange={setIsFocused}
+          />
         )}
       </div>
 
-      <div className="cli-statusbar">
-        <div className="cli-statusbar-left">
-          <span className="cli-mode-block">
-            <span className="cli-mode">NORMAL</span>
-          </span>
-          <span className="cli-powerline-arrow">&#xe0b0;</span>
-          <span className="cli-info-block">
-            <span className="cli-info">CPU: {cpuUsage}%</span>
-            <span className="cli-info">MEM: {memUsage}%</span>
-          </span>
-        </div>
-        <div className="cli-statusbar-right">
-          <span className="cli-connection">
-            <span className="cli-dot-pulse" />
-            {userIp}
-          </span>
-          <span className="cli-time">
-            {currentTime.toLocaleTimeString("en-US", { hour12: false })}
-          </span>
-        </div>
-      </div>
+      <StatusBar isInputFocused={isFocused} />
+      <ContactModal
+        isOpen={isContactOpen}
+        onClose={() => setIsContactOpen(false)}
+      />
     </div>
   );
 }

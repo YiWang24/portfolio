@@ -1,16 +1,48 @@
 import { useState, useEffect } from "react";
 
-export type LanguageStats = {
+export interface LanguageStats {
   name: string;
   percent: number;
   color: string;
-};
+  linesOfCode: number;
+}
 
-export type GitHubStats = {
+export interface ProjectActivity {
+  name: string;
+  description: string;
+  recentCommits: number;
+  status: "active" | "idle";
+  language: string;
+  languageColor: string;
+  stars: number;
+}
+
+export interface GitHubStats {
+  // Engineering Impact
+  totalStars: number;
+  totalForks: number;
+  followers: number;
+  repositoryCount: number;
+
+  // Code Contributions
+  ytdCommits: number;
   totalCommits: number;
-  totalPRs: number;
+  mergedPRs: number;
+  openPRs: number;
+  codeReviews: number;
+
+  // Activity
+  last30DaysCommits: number;
+  currentStreak: number;
+  longestStreak: number;
+
+  // Languages
   languages: LanguageStats[];
-};
+  languageCount: number;
+
+  // Top Projects
+  topProjects: ProjectActivity[];
+}
 
 type UseGitHubStatsReturn = {
   data: GitHubStats | null;

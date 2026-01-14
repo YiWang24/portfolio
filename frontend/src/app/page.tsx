@@ -1,12 +1,10 @@
 import profile from "../data/profile.json";
 import CommandBar from "../components/CommandBar";
-import ProfilePanel from "../components/ProfilePanel";
 import SectionModule from "../components/SectionModule";
 import TimelineList from "../components/TimelineList";
 import ProjectGrid from "../components/ProjectGrid";
 import TechStack from "../components/TechStack";
-import TerminalPanel from "../components/TerminalPanel";
-import MobileHeader from "../components/MobileHeader";
+import TerminalPanel from "../components/terminal/TerminalPanel";
 
 const education = profile.education.map((item) => ({
   heading: item.school,
@@ -40,9 +38,6 @@ export default function Home() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
       </div>
 
-      {/* === Mobile Header (仅移动端) === */}
-      <MobileHeader hero={profile.hero} />
-
       {/* === Desktop Navbar (仅桌面端) === */}
       <div className="hidden md:block">
         <CommandBar hero={profile.hero} />
@@ -53,11 +48,11 @@ export default function Home() {
         {/* Hero Section - Full viewport minus nav */}
         <div className="w-full h-[calc(100vh-60px)]">
           <section className="hero-frame w-full h-full">
+           
+
             <div className="hero-terminal">
+              
               <TerminalPanel />
-            </div>
-            <div className="hero-profile">
-              <ProfilePanel hero={profile.hero} />
             </div>
           </section>
         </div>

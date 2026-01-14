@@ -8,18 +8,16 @@
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         Router Agent                                 │
 │                    (意图识别 & 请求分发)                              │
-└──────────┬──────────────────┬──────────────────┬────────────────────┘
-           │                  │                  │
-┌──────────▼─────────┐ ┌──────▼──────────┐ ┌─────▼─────────────────┐
-│  Digital Twin      │ │   Tech Lead     │ │   Knowledge Agent     │
-│  (简历/经历问答)    │ │  (GitHub/代码)   │ │  (语义搜索/联网)       │
-│                    │ │                 │ │                       │
-│  Tools:            │ │  Tools:         │ │  Tools:               │
-│  - queryPersonal   │ │  - getProfile   │ │  - semanticSearch     │
-│  - queryProjects   │ │  - listRepos    │ │  - searchByCategory   │
-│  - queryBlogPosts  │ │  - getDetails   │ │  - webSearch (Tavily) │
-│  - getContactCard  │ │  - readFile     │ │  - refreshIndex       │
-└────────────────────┘ └─────────────────┘ └───────────────────────┘
+└──────┬──────────────┬──────────────────┬──────────────┬────────────┘
+       │              │                  │              │
+┌──────▼─────────┐ ┌──▼──────────┐ ┌─────▼─────────┐ ┌─▼────────────┐
+│  Digital Twin  │ │  Tech Lead  │ │   Knowledge   │ │   Contact    │
+│  (简历/经历)    │ │ (GitHub/代码)│ │  (搜索/联网)   │ │  (邮件发送)   │
+│                │ │             │ │               │ │              │
+│  Tools:        │ │  Tools:     │ │  Tools:       │ │  Tools:      │
+│  - queryInfo   │ │  - getRepo  │ │  - semantic   │ │  - sendEmail │
+│  - getContact  │ │  - readFile │ │  - webSearch  │ │              │
+└────────────────┘ └─────────────┘ └───────────────┘ └──────────────┘
 ```
 
 ## 技术栈
@@ -46,6 +44,11 @@ GITHUB_USERNAME=your-github-username
 
 # Tavily API (https://tavily.com - 联网搜索)
 TAVILY_API_KEY=your-tavily-api-key
+
+# Resend API (https://resend.com - 邮件发送)
+RESEND_API_KEY=your-resend-api-key
+RESEND_FROM=contact@yourdomain.com
+CONTACT_SUBJECT=New Portfolio Contact Message
 
 # 联系信息
 CONTACT_EMAIL=your@email.com
@@ -178,6 +181,7 @@ data:{"type":"complete"}
 | Digital Twin | "你是谁"、"工作经历"、"联系方式" | RAG 检索简历，返回联系卡片 |
 | Tech Lead | "GitHub"、"项目"、"代码" | GitHub API 获取统计、搜索项目、读取代码 |
 | Knowledge | "搜索"、"最新"、技术问题 | 向量语义搜索 + Tavily 联网搜索 |
+| Contact | "联系你"、"发消息"、"留言" | 通过 Resend API 发送邮件 |
 
 ## Tools 说明
 
@@ -204,6 +208,12 @@ data:{"type":"complete"}
 | `listKnowledgeBase` | 列出所有已索引文档 |
 | `webSearch` | Tavily API 联网搜索 |
 | `refreshIndex` | 手动刷新知识库索引 |
+
+### ContactTools
+
+| Tool | 功能 |
+|------|------|
+| `sendContactMessage` | 通过 Resend API 发送联系邮件 |
 
 ### RAGTools
 

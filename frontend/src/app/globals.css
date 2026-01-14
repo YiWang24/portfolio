@@ -377,6 +377,36 @@ main {
   z-index: 5;
   width: 100%;
   flex-shrink: 0;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+/* Header Center - Avatar + Info */
+.cli-header-center {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.cli-hero-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.cli-hero-name-inline {
+  font-size: 16px;
+  font-weight: 700;
+  color: #34d399;
+  margin: 0;
+  line-height: 1.2;
+  text-shadow: 0 0 12px rgba(52, 211, 153, 0.4);
+  text-align: center;
 }
 
 .cli-traffic-lights {
@@ -420,7 +450,25 @@ main {
   font-size: 10px;
 }
 .cli-header-spacer {
-  width: 52px;
+  flex: 1;
+}
+
+/* Header Actions */
+.cli-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cli-btn-small {
+  padding: 6px 12px;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.cli-btn-small svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* Scrollable Content Area */
@@ -455,7 +503,7 @@ main {
 .cli-ascii-logo {
   font-size: 7px;
   line-height: 1.1;
-  margin-bottom: 12px;
+  margin: 0 auto 16px;
   white-space: pre;
   user-select: none;
   background: linear-gradient(135deg, #34d399 0%, #60a5fa 50%, #a78bfa 100%);
@@ -463,8 +511,8 @@ main {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.4));
-  display: flex;
-  justify-content: center;
+  font-family: var(--font-plex-mono), monospace;
+  display: block;
   text-align: center;
 }
 
@@ -511,9 +559,17 @@ main {
 
 /* System Message */
 .cli-system-line {
-  color: #6272a4;
-  font-size: 12px;
-  padding-left: 4px;
+  color: #a0aec0;
+  font-size: 13px;
+  font-family: var(--font-plex-mono), monospace;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  padding: 8px 0;
+  opacity: 0.9;
+}
+
+.cli-system-line:empty {
+  display: none;
 }
 
 /* Agent Response */
@@ -1807,6 +1863,14 @@ main {
 }
 
 /* 动画延迟工具类 */
+.animation-delay-100 {
+  animation-delay: 0.1s;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
 .animation-delay-300 {
   animation-delay: 0.3s;
 }
@@ -1981,4 +2045,468 @@ main {
   font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
+}
+
+/* ========== Terminal Hero (MOTD Header) ========== */
+.cli-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  margin-bottom: 12px;
+}
+
+.cli-header-avatar {
+  flex-shrink: 0;
+}
+
+.cli-avatar-container-small {
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+
+.cli-avatar-fallback-small {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid rgba(16, 185, 129, 0.4);
+  font-size: 18px;
+  font-weight: 700;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.15);
+  font-family: var(--font-jetbrains), monospace;
+}
+
+.cli-status-dot-small {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 12px;
+  height: 12px;
+  background: #10b981;
+  border: 2.5px solid #0a0a0a;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.cli-motd {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 16px 20px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 16px;
+}
+
+/* Name + Role Row */
+.cli-hero-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Name */
+.cli-hero-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  font-family: var(--font-jetbrains), monospace;
+  margin: 0;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 12px rgba(52, 211, 153, 0.4);
+}
+
+/* Role Badge */
+.cli-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #34d399;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: var(--font-plex-mono), monospace;
+  align-self: center;
+}
+
+.cli-status-dot-inline {
+  width: 6px;
+  height: 6px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Bio */
+.cli-hero-bio {
+  max-width: 60ch;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #9ca3af;
+  margin: 0 0 10px 0;
+  padding: 0 16px;
+}
+
+/* Actions */
+.cli-hero-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.cli-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-plex-mono), monospace;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.cli-btn-primary {
+  background: #fff;
+  color: #0a0a0a;
+  border: none;
+}
+
+.cli-btn-primary:hover {
+  background: #e5e5e5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+}
+
+.cli-btn-secondary {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cli-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Social Icons */
+.cli-hero-social {
+  display: flex;
+  gap: 12px;
+}
+
+.cli-social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.cli-social-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
+  transform: translateY(-2px);
+}
+
+/* ========== Responsive Design ========== */
+@media (max-width: 767px) {
+  .cli-motd {
+    padding: 24px 12px 20px;
+    margin-bottom: 16px;
+  }
+
+  .cli-avatar-container {
+    width: 64px;
+    height: 64px;
+  }
+
+  .cli-avatar-fallback {
+    font-size: 20px;
+  }
+
+  .cli-hero-name {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .cli-hero-bio {
+    font-size: 13px;
+    padding: 0 6px;
+    margin-bottom: 8px;
+  }
+
+  .cli-hero-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .cli-btn {
+    justify-content: center;
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+
+  /* Hide ASCII art on mobile */
+  .cli-ascii-logo {
+    display: none;
+  }
+
+  /* Smaller system logs on mobile */
+  .cli-boot-line {
+    font-size: 10px;
+  }
+
+  /* Input area pinned to bottom */
+  .cli-input-line {
+    position: sticky;
+    bottom: 0;
+    background: rgba(10, 10, 10, 0.95);
+    padding: 12px;
+    margin: 0 -16px -12px;
+    z-index: 10;
+    padding-bottom: env(safe-area-inset-bottom, 12px);
+  }
+
+  .cli-input {
+    font-size: 16px; /* Prevent iOS auto-zoom */
+  }
+
+  .cli-content {
+    padding: 12px 16px;
+  }
+}
+
+/* ========== Powerline Status Bar ========== */
+.cli-powerline-statusbar {
+  height: 24px;
+  width: 100%;
+  background: #1a1b26;
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  font-family: var(--font-plex-mono), monospace;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+  cursor: default;
+  position: relative;
+  z-index: 5;
+  flex-shrink: 0;
+}
+
+/* Mode Indicator */
+.cli-powerline-mode {
+  padding: 0 12px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  color: #0a0a0a;
+  transition: background-color 0.3s;
+  z-index: 1;
+}
+
+/* Powerline Arrow */
+.cli-powerline-arrow {
+  width: 0;
+  height: 0;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  border-left: 12px solid;
+  margin-right: -1px;
+  z-index: 0;
+}
+
+/* Powerline Section */
+.cli-powerline-section {
+  padding: 0 12px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #2f334d;
+  color: #d1d5db;
+  margin-left: -1px;
+  z-index: 1;
+}
+
+.cli-powerline-git {
+  padding-left: 14px;
+}
+
+.cli-powerline-location {
+  background: #2f334d;
+}
+
+/* Center Metrics */
+.cli-powerline-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  color: #6b7280;
+}
+
+.cli-powerline-metric {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s;
+}
+
+.cli-powerline-metric:hover {
+  color: #34d399;
+}
+
+/* Time Section */
+.cli-powerline-time {
+  height: 100%;
+  background: #2563eb;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-weight: 700;
+  min-width: 80px;
+  justify-content: center;
+  margin-left: -1px;
+  z-index: 1;
+}
+
+/* ========== Terminal Input with Typewriter ========== */
+.cli-input-line-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.cli-prompt-arrow {
+  color: #10b981;
+  font-weight: bold;
+  text-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.cli-prompt-path {
+  color: #60a5fa;
+  font-weight: 500;
+}
+
+.cli-input-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cli-ghost-text {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #4b5563;
+  font-size: 13px;
+  font-family: var(--font-jetbrains), monospace;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.cli-ghost-cursor {
+  margin-left: 2px;
+  opacity: 0.5;
+  animation: ghost-blink 1s infinite;
+}
+
+@keyframes ghost-blink {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.2; }
+}
+
+.cli-real-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #6ee7b7;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 13px;
+  padding: 0;
+  margin: 0;
+  caret-color: transparent;
+  text-shadow: 0 0 4px rgba(110, 231, 183, 0.4);
+  position: relative;
+  z-index: 10;
+  display: block;
+}
+
+.cli-block-cursor {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 18px;
+  background: #10b981;
+  animation: cursor-blink 1s step-end infinite;
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  z-index: 20;
+  transition: left 0.05s ease-out;
+}
+
+/* ========== Desktop Centered Terminal ========== */
+@media (min-width: 768px) {
+  .hero-frame {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+    background: transparent;
+    border: none;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  .hero-terminal {
+    width: 100%;
+    max-width: 80%;
+    height: 85vh;
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  }
+
+  .hero-profile {
+    display: none;
+  }
 }

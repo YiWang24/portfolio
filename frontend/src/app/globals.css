@@ -2592,6 +2592,45 @@ main {
   }
 }
 
+@keyframes grid-perspective {
+  0% {
+    background-position: center center;
+  }
+  100% {
+    background-position: center calc(100% + 60px);
+  }
+}
+
+@keyframes gridUp {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-40px);
+  }
+}
+
+@keyframes gridDown {
+  0% {
+    transform: translateY(-40px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
 .animate-grid {
   animation: grid 20s linear infinite;
+}
+
+.animate-grid-perspective {
+  animation: grid-perspective 20s linear infinite;
+}
+
+.animate-grid-up {
+  animation: gridUp 10s linear infinite;
+}
+
+.animate-grid-down {
+  animation: gridDown 10s linear infinite;
 }

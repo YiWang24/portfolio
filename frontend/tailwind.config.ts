@@ -25,6 +25,8 @@ const config: Config = {
         "fade-in-up": "fadeInUp 0.5s ease-out",
         "glow-pulse": "glowPulse 3s ease-in-out infinite",
         "boot-scale": "bootScale 0.6s ease-out forwards",
+        "tunnel-y": "tunnelY 3s linear infinite",
+        "tunnel-x": "tunnelX 3s linear infinite",
       },
       keyframes: {
         blink: {
@@ -42,6 +44,14 @@ const config: Config = {
         bootScale: {
           "0%": { opacity: "0", transform: "scale(0.95)" },
           "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        tunnelY: {
+          "0%": { backgroundPosition: "0 0" },
+          "100%": { backgroundPosition: "0 50px" },
+        },
+        tunnelX: {
+          "0%": { backgroundPosition: "0 0" },
+          "100%": { backgroundPosition: "50px 0" },
         },
       },
     },

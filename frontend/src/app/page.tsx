@@ -6,7 +6,7 @@ import ProjectGrid from "../components/ProjectGrid";
 import TechStack from "../components/TechStack";
 import TerminalPanel from "../components/terminal/TerminalPanel";
 import { MatrixRain } from "../components/effects/MatrixRain";
-import RetroGrid from "../components/ui/RetroGrid";
+import HyperTunnel from "../components/ui/HyperTunnel";
 
 const education = profile.education.map((item) => ({
   heading: item.school,
@@ -28,20 +28,13 @@ export default function Home() {
       {/* === Matrix Rain Effect === */}
       <MatrixRain />
 
-      {/* === 背景层：光影层次与纵深感 === */}
-      <div className="fixed inset-0 z-[-1] h-full w-full bg-[#05070f]">
-        {/* 1. 顶部圣光 (Next.js 风格) */}
-        <div className="absolute top-0 h-screen w-screen bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.15),transparent)]" />
+      {/* === 背景层：时空隧道透视效果 === */}
+      <div className="fixed inset-0 z-[-1] h-full w-full">
+        {/* 4面 3D 隧道背景 (HyperTunnel) */}
+        <HyperTunnel />
 
-        {/* 2. 3D 透视网格 (Retro Grid Effect) */}
-        <div className="absolute inset-0 z-[0]">
-          <RetroGrid />
-        </div>
-
-        {/* 3. 环境色彩 - 左上紫色氛围 */}
+        {/* 环境色彩光晕 */}
         <div className="absolute top-0 left-0 h-[500px] w-[500px] bg-purple-500/10 blur-[120px] rounded-full mix-blend-screen pointer-events-none" />
-
-        {/* 4. 环境色彩 - 右下翠绿氛围 */}
         <div className="absolute bottom-0 right-0 h-[500px] w-[500px] bg-emerald-500/10 blur-[120px] rounded-full mix-blend-screen pointer-events-none" />
       </div>
 

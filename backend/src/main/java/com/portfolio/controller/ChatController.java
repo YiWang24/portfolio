@@ -2,6 +2,7 @@ package com.portfolio.controller;
 
 import com.google.adk.events.Event;
 import com.portfolio.service.AgentService;
+import com.portfolio.service.RateLimitService;
 import com.google.genai.types.Content;
 import io.reactivex.rxjava3.core.Flowable;
 import org.slf4j.Logger;
@@ -22,9 +23,11 @@ public class ChatController {
 
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);
     private final AgentService agentService;
+    private final RateLimitService rateLimitService;
 
-    public ChatController(AgentService agentService) {
+    public ChatController(AgentService agentService, RateLimitService rateLimitService) {
         this.agentService = agentService;
+        this.rateLimitService = rateLimitService;
     }
 
     @PostMapping("/message")
@@ -192,6 +195,11 @@ public class ChatController {
     public ResponseEntity<Void> clearSession(@PathVariable String sessionId) {
         agentService.clearSession(sessionId);
         return ResponseEntity.ok().build();
+    }
+    
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getRateLimitStats() {
+        return ResponseEntity.ok(rateLimitService.getStats());
     }
 
     private String escapeJson(String text) {

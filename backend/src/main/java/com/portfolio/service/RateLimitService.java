@@ -4,20 +4,21 @@ import com.portfolio.config.EnvConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.time.Instant;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Service
 public class RateLimitService {
     private static final Logger log = LoggerFactory.getLogger(RateLimitService.class);
     private final boolean enabled;
     private final int globalDaily, globalHourly, ipDaily, ipHourly;
-    private final Map<String, Counter> ipHourlyMap = new ConcurrentHashMap<>();
-    private final Map<String, Counter> ipDailyMap = new ConcurrentHashMap<>();
-    private final Counter globalHourlyCounter = new Counter();
-    private final Counter globalDailyCounter = new Counter();
+    private final Map<String, SlidingWindow> ipHourlyMap = new ConcurrentHashMap<>();
+    private final Map<String, SlidingWindow> ipDailyMap = new ConcurrentHashMap<>();
+    private final SlidingWindow globalHourlyWindow = new SlidingWindow();
+    private final SlidingWindow globalDailyWindow = new SlidingWindow();
 
     public RateLimitService() {
         this.enabled = Boolean.parseBoolean(EnvConfig.get("RATE_LIMIT_ENABLED", "true"));
@@ -25,54 +26,63 @@ public class RateLimitService {
         this.globalHourly = Integer.parseInt(EnvConfig.get("RATE_LIMIT_GLOBAL_HOURLY", "100"));
         this.ipDaily = Integer.parseInt(EnvConfig.get("RATE_LIMIT_IP_DAILY", "50"));
         this.ipHourly = Integer.parseInt(EnvConfig.get("RATE_LIMIT_IP_HOURLY", "10"));
-        log.info("RateLimitService: enabled={}, global={}/{}, ip={}/{}", enabled, globalHourly, globalDaily, ipHourly, ipDaily);
+        log.info("RateLimitService: enabled={}, global={}/{}, ip={}/{} (sliding window)", 
+                enabled, globalHourly, globalDaily, ipHourly, ipDaily);
     }
 
     public boolean allowRequest(String ip) {
         if (!enabled) return true;
-        LocalDateTime now = LocalDateTime.now();
-        if (!checkLimit(globalHourlyCounter, globalHourly, now, ChronoUnit.HOURS)) {
+        long now = Instant.now().getEpochSecond();
+        
+        if (globalHourlyWindow.getCount(now, 3600) >= globalHourly) {
             log.warn("Global hourly limit exceeded");
             return false;
         }
-        if (!checkLimit(globalDailyCounter, globalDaily, now, ChronoUnit.DAYS)) {
+        if (globalDailyWindow.getCount(now, 86400) >= globalDaily) {
             log.warn("Global daily limit exceeded");
             return false;
         }
-        Counter ipH = ipHourlyMap.computeIfAbsent(ip, k -> new Counter());
-        Counter ipD = ipDailyMap.computeIfAbsent(ip, k -> new Counter());
-        if (!checkLimit(ipH, this.ipHourly, now, ChronoUnit.HOURS)) {
+        
+        SlidingWindow ipH = ipHourlyMap.computeIfAbsent(ip, k -> new SlidingWindow());
+        SlidingWindow ipD = ipDailyMap.computeIfAbsent(ip, k -> new SlidingWindow());
+        
+        if (ipH.getCount(now, 3600) >= this.ipHourly) {
             log.warn("IP {} hourly limit exceeded", ip);
             return false;
         }
-        if (!checkLimit(ipD, this.ipDaily, now, ChronoUnit.DAYS)) {
+        if (ipD.getCount(now, 86400) >= this.ipDaily) {
             log.warn("IP {} daily limit exceeded", ip);
             return false;
         }
-        globalHourlyCounter.increment(now);
-        globalDailyCounter.increment(now);
-        ipH.increment(now);
-        ipD.increment(now);
+        
+        globalHourlyWindow.add(now);
+        globalDailyWindow.add(now);
+        ipH.add(now);
+        ipD.add(now);
         return true;
     }
 
-    private boolean checkLimit(Counter counter, int limit, LocalDateTime now, ChronoUnit unit) {
-        counter.cleanup(now, unit);
-        return counter.getCount() < limit;
-    }
-
     public Map<String, Object> getStats() {
-        return Map.of("enabled", enabled, "globalHourly", globalHourlyCounter.getCount() + "/" + globalHourly,
-            "globalDaily", globalDailyCounter.getCount() + "/" + globalDaily, "uniqueIPs", ipHourlyMap.size());
+        long now = Instant.now().getEpochSecond();
+        return Map.of(
+            "enabled", enabled,
+            "globalHourly", globalHourlyWindow.getCount(now, 3600) + "/" + globalHourly,
+            "globalDaily", globalDailyWindow.getCount(now, 86400) + "/" + globalDaily,
+            "uniqueIPs", ipHourlyMap.size()
+        );
     }
 
-    private static class Counter {
-        private int count = 0;
-        private LocalDateTime windowStart = LocalDateTime.now();
-        synchronized void increment(LocalDateTime now) { count++; }
-        synchronized void cleanup(LocalDateTime now, ChronoUnit unit) {
-            if (unit.between(windowStart, now) >= 1) { count = 0; windowStart = now; }
+    private static class SlidingWindow {
+        private final Queue<Long> timestamps = new ConcurrentLinkedQueue<>();
+        
+        synchronized void add(long timestamp) {
+            timestamps.offer(timestamp);
         }
-        synchronized int getCount() { return count; }
+        
+        synchronized int getCount(long now, long windowSeconds) {
+            long cutoff = now - windowSeconds;
+            timestamps.removeIf(ts -> ts < cutoff);
+            return timestamps.size();
+        }
     }
 }

@@ -45,6 +45,7 @@ export default function Home() {
 
       {/* === 内容层 === */}
       <main
+        id="main-scroll-container"
         ref={containerRef}
         className="relative w-full z-10 h-screen overflow-y-scroll snap-y snap-proximity scroll-smooth"
 

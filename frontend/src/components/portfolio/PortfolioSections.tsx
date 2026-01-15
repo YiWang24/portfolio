@@ -9,6 +9,7 @@
 import { ProfileData } from "@/types/profile";
 import { AboutSection } from "./AboutSection";
 import { ExperienceSection } from "./ExperienceSection";
+import { ProjectsDashboard } from "./ProjectsDashboard";
 import { SparklesCore } from "@/components/ui/sparkles";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import { motion } from "framer-motion";
@@ -30,7 +31,7 @@ export default function PortfolioSections({ data }: PortfolioSectionsProps) {
             <AboutSection about={data.about} />
 
             {/* Connecting Line to Next Section */}
-            <div className="absolute bottom-0 left-1/2 w-px h-24 bg-gradient-to-b from-transparent to-cyan-500/50 hidden md:block" />
+            <div className="absolute bottom-0 left-1/2 w-px h-24 bg-gradient-to-b from-transparent to-violet-500/80 hidden md:block" />
           </div>
         </ScrollReveal>
 
@@ -38,9 +39,22 @@ export default function PortfolioSections({ data }: PortfolioSectionsProps) {
         <PerspectiveReveal className="w-full">
           <div id="experience" className="snap-start relative">
             {/* Connecting Line from Previous Section */}
-            <div className="absolute top-0 left-1/2 w-px h-24 bg-gradient-to-b from-cyan-500/50 to-transparent hidden md:block" />
+            <div className="absolute top-0 left-1/2 w-px h-24 bg-gradient-to-b from-violet-500/80 to-transparent hidden md:block" />
 
             <ExperienceSection experience={data.experience} />
+
+            {/* Connecting Line to Next Section */}
+            <div className="absolute bottom-0 left-1/2 w-px h-24 bg-gradient-to-b from-transparent to-violet-500/80 hidden md:block" />
+          </div>
+        </PerspectiveReveal>
+
+        {/* Projects Dashboard Section */}
+        <PerspectiveReveal className="w-full">
+          <div id="projects" className="snap-start relative">
+            {/* Connecting Line from Previous Section */}
+            <div className="absolute top-0 left-1/2 w-px h-24 bg-gradient-to-b from-violet-500/80 to-transparent hidden md:block" />
+
+            <ProjectsDashboard projects={data.projects} />
           </div>
         </PerspectiveReveal>
       </div>

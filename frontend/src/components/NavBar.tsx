@@ -37,9 +37,13 @@ export default function Navbar({ hero }: Props) {
     >
       <nav className="flex items-center justify-between px-4 py-2 md:px-6 md:py-3 rounded-full border border-white/10 bg-black/60 backdrop-blur-xl shadow-[0_0_30px_rgba(0,0,0,0.5)]">
         {/* Brand */}
-        <motion.a
-          href="/"
-          className="flex items-center gap-3"
+        <motion.div
+          className="flex items-center gap-3 cursor-pointer"
+          onClick={() => {
+            const container = document.getElementById('main-scroll-container');
+            if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+            else window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -49,7 +53,7 @@ export default function Navbar({ hero }: Props) {
           <span className="font-semibold text-white text-sm tracking-wide hidden sm:block">
             {hero.name}
           </span>
-        </motion.a>
+        </motion.div>
 
         {/* Navigation Links - IDE Tab Style */}
         <div className="hidden md:flex items-center gap-1">

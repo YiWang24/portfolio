@@ -113,7 +113,7 @@
       "summary": "Real-time chat application with AI-powered responses and intelligent conversation routing.",
       "tech": ["React", "TypeScript", "OpenAI", "WebSocket", "Redis"],
       "links": {
-        "demo": "https://aichat.example.com",
+        "demo": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
         "repo": "https://github.com/user/ai-chat"
       },
       "metrics": {

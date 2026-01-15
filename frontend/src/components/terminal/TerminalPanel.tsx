@@ -11,6 +11,11 @@ import { StatusBar } from "./StatusBar";
 import { TerminalInput, TerminalInputRef } from "./TerminalInput";
 import ContactModal from "./ContactModal";
 import { useUIStore } from "@/store/ui-store";
+import {
+  extractThinkingPreview,
+  finalizeThinkingMessage,
+  shouldShowThinking,
+} from "@/utils/thinking";
 import type {
   TerminalMessage,
   MessageStatus,
@@ -105,13 +110,7 @@ export default function TerminalPanel() {
     setMessages((prev) =>
       prev.map((msg) => {
         if (msg.id !== streamingId) return msg;
-        // Clear functionSteps and thoughts when thinking is complete
-        return {
-          ...msg,
-          functionSteps: undefined,
-          thoughts: undefined,
-          status: "streaming" as MessageStatus,
-        };
+        return finalizeThinkingMessage(msg);
       })
     );
   }, []);
@@ -144,6 +143,9 @@ export default function TerminalPanel() {
       const streamingId = streamingIdRef.current;
       if (!streamingId) return;
 
+      const preview = extractThinkingPreview(thought.message);
+      if (!preview) return;
+
       setMessages((prev) =>
         prev.map((msg) => {
           if (msg.id !== streamingId) return msg;
@@ -154,7 +156,7 @@ export default function TerminalPanel() {
               ...thoughts,
               {
                 id: `thought-${thoughts.length}`,
-                message: thought.message,
+                message: preview,
                 status: thought.status || "completed",
               },
             ],
@@ -286,7 +288,6 @@ export default function TerminalPanel() {
               ? {
                   ...msg,
                   status: "completed" as MessageStatus,
-                  functionSteps: undefined,
                 }
               : msg
           )
@@ -302,7 +303,6 @@ export default function TerminalPanel() {
               ? {
                   ...msg,
                   status: "error" as MessageStatus,
-                  functionSteps: undefined,
                 }
               : msg
           )
@@ -378,13 +378,13 @@ export default function TerminalPanel() {
               <div className="cli-system-line">{msg.content}</div>
             ) : (
               <div className="cli-agent-response">
-                {/* Show thinking chain only when status is thinking */}
-                {msg.status === "thinking" && msg.functionSteps && (
+                {/* Show thinking chain above content while it exists */}
+                {shouldShowThinking(msg) && msg.functionSteps && (
                   <ThinkingChain steps={msg.functionSteps} />
                 )}
 
-                {/* Show thoughts during thinking phase */}
-                {msg.status === "thinking" &&
+                {/* Show thoughts above content while they exist */}
+                {shouldShowThinking(msg) &&
                   msg.thoughts &&
                   msg.thoughts.length > 0 && (
                     <div className="cli-thoughts">

@@ -54,8 +54,41 @@
 
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+}
+
+/* Shimmer animation for gradient text */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
+
+/* Pulse ring animation for status dot */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s ease-out infinite;
 }
 
 body {
@@ -518,20 +551,14 @@ main {
   z-index: 1;
   /* 防止滚动影响外部页面 */
   overscroll-behavior: contain;
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
+/* Hide scrollbar for Chrome, Safari and Opera */
 .cli-content::-webkit-scrollbar {
-  width: 6px;
-}
-.cli-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-.cli-content::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 3px;
-}
-.cli-content::-webkit-scrollbar-thumb:hover {
-  background: #444;
+  display: none;
 }
 
 /* ASCII Logo */

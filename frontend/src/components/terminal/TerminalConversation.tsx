@@ -23,6 +23,7 @@ import {
   shouldShowThinking,
 } from "@/utils/thinking";
 import type { TerminalMessage, MessageStatus, ItemStatus } from "@/types/message";
+import { TerminalBio } from "./TerminalBio";
 
 export type TerminalConversationRef = {
   focus: () => void;
@@ -421,10 +422,10 @@ const TerminalConversation = forwardRef<
             prev.map((msg) =>
               msg.id === id
                 ? {
-                    ...msg,
-                    content: finalContent,
-                    status: "completed" as MessageStatus,
-                  }
+                  ...msg,
+                  content: finalContent,
+                  status: "completed" as MessageStatus,
+                }
                 : msg
             )
           );
@@ -461,9 +462,9 @@ const TerminalConversation = forwardRef<
           prev.map((msg) =>
             msg.id === id
               ? {
-                  ...msg,
-                  status: "error" as MessageStatus,
-                }
+                ...msg,
+                status: "error" as MessageStatus,
+              }
               : msg
           )
         );
@@ -484,15 +485,8 @@ const TerminalConversation = forwardRef<
       {/* ASCII Logo */}
       <pre className="cli-ascii-logo">{ASCII_LOGO}</pre>
 
-      {/* Terminal Hero - MOTD Section */}
-      <div className="cli-motd">
-        {/* Bio */}
-        <p className="cli-hero-bio">
-          Building AI-powered interfaces and backend systems. Passionate about
-          clean code, elegant solutions, and the intersection of design and
-          engineering.
-        </p>
-      </div>
+      {/* Terminal Hero - Dynamic Typewriter */}
+      <TerminalBio />
 
       {messages.map((msg) => (
         <div key={msg.id} className="cli-message">

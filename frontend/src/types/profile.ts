@@ -5,6 +5,34 @@ export type ProfileData = {
     intro: string;
     avatar: string;
     status: string;
+    github?: string;
+  };
+  about: {
+    name: string;
+    role: string;
+    avatar: string;
+    location: string;
+    experience: string;
+    tagline: string;
+    bio: string;
+    focusAreas: Array<{
+      title: string;
+      icon: string;
+      description: string;
+      tags: string[];
+    }>;
+    socials: {
+      github?: string;
+      linkedin?: string;
+      email?: string;
+      twitter?: string;
+    };
+    educationList: Array<{
+      degree: string;
+      school: string;
+      period: string;
+      logo: string;
+    }>;
   };
   education: {
     school: string;
@@ -22,7 +50,7 @@ export type ProfileData = {
     title: string;
     summary: string;
     tech: string[];
-    links: {
+    links?: {
       demo?: string;
       repo?: string;
     };

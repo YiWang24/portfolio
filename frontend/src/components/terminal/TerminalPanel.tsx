@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { Mail, Download } from "lucide-react";
+import { motion } from "framer-motion";
 import profile from "@/data/profile.json";
-import ContactModal from "./ContactModal";
 import { StatusBar } from "./StatusBar";
 import TerminalConversation, {
   TerminalConversationRef,
@@ -16,7 +15,6 @@ export default function TerminalPanel() {
     []
   );
   const [isFocused, setIsFocused] = useState(true);
-  const [isContactOpen, setIsContactOpen] = useState(false);
   const setMatrixActive = useUIStore((state) => state.setMatrixActive);
   const isMatrixActive = useUIStore((state) => state.isMatrixActive);
   const conversationRef = useRef<TerminalConversationRef>(null);
@@ -25,8 +23,23 @@ export default function TerminalPanel() {
     conversationRef.current?.focus();
   };
 
+  // Open contact modal via global event
+  const handleOpenContact = () => {
+    window.dispatchEvent(new CustomEvent('openContact'));
+  };
+
   return (
-    <div className="cli-terminal" onClick={handleContainerClick}>
+    <motion.div
+      className="cli-terminal"
+      onClick={handleContainerClick}
+      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{
+        duration: 0.6,
+        ease: [0.22, 1, 0.36, 1], // Custom cubic-bezier for smooth "Apple-like" easing
+        delay: 0.1
+      }}
+    >
       <div className="crt-overlay"></div>
 
       <div className="cli-header">
@@ -43,28 +56,8 @@ export default function TerminalPanel() {
             </div>
           </div>
         </div>
-        <div className="cli-header-actions">
-          <button
-            className="cli-btn cli-btn-primary cli-btn-small"
-            onClick={(event) => {
-              event.stopPropagation();
-              setIsContactOpen(true);
-            }}
-          >
-            <Mail size={16} />
-            Contact
-          </button>
-          <button
-            className="cli-btn cli-btn-secondary cli-btn-small"
-            onClick={(event) => {
-              event.stopPropagation();
-              window.open("/resume.pdf", "_blank");
-            }}
-          >
-            <Download size={16} />
-            Resume
-          </button>
-        </div>
+        {/* Spacer for balanced layout */}
+        <div className="cli-header-spacer" />
       </div>
 
       <TerminalConversation
@@ -72,16 +65,11 @@ export default function TerminalPanel() {
         sessionId={sessionId}
         isMatrixActive={isMatrixActive}
         setMatrixActive={setMatrixActive}
-        onOpenContact={() => setIsContactOpen(true)}
+        onOpenContact={handleOpenContact}
         onInputFocusChange={setIsFocused}
       />
 
       <StatusBar isInputFocused={isFocused} />
-
-      <ContactModal
-        isOpen={isContactOpen}
-        onClose={() => setIsContactOpen(false)}
-      />
-    </div>
+    </motion.div>
   );
 }

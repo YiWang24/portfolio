@@ -1,12 +1,20 @@
+/**
+ * Enhanced SSE Service
+ * Handles streaming chat with thinking phases and tool execution display
+ */
+
 import type {
   StreamEvent,
   StreamHandlers,
-  ItemStatus,
-} from "@/types/message";
+  ToolExecution,
+} from "@/types/stream";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-export function splitSsePayloads(buffer: string) {
+/**
+ * Parse SSE buffer into individual JSON payloads
+ */
+export function splitSsePayloads(buffer: string): { payloads: string[]; rest: string } {
   const payloads: string[] = [];
   const normalized = buffer.replace(/\r\n/g, "\n");
   let cursor = 0;
@@ -14,6 +22,7 @@ export function splitSsePayloads(buffer: string) {
   while (true) {
     const dataIndex = normalized.indexOf("data:", cursor);
     if (dataIndex === -1) break;
+
     let start = dataIndex + 5;
     if (normalized[start] === " ") start += 1;
 
@@ -45,7 +54,7 @@ export function splitSsePayloads(buffer: string) {
         cursor = normalized.length;
       }
     } catch {
-      // Incomplete payload, keep in rest.
+      // Incomplete payload, keep in rest
     }
     break;
   }
@@ -53,129 +62,30 @@ export function splitSsePayloads(buffer: string) {
   return { payloads, rest: normalized.slice(cursor) };
 }
 
-// 检查是否是内部调试信息
-function isInternalDebugInfo(content: string): boolean {
-  const debugPatterns = [
-    /^Function Call:/i,
-    /^Function Response:/i,
-    /^FunctionCall\{/i,
-    /^FunctionResponse\{/i,
-    /^Call:/i,
-    /id=Optional\[/i,
-    /args=Optional\[/i,
-    /name=Optional\[/i,
-    /response=Optional\[/i,
-    /partialArgs=Optional/i,
-    /willContinue=Optional/i,
-    /scheduling=Optional/i,
-  ];
-
-  return debugPatterns.some((pattern) => pattern.test(content));
-}
-
-export function parseStreamEvent(payload: string): StreamEvent | { type: "skip" } {
-  try {
-    const parsed = JSON.parse(payload) as {
-      type?: string;
-      content?: string;
-      message?: string;
-      name?: string;
-      status?: string;
-      phase?: string;
-      step?: string;
-    };
-
-    // Handle function_call type (tool calls)
-    if (parsed.type === "function_call" && typeof parsed.name === "string") {
-      return {
-        type: "function_call",
-        name: parsed.name,
-        status: (parsed.status as ItemStatus) || "running",
-      };
-    }
-
-    // Handle thought type
-    if (parsed.type === "thought" && typeof parsed.message === "string") {
-      return {
-        type: "thought",
-        message: parsed.message,
-        status: (parsed.status as ItemStatus) || "completed",
-      };
-    }
-
-    // Handle token type
-    if (parsed.type === "token" && typeof parsed.content === "string") {
-      if (isInternalDebugInfo(parsed.content)) {
-        return { type: "skip" };
-      }
-      return { type: "token", content: parsed.content };
-    }
-
-    // Handle delta type
-    if (parsed.type === "delta" && typeof parsed.content === "string") {
-      if (isInternalDebugInfo(parsed.content)) {
-        return { type: "skip" };
-      }
-      return { type: "delta", content: parsed.content };
-    }
-
-    // Handle status type
-    if (parsed.type === "status" && typeof parsed.phase === "string") {
-      const phase = parsed.phase as "start" | "thinking" | "thinking_complete";
-      return { type: "status", phase };
-    }
-
-    // Handle error type
-    if (parsed.type === "error" && typeof parsed.message === "string") {
-      return { type: "error", message: parsed.message };
-    }
-
-    // Handle complete type
-    if (parsed.type === "complete") {
-      return { type: "complete" };
-    }
-
-    // Handle thinking_complete type
-    if (parsed.type === "thinking_complete") {
-      return { type: "thinking_complete" };
-    }
-
-    // If it has content field but no type, treat as token
-    if (typeof parsed.content === "string") {
-      if (isInternalDebugInfo(parsed.content)) {
-        return { type: "skip" };
-      }
-      return { type: "token", content: parsed.content };
-    }
-  } catch {
-    // 不是 JSON，检查是否是调试信息
-    if (isInternalDebugInfo(payload)) {
-      return { type: "skip" };
-    }
-  }
-
-  // 如果是纯文本且不是调试信息，作为 token 返回
-  if (!isInternalDebugInfo(payload)) {
-    return { type: "token", content: payload };
-  }
-
-  return { type: "skip" };
-}
-
+/**
+ * Enhanced streaming chat function
+ * Connects to /api/v1/chat/stream endpoint
+ *
+ * @param message - User message
+ * @param sessionId - Session ID (optional, will be generated if not provided)
+ * @param handlers - Event handlers for different stream events
+ */
 export async function streamChat(
   message: string,
   sessionId: string,
   handlers: StreamHandlers
-) {
-  try {
-    const params = new URLSearchParams();
-    if (sessionId) params.set("sessionId", sessionId);
-    params.set("message", message);
-    const url = `${baseUrl}/api/v1/chat/stream?${params.toString()}`;
+): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    try {
+      const params = new URLSearchParams();
+      if (sessionId) params.set("sessionId", sessionId);
+      params.set("message", message);
 
-    await new Promise<void>((resolve) => {
+      const url = `${baseUrl}/api/v1/chat/stream?${params.toString()}`;
       const source = new EventSource(url);
+
       let closed = false;
+      let firstDataReceived = false;
 
       const close = () => {
         if (closed) return;
@@ -184,64 +94,212 @@ export async function streamChat(
         resolve();
       };
 
-      const handleJson = <T,>(data: string): T | null => {
-        try {
-          return JSON.parse(data) as T;
-        } catch {
-          return null;
+      // Connection error handler
+      source.onerror = (evt) => {
+        if (!firstDataReceived) {
+          handlers.onError?.(
+            "Connection failed. The server may be unavailable or rate limited.",
+            "CONNECTION_ERROR"
+          );
+          close();
+          reject(new Error("EventSource connection failed"));
         }
       };
 
-      source.addEventListener("status", (evt) => {
-        const payload = handleJson<{ phase?: string }>((evt as MessageEvent).data);
-        if (!payload?.phase) return;
-        const phase = payload.phase as "start" | "thinking" | "thinking_complete";
-        handlers.onStatus?.({ phase });
-        if (phase === "thinking_complete") {
-          handlers.onThinkingComplete?.();
+      // Session start event
+      source.addEventListener("session_start", (evt) => {
+        firstDataReceived = true;
+        try {
+          const data = JSON.parse((evt as MessageEvent).data) as {
+            session_id?: string;
+          };
+          if (data.session_id) {
+            handlers.onSessionStart?.(data.session_id);
+          }
+        } catch (e) {
+          console.error("Failed to parse session_start event", e);
         }
       });
 
-      source.addEventListener("delta", (evt) => {
-        const payload = handleJson<{ content?: string }>((evt as MessageEvent).data);
-        if (payload?.content && !isInternalDebugInfo(payload.content)) {
-          handlers.onToken(payload.content);
+      // Thinking phase events
+      source.addEventListener("thinking_start", () => {
+        firstDataReceived = true;
+        handlers.onThinkingStart?.();
+      });
+
+      source.addEventListener("thinking_delta", (evt) => {
+        firstDataReceived = true;
+        try {
+          const data = JSON.parse((evt as MessageEvent).data) as {
+            content?: string;
+          };
+          if (data.content) {
+            handlers.onThinkingDelta?.(data.content);
+          }
+        } catch (e) {
+          console.error("Failed to parse thinking_delta event", e);
         }
       });
 
-      source.addEventListener("function_call", (evt) => {
-        const payload = handleJson<{ name?: string; status?: ItemStatus }>(
-          (evt as MessageEvent).data
-        );
-        if (payload?.name) {
-          handlers.onFunctionCall?.({
-            name: payload.name,
-            status: payload.status || "running",
-          });
+      source.addEventListener("thinking_end", () => {
+        firstDataReceived = true;
+        handlers.onThinkingEnd?.();
+      });
+
+      // Tool call events
+      source.addEventListener("tool_call_start", (evt) => {
+        firstDataReceived = true;
+        try {
+          const data = JSON.parse((evt as MessageEvent).data) as {
+            tool_id?: string;
+            tool_name?: string;
+            arguments?: string;
+          };
+
+          if (data.tool_id && data.tool_name) {
+            const tool: ToolExecution = {
+              toolId: data.tool_id,
+              toolName: data.tool_name,
+              arguments: data.arguments || "{}",
+              status: "running",
+              timestamp: Date.now(),
+            };
+            handlers.onToolStart?.(tool);
+          }
+        } catch (e) {
+          console.error("Failed to parse tool_call_start event", e);
         }
       });
 
+      source.addEventListener("tool_call_end", (evt) => {
+        firstDataReceived = true;
+        try {
+          const data = JSON.parse((evt as MessageEvent).data) as {
+            tool_id?: string;
+            tool_name?: string;
+            result?: string;
+            success?: boolean;
+          };
+
+          if (data.tool_id && data.tool_name) {
+            const tool: ToolExecution = {
+              toolId: data.tool_id,
+              toolName: data.tool_name,
+              arguments: "{}",
+              result: data.result || "",
+              status: data.success ? "completed" : "failed",
+              timestamp: Date.now(),
+            };
+            handlers.onToolEnd?.(tool);
+          }
+        } catch (e) {
+          console.error("Failed to parse tool_call_end event", e);
+        }
+      });
+
+      // Response phase events
+      source.addEventListener("response_start", () => {
+        firstDataReceived = true;
+        handlers.onResponseStart?.();
+      });
+
+      source.addEventListener("response_delta", (evt) => {
+        firstDataReceived = true;
+        try {
+          const data = JSON.parse((evt as MessageEvent).data) as {
+            content?: string;
+          };
+          if (data.content) {
+            handlers.onResponseDelta?.(data.content);
+          }
+        } catch (e) {
+          console.error("Failed to parse response_delta event", e);
+        }
+      });
+
+      source.addEventListener("response_end", () => {
+        firstDataReceived = true;
+        handlers.onResponseEnd?.();
+      });
+
+      // Complete event
       source.addEventListener("complete", () => {
-        handlers.onComplete();
+        firstDataReceived = true;
+        handlers.onComplete?.();
         close();
       });
 
+      // Error event
       source.addEventListener("error", (evt) => {
         if ("data" in evt) {
-          const payload = handleJson<{ message?: string }>(
-            (evt as MessageEvent).data
-          );
-          if (payload?.message) {
-            handlers.onError(payload.message);
-            close();
-            return;
+          try {
+            const data = JSON.parse((evt as MessageEvent).data) as {
+              message?: string;
+              code?: string;
+            };
+            if (data.message) {
+              handlers.onError?.(data.message, data.code);
+              close();
+              return;
+            }
+          } catch (e) {
+            console.error("Failed to parse error event", e);
           }
         }
-        handlers.onError("Stream error");
+        handlers.onError?.("Stream error", "UNKNOWN_ERROR");
         close();
       });
-    });
-  } catch (error) {
-    handlers.onError(error instanceof Error ? error.message : "Stream error");
+
+      // Set timeout for connection (30 seconds)
+      const timeout = setTimeout(() => {
+        if (!firstDataReceived) {
+          handlers.onError?.("Connection timeout", "TIMEOUT");
+          close();
+          reject(new Error("EventSource connection timeout"));
+        }
+      }, 30000);
+
+      // Clear timeout when data is received
+      const originalOnThinkingStart = handlers.onThinkingStart;
+      handlers.onThinkingStart = () => {
+        clearTimeout(timeout);
+        originalOnThinkingStart?.();
+      };
+    } catch (error) {
+      handlers.onError?.(
+        error instanceof Error ? error.message : "Unknown error",
+        "INIT_ERROR"
+      );
+      reject(error);
+    }
+  });
+}
+
+/**
+ * Parse SSE payload into StreamEvent
+ */
+export function parseEventPayload(payload: string): StreamEvent | null {
+  try {
+    const parsed = JSON.parse(payload) as StreamEvent;
+
+    // Validate type field
+    if (!parsed || typeof parsed.type !== "string") {
+      return null;
+    }
+
+    return parsed;
+  } catch (e) {
+    console.error("Failed to parse stream event:", payload, e);
+    return null;
   }
+}
+
+/**
+ * Type guard for checking event type
+ */
+export function isEventType<T extends StreamEvent["type"]>(
+  event: StreamEvent,
+  type: T
+): event is Extract<StreamEvent, { type: T }> {
+  return event.type === type;
 }

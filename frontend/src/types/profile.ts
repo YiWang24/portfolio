@@ -26,9 +26,9 @@ export type ProfileData = {
       demo?: string;
       repo?: string;
     };
-    metrics: {
-      stars: string;
-      users: string;
+    metrics?: {
+      stars?: string;
+      users?: string;
     };
   }[];
   techStack: {

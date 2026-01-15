@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Send, X, Loader2, CheckCircle2 } from "lucide-react";
+import { Terminal, X, Loader2, CheckCircle2, Send } from "lucide-react";
+import { toast } from "sonner";
 import { sendContactMessage } from "../../services/contact";
 
 type Props = {
@@ -16,6 +17,7 @@ export default function ContactModal({ isOpen, onClose }: Props) {
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [terminalLines, setTerminalLines] = useState<string[]>([]);
 
   const canSubmit = useMemo(() => {
     return email.trim().length > 0 && message.trim().length > 0;
@@ -26,10 +28,31 @@ export default function ContactModal({ isOpen, onClose }: Props) {
       return;
     }
 
+    // Reset form and state
     setEmail("");
     setMessage("");
     setStatus("idle");
     setError(null);
+
+    // Reset terminal logs first
+    setTerminalLines([]);
+
+    // Terminal boot sequence animation
+    const bootSequence = [
+      "INITIALIZING SECURE CHANNEL...",
+      "LOADING ENCRYPTION MODULES...",
+      "ESTABLISHING CONNECTION...",
+      "READY.",
+    ];
+
+    let delay = 0;
+
+    bootSequence.forEach((line, index) => {
+      setTimeout(() => {
+        setTerminalLines((prev) => [...prev, line]);
+      }, delay);
+      delay += 150;
+    });
   }, [isOpen]);
 
   useEffect(() => {
@@ -79,191 +102,308 @@ export default function ContactModal({ isOpen, onClose }: Props) {
         message: message.trim(),
       });
       setStatus("sent");
+      setTerminalLines((prev) => [
+        ...prev,
+        "✓ MESSAGE TRANSMITTED SUCCESSFULLY",
+      ]);
+      toast.success("Transmission complete", {
+        description: "Your message has been securely delivered.",
+      });
+      // Close modal after a short delay to let user see the success state
+      setTimeout(() => {
+        onClose();
+      }, 1500);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to send message.";
       setError(errorMessage);
       setStatus("idle");
+      setTerminalLines((prev) => [...prev, `✗ ERROR: ${errorMessage}`]);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+    <>
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-md"
+        className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Modal Container */}
+      {/* Modal Container with proper spacing */}
       <div
-        className="relative w-full max-w-2xl animate-[fadeIn_0.2s_ease-out]"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="contact-modal-title"
-        style={{
-          animation: "fadeIn 0.2s ease-out, slideUp 0.3s ease-out",
-        }}
+        className="fixed  inset-0 z-50 flex items-center justify-center"
+        onClick={(event) => event.stopPropagation()}
       >
-        {/* Main Card */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/95 to-slate-950/95 shadow-2xl shadow-emerald-500/10 backdrop-blur-xl">
-          {/* Top Accent Line */}
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent" />
-          
-          {/* Glow Effects */}
-          <div className="absolute -top-32 -right-32 h-64 w-64 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-32 -left-32 h-64 w-64 rounded-full bg-teal-500/15 blur-3xl pointer-events-none" />
+        <div className="w-full  max-w-4xl mx-4 sm:mx-6 md:mx-8 lg:mx-auto pointer-events-auto">
+          {/* Terminal Window */}
+          <div
+            className="relative animate-[boot-scale_0.3s_ease-out]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="contact-modal-title"
+          >
+            {/* Main Terminal Container */}
+            <div className="relative rounded-2xl  overflow-hidden border border-emerald-500/30 bg-[#0a0a0a] shadow-2xl shadow-emerald-500/20 font-['JetBrains_Mono',monospace]">
+              {/* CRT Scanline Overlay */}
+              <div className="pointer-events-none absolute inset-0 z-20 opacity-40">
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.15)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.015),rgba(0,0,255,0.03))] bg-[length:100%_2px,3px_100%]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent animate-[scanline_8s_linear_infinite]" />
+              </div>
 
-          {/* Content Container with explicit padding */}
-          <div style={{ padding: '48px' }}>
-            {/* Header */}
-            <div className="relative flex items-start justify-between mb-12">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-5">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
-                  </span>
-                  <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-emerald-400/80">
-                    Secure Connection
+              {/* Terminal Header */}
+              <div
+                className="relative flex items-center justify-between  bg-[#1a1b26] border-b border-emerald-500/20"
+                style={{ padding: "8px" }}
+              >
+                {/* Traffic Lights */}
+                <div className="flex  items-center gap-2.5">
+                  <button
+                    onClick={onClose}
+                    className="w-3 h-3 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 transition-colors"
+                    aria-label="Close terminal"
+                  />
+                  <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+                  <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
+                </div>
+
+                {/* Title */}
+                <div className="flex items-center gap-2 text-xs">
+                  <Terminal size={14} className="text-emerald-400" />
+                  <span className="text-emerald-400 font-semibold">
+                    secure-contact@portfolio:~
                   </span>
                 </div>
-                <h2
-                  id="contact-modal-title"
-                  className="text-3xl font-semibold tracking-tight text-white"
+
+                {/* Close Button */}
+                <button
+                  onClick={onClose}
+                  className="text-slate-500 hover:text-white transition-colors"
+                  aria-label="Close"
                 >
-                  Send a Message
-                </h2>
-                <p className="mt-4 text-base text-slate-400">
-                  I&apos;ll respond to your email within 24 hours.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-xl p-3 text-slate-500 transition-all hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 -mr-2 -mt-2"
-                aria-label="Close contact modal"
-              >
-                <X size={22} />
-              </button>
-            </div>
-
-            {/* Divider */}
-            <div className="h-px bg-gradient-to-r from-transparent via-white/15 to-transparent mb-14" />
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="relative">
-              <div className="space-y-12">
-              {/* Email Field */}
-              <div className="space-y-4">
-                <label
-                  htmlFor="contact-email"
-                  className="block text-sm font-medium uppercase tracking-wider text-slate-400"
-                >
-                  Your Email
-                </label>
-                <input
-                  id="contact-email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-5 py-4 text-base text-white placeholder:text-slate-500 transition-all duration-200 focus:border-emerald-400/50 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  placeholder="your@email.com"
-                  required
-                  disabled={status === "sending" || status === "sent"}
-                />
+                  <X size={18} />
+                </button>
               </div>
 
-              {/* Message Field */}
-              <div className="space-y-4">
-                <label
-                  htmlFor="contact-message"
-                  className="block text-sm font-medium uppercase tracking-wider text-slate-400"
-                >
-                  Message
-                </label>
-                <textarea
-                  id="contact-message"
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                  rows={6}
-                  className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-5 py-4 text-base text-white placeholder:text-slate-500 transition-all duration-200 focus:border-emerald-400/50 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  placeholder="What would you like to discuss?"
-                  required
-                  disabled={status === "sending" || status === "sent"}
-                />
-              </div>
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="mt-6 flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-base text-red-200">
-                <span className="flex-shrink-0">⚠️</span>
-                <span>{error}</span>
-              </div>
-            )}
-
-            {/* Success Message */}
-            {status === "sent" && (
-              <div className="mt-6 flex items-center gap-4 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-5 py-4">
-                <CheckCircle2 size={22} className="flex-shrink-0 text-emerald-400" />
-                <div className="text-base text-emerald-100">
-                  <strong>Message sent!</strong> I&apos;ll get back to you soon.
+              {/* Terminal Body */}
+              <div className="relative space-y-4" style={{ padding: "10px" }}>
+                {/* Boot Sequence */}
+                <div className="space-y-2 mb-8">
+                  {terminalLines.map((line, index) => (
+                    <div
+                      key={index}
+                      className="text-xs text-emerald-400/80 font-['IBM_Plex_Mono',monospace]"
+                    >
+                      <span className="text-emerald-500/50">
+                        [
+                        {new Date().toLocaleTimeString("en-US", {
+                          hour12: false,
+                        })}
+                        ]
+                      </span>
+                      <span className="ml-2">{line}</span>
+                    </div>
+                  ))}
                 </div>
+
+                {/* ASCII Art Header */}
+                <pre
+                  style={{ marginBottom: "8px" }}
+                  className="text-[10px] leading-tight text-emerald-400/60 mb-8 select-none"
+                >
+                  {`
+██████╗ ██╗   ██╗ █████╗ ███╗   ██╗██╗ ██████╗ █████╗ ██████╗
+██╔══██╗╚██╗ ██╔╝██╔══██╗████╗  ██║██║██╔════╝██╔══██╗██╔══██╗
+██████╔╝ ╚████╔╝ ███████║██╔██╗ ██║██║██║     ███████║██████╔╝
+██╔══██╗  ╚██╔╝  ██╔══██║██║╚██╗██║██║██║     ██╔══██║██╔══██╗
+██║  ██║   ██║   ██║  ██║██║ ╚████║██║╚██████╗██║  ██║██║  ██║
+╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝
+                    SECURE TRANSMISSION PROTOCOL v2.0
+`}
+                </pre>
+
+                {/* Form */}
+                <form
+                  onSubmit={handleSubmit}
+                  className="space-y-7 relative z-10"
+                  style={{ position: "relative", zIndex: 10 }}
+                >
+                  {/* Status Bar */}
+                  <div
+                    className="flex items-center justify-between px-4 py-3 bg-emerald-950/20 rounded text-[10px] font-['IBM_Plex_Mono',monospace]"
+                    style={{ marginBottom: "8px", padding: "4px" }}
+                  >
+                    <div
+                      className="flex items-center gap-2"
+                      style={{ margin: "2px" }}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span className="text-emerald-400">ENCRYPTED</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-emerald-400/70">
+                      <span>SSH-RSA 4096</span>
+                      <span>AES-256</span>
+                    </div>
+                  </div>
+
+                  {/* Email Field */}
+                  <div
+                    className="flex flex-col gap-3 mt-4"
+                    style={{ marginBottom: "12px" }}
+                  >
+                    <label
+                      htmlFor="contact-email"
+                      className="flex items-center gap-2 text-xs font-['IBM_Plex_Mono',monospace] text-emerald-400/80 uppercase tracking-wider"
+                    >
+                      <span className="text-emerald-500">$</span>
+                      <span>var sender_email =</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="contact-email"
+                        type="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        className="w-full bg-[#0c0c0c] rounded px-5 py-4 text-base text-emerald-100 placeholder:text-slate-600 focus:bg-[#0f0f0f] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 font-['JetBrains_Mono',monospace] transition-all duration-200"
+                        placeholder='"your@email.com";'
+                        required
+                        disabled={status === "sending" || status === "sent"}
+                        style={{
+                          padding: "4px",
+                          boxShadow:
+                            "0 0 0 1px rgba(16,185,129,0.08), 0 0 30px rgba(16,185,129,0.05)",
+                        }}
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-emerald-500/50 pointer-events-none select-none">
+                        ;
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Message Field */}
+                  <div
+                    className="flex flex-col gap-3 mt-4"
+                    style={{ marginBottom: "12px" }}
+                  >
+                    <label
+                      htmlFor="contact-message"
+                      className="flex items-center gap-2 text-xs font-['IBM_Plex_Mono',monospace] text-emerald-400/80 uppercase tracking-wider"
+                    >
+                      <span className="text-emerald-500">$</span>
+                      <span>const payload =</span>
+                    </label>
+                    <div className="relative">
+                      <textarea
+                        id="contact-message"
+                        value={message}
+                        onChange={(event) => setMessage(event.target.value)}
+                        rows={6}
+                        className="w-full resize-none bg-[#0c0c0c] rounded px-5 py-4 text-base text-emerald-100 placeholder:text-slate-600 focus:bg-[#0f0f0f] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 font-['JetBrains_Mono',monospace] transition-all duration-200"
+                        placeholder={`\`Your message here...\`;`}
+                        required
+                        disabled={status === "sending" || status === "sent"}
+                        style={{
+                          padding: "4px",
+                          boxShadow:
+                            "0 0 0 1px rgba(16,185,129,0.08), 0 0 30px rgba(16,185,129,0.05)",
+                        }}
+                      />
+                      <div className="absolute right-3 bottom-3 text-xs text-emerald-500/50 pointer-events-none select-none">
+                        ;
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="flex items-start gap-3 p-3 bg-red-950/30 border border-red-500/40 rounded text-sm font-['IBM_Plex_Mono',monospace] ">
+                      <span className="text-red-400 flex-shrink-0 mt-0.5">
+                        ✗
+                      </span>
+                      <div>
+                        <div className="text-red-300 font-semibold">
+                          TRANSMISSION FAILED
+                        </div>
+                        <div className="text-red-400/80 mt-1">{error}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Submit Button */}
+                  <div className="pt-4 flex justify-center">
+                    <button
+                      type="submit"
+                      disabled={
+                        !canSubmit || status === "sending" || status === "sent"
+                      }
+                      className="group relative inline-flex items-center justify-center gap-2 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/15 hover:border-emerald-400/40 text-emerald-400 px-8 py-2.5 rounded text-xs font-['IBM_Plex_Mono',monospace] font-semibold uppercase tracking-wider transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-emerald-500/10 disabled:hover:border-emerald-500/30 overflow-hidden min-w-[160px]"
+                    >
+                      {/* Scanline effect on button */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-400/10 to-transparent translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+
+                      {status === "sending" ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>TRANSMITTING...</span>
+                        </>
+                      ) : status === "sent" ? (
+                        <>
+                          <CheckCircle2 size={14} />
+                          <span>SENT</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send
+                            size={14}
+                            className="group-hover:translate-x-0.5 transition-transform"
+                          />
+                          <span>SEND MESSAGE</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="pt-4 pb-3">
+                    <div className="flex items-center justify-between text-[10px] font-['IBM_Plex_Mono',monospace]">
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>CONNECTION: SECURE</span>
+                      </div>
+                      <div className="text-slate-600">Press ESC to close</div>
+                    </div>
+                  </div>
+                </form>
               </div>
-            )}
-
-            {/* Submit Button */}
-            <div className="mt-14">
-              <button
-                type="submit"
-                disabled={!canSubmit || status === "sending" || status === "sent"}
-                className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-4.5 text-lg font-medium text-white shadow-lg shadow-emerald-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-lg"
-              >
-                {/* Button Shine Effect */}
-                <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full group-disabled:hidden" />
-                
-                {status === "sending" ? (
-                  <>
-                    <Loader2 size={20} className="animate-spin" />
-                    <span>Sending...</span>
-                  </>
-                ) : status === "sent" ? (
-                  <>
-                    <CheckCircle2 size={20} />
-                    <span>Message Sent</span>
-                  </>
-                ) : (
-                  <>
-                    <Send size={20} className="transition-transform group-hover:translate-x-0.5" />
-                    <span>Send Message</span>
-                  </>
-                )}
-              </button>
             </div>
-
-            {/* Footer Note */}
-            <p className="mt-6 text-center text-sm text-slate-500">
-              Your email will only be used to respond to this message.
-            </p>
-          </form>
           </div>
         </div>
       </div>
 
-      {/* Animation Keyframes */}
+      {/* Custom Animations */}
       <style jsx global>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+        @keyframes scanline {
+          0% {
+            transform: translateY(-100%);
+          }
+          100% {
+            transform: translateY(100%);
+          }
         }
-        @keyframes slideUp {
-          from { transform: translateY(10px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
+
+        @keyframes boot-scale {
+          0% {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
         }
       `}</style>
-    </div>
+    </>
   );
 }

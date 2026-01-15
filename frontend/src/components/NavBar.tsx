@@ -5,7 +5,7 @@ type HeroData = {
 
 type Props = { hero: HeroData };
 
-export default function CommandBar({ hero }: Props) {
+export default function Navbar({ hero }: Props) {
   return (
     <div className="command-bar">
       <div className="command-brand">

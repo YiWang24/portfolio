@@ -155,13 +155,6 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
       }
     };
 
-    // 选择建议的命令
-    const selectSuggestion = (cmd: string) => {
-      setInput(cmd + ' ');
-      setShowSuggestions(false);
-      setSelectedIndex(-1);
-      internalInputRef.current?.focus();
-    };
 
     // 隐藏建议列表
     const hideSuggestions = () => {

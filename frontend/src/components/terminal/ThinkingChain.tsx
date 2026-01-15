@@ -100,19 +100,12 @@ export default function ThinkingChain({ steps }: Props) {
     );
   }
 
-  // 计算完成的步骤数
-  const completedCount = steps.filter((s) => s.status === "completed").length;
-  const isAllComplete = completedCount === steps.length;
-
   return (
     <div className="thinking-chain">
       <div className="thinking-card">
         <div className="thinking-header">
           <Sparkles className="thinking-header-icon" />
           <span>Thinking</span>
-          <span className="thinking-count">
-            {completedCount}/{steps.length}
-          </span>
         </div>
         <div className="thinking-steps">
           {steps.map((step) => {
@@ -144,11 +137,6 @@ export default function ThinkingChain({ steps }: Props) {
             );
           })}
         </div>
-        {isAllComplete && (
-          <div className="thinking-footer">
-            <span>Ready to respond</span>
-          </div>
-        )}
       </div>
     </div>
   );

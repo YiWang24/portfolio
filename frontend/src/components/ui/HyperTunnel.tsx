@@ -1,64 +1,219 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react';
 
 export default function HyperTunnel({ className }: { className?: string }) {
+  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      // 计算鼠标位置百分比
+      const x = (e.clientX / window.innerWidth) * 100;
+      const y = (e.clientY / window.innerHeight) * 100;
+      setMousePosition({ x, y });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   return (
-    <div
-      className={cn(
-        "pointer-events-none absolute inset-0 overflow-hidden bg-[#030303]",
-        // 核心透视设置：
-        // perspective: 400px 制造适中的景深
-        // perspective-origin: center 让所有线条汇聚到正中心
-        "[perspective:400px] [perspective-origin:center]",
-        className
-      )}
-    >
+    <div className={cn("pointer-events-none absolute inset-0 overflow-hidden bg-[#030303]", className)}>
       {/*
-         我们创建4个面，通过 transform-origin 锚定在屏幕边缘
-         然后向内旋转，形成一个金字塔/隧道形状
+        透视网格：四周密集 → 中间稀疏
+        通过多层不同间距的网格叠加 + 径向遮罩实现
       */}
 
-      {/* 1. 天花板 (Top) */}
-      <div className="absolute top-0 left-0 right-0 h-[50vh] origin-top [transform:rotateX(-15deg)]">
-        <GridPlane direction="vertical" />
+      {/* 最密集层 - 四周区域 */}
+      <div className="absolute inset-0 opacity-[0.4]">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundSize: '30px 30px',
+            backgroundImage: `
+              linear-gradient(to right, rgba(93, 220, 255, 0.5) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(93, 220, 255, 0.5) 1px, transparent 1px)
+            `,
+            // 只显示边缘区域
+            WebkitMaskImage: 'radial-gradient(circle at 50% 50%, transparent 40%, black 70%)',
+            maskImage: 'radial-gradient(circle at 50% 50%, transparent 40%, black 70%)',
+          }}
+        />
       </div>
 
-      {/* 2. 地板 (Bottom) */}
-      <div className="absolute bottom-0 left-0 right-0 h-[50vh] origin-bottom [transform:rotateX(15deg)]">
-        <GridPlane direction="vertical" />
+      {/* 中等密度层 - 过渡区域 */}
+      <div className="absolute inset-0 opacity-[0.35]">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundSize: '50px 50px',
+            backgroundImage: `
+              linear-gradient(to right, rgba(93, 220, 255, 0.5) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(93, 220, 255, 0.5) 1px, transparent 1px)
+            `,
+            // 显示中间区域
+            WebkitMaskImage: 'radial-gradient(circle at 50% 50%, transparent 20%, black 50%, transparent 75%)',
+            maskImage: 'radial-gradient(circle at 50% 50%, transparent 20%, black 50%, transparent 75%)',
+          }}
+        />
       </div>
 
-      {/* 3. 左墙 (Left) */}
-      <div className="absolute top-0 bottom-0 left-0 w-[50vw] origin-left [transform:rotateY(15deg)]">
-        <GridPlane direction="horizontal" />
+      {/* 稀疏层 - 中心区域 */}
+      <div className="absolute inset-0 opacity-[0.3]">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundSize: '80px 80px',
+            backgroundImage: `
+              linear-gradient(to right, rgba(93, 220, 255, 0.5) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(93, 220, 255, 0.5) 1px, transparent 1px)
+            `,
+            // 只显示中心区域
+            WebkitMaskImage: 'radial-gradient(circle at 50% 50%, black 0%, transparent 45%)',
+            maskImage: 'radial-gradient(circle at 50% 50%, black 0%, transparent 45%)',
+          }}
+        />
       </div>
 
-      {/* 4. 右墙 (Right) */}
-      <div className="absolute top-0 bottom-0 right-0 w-[50vw] origin-right [transform:rotateY(-15deg)]">
-        <GridPlane direction="horizontal" />
-      </div>
+      {/* 动态光晕层 */}
+      {/* 跟随鼠标的光晕 */}
+      <div
+        className="absolute rounded-full pointer-events-none transition-all duration-1000 ease-out"
+        style={{
+          left: `${mousePosition.x}%`,
+          top: `${mousePosition.y}%`,
+          width: '400px',
+          height: '400px',
+          transform: 'translate(-50%, -50%)',
+          background: 'radial-gradient(circle, rgba(93, 220, 255, 0.25) 0%, rgba(139, 92, 246, 0.15) 40%, transparent 70%)',
+          filter: 'blur(80px)',
+        }}
+      />
 
-      {/* 5. 中心深渊 (The Void) */}
-      {/* 用一个黑色光晕遮住 4 个面交汇的接缝处，制造无限远的错觉 */}
-      <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,black_20%,transparent_60%)]"></div>
+      {/* 左上角 - 紫粉色光晕 */}
+      <div className="absolute top-[-15%] left-[-15%] w-[55vw] h-[55vw] rounded-full pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(236, 72, 153, 0.35) 0%, rgba(139, 92, 246, 0.25) 50%, transparent 70%)',
+          filter: 'blur(120px)',
+          animation: 'breathe1 12s ease-in-out infinite alternate',
+        }}
+      />
+
+      {/* 右下角 - 青蓝色光晕 */}
+      <div className="absolute bottom-[-15%] right-[-15%] w-[55vw] h-[55vw] rounded-full pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(6, 182, 212, 0.35) 0%, rgba(59, 130, 246, 0.25) 50%, transparent 70%)',
+          filter: 'blur(120px)',
+          animation: 'breathe2 14s ease-in-out infinite alternate',
+        }}
+      />
+
+      {/* 左上角副光晕 - 金色点缀 */}
+      <div className="absolute top-[10%] left-[10%] w-[35vw] h-[35vw] rounded-full opacity-40 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(251, 191, 36, 0.2) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+          animation: 'floatShift1 16s ease-in-out infinite',
+        }}
+      />
+
+      {/* 右下角副光晕 - 绿色点缀 */}
+      <div className="absolute bottom-[10%] right-[10%] w-[35vw] h-[35vw] rounded-full opacity-40 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+          animation: 'floatShift2 18s ease-in-out infinite',
+        }}
+      />
+
+      {/* 中心暗部 - 增强对比 */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.3)_60%,rgba(0,0,0,0.7)_90%,#000_100%)] pointer-events-none"></div>
+
+      {/* 动画定义 */}
+      <style jsx>{`
+        @keyframes breathe1 {
+          0% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.3;
+          }
+          25% {
+            transform: translate(80px, 50px) scale(1.3);
+            opacity: 0.5;
+          }
+          50% {
+            transform: translate(-40px, 100px) scale(1.5);
+            opacity: 0.6;
+          }
+          75% {
+            transform: translate(-60px, 40px) scale(1.2);
+            opacity: 0.4;
+          }
+          100% {
+            transform: translate(30px, -20px) scale(1.1);
+            opacity: 0.35;
+          }
+        }
+        @keyframes breathe2 {
+          0% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.3;
+          }
+          25% {
+            transform: translate(-100px, -60px) scale(1.4);
+            opacity: 0.55;
+          }
+          50% {
+            transform: translate(50px, -120px) scale(1.6);
+            opacity: 0.65;
+          }
+          75% {
+            transform: translate(80px, -40px) scale(1.25);
+            opacity: 0.45;
+          }
+          100% {
+            transform: translate(-40px, 30px) scale(1.15);
+            opacity: 0.4;
+          }
+        }
+        @keyframes floatShift1 {
+          0% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.3;
+          }
+          33% {
+            transform: translate(100px, -80px) scale(1.4);
+            opacity: 0.5;
+          }
+          66% {
+            transform: translate(-60px, 60px) scale(0.8);
+            opacity: 0.25;
+          }
+          100% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.3;
+          }
+        }
+        @keyframes floatShift2 {
+          0% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.3;
+          }
+          33% {
+            transform: translate(-90px, 70px) scale(1.3);
+            opacity: 0.45;
+          }
+          66% {
+            transform: translate(70px, -50px) scale(0.85);
+            opacity: 0.2;
+          }
+          100% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.3;
+          }
+        }
+      `}</style>
 
     </div>
-  );
-}
-
-// 辅助组件：单个网格面
-function GridPlane({ direction }: { direction: 'vertical' | 'horizontal' }) {
-  return (
-    <div
-      className={cn(
-        "absolute inset-[-200%]", // 让网格足够大，防止旋转后露出边缘
-        "[background-size:120px_120px]", // 更大的网格，减少视觉混乱
-        // 网格线颜色：更subtle的emerald绿色，降低透明度
-        "[background-image:linear-gradient(to_right,rgba(16,185,129,0.08)_1px,transparent_0),linear-gradient(to_bottom,rgba(16,185,129,0.08)_1px,transparent_0)]",
-        // 动画：更快的速度产生飞行感
-        direction === 'vertical' ? "animate-tunnel-y" : "animate-tunnel-x"
-      )}
-    />
   );
 }

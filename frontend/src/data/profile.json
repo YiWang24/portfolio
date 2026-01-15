@@ -18,36 +18,120 @@
       "school": "York University",
       "degree": "B.S. Computer Science",
       "period": "2018 - 2022",
-      "highlights": ["GPA 3.8/4.0", "AI Lab Research Assistant"]
+      "highlights": [
+        "GPA 3.8/4.0",
+        "AI Lab Research Assistant",
+        "Dean's List 2020-2022"
+      ]
+    },
+    {
+      "school": "Online Certifications",
+      "degree": "AWS Solutions Architect",
+      "period": "2023",
+      "highlights": [
+        "AWS Certified Solutions Architect - Associate",
+        "Cloud Architecture Best Practices"
+      ]
     }
   ],
   "experience": [
     {
-      "company": "Company Name",
-      "title": "Software Engineer",
+      "company": "Tech Innovations Inc.",
+      "title": "Senior Software Engineer",
       "period": "2022 - Present",
-      "achievements": ["Led platform migration", "Reduced latency by 35%"]
+      "achievements": [
+        "Led platform migration to microservices architecture",
+        "Reduced API latency by 35% through optimization",
+        "Mentored team of 4 junior developers"
+      ]
+    },
+    {
+      "company": "StartupXYZ",
+      "title": "Full Stack Developer",
+      "period": "2020 - 2022",
+      "achievements": [
+        "Built real-time collaboration features using WebSocket",
+        "Implemented CI/CD pipeline reducing deployment time by 60%",
+        "Developed RESTful APIs serving 10k+ daily users"
+      ]
+    },
+    {
+      "company": "York University AI Lab",
+      "title": "Research Assistant",
+      "period": "2019 - 2020",
+      "achievements": [
+        "Contributed to NLP research on sentiment analysis",
+        "Published paper on transformer-based text classification"
+      ]
     }
   ],
   "projects": [
     {
-      "title": "Project Name",
-      "summary": "A short summary describing impact and scope.",
-      "tech": ["React", "TypeScript", "Spring Boot"],
+      "title": "AI Chat Platform",
+      "summary": "Real-time chat application with AI-powered responses and intelligent conversation routing.",
+      "tech": ["React", "TypeScript", "OpenAI", "WebSocket", "Redis"],
       "links": {
-        "demo": "https://example.com",
-        "repo": "https://github.com/user/repo"
+        "demo": "https://aichat.example.com",
+        "repo": "https://github.com/user/ai-chat"
       },
       "metrics": {
-        "stars": "120",
-        "users": "3k"
+        "stars": "245",
+        "users": "5k"
+      }
+    },
+    {
+      "title": "DevOps Dashboard",
+      "summary": "Unified monitoring dashboard for microservices with real-time metrics and alerting.",
+      "tech": ["Next.js", "Spring Boot", "Prometheus", "Grafana"],
+      "links": {
+        "repo": "https://github.com/user/devops-dash"
+      },
+      "metrics": {
+        "stars": "89"
+      }
+    },
+    {
+      "title": "Code Review Bot",
+      "summary": "Automated code review assistant using LLMs to provide intelligent feedback on PRs.",
+      "tech": ["Python", "FastAPI", "GPT-4", "GitHub Actions"],
+      "links": {
+        "demo": "https://codereview.example.com",
+        "repo": "https://github.com/user/code-review-bot"
+      },
+      "metrics": {
+        "stars": "312",
+        "users": "1.2k"
+      }
+    },
+    {
+      "title": "Portfolio Digital Twin",
+      "summary": "This interactive portfolio site featuring a terminal interface and AI-powered chat.",
+      "tech": ["Next.js", "Tailwind CSS", "TypeScript", "Vercel"],
+      "links": {
+        "repo": "https://github.com/user/portfolio"
       }
     }
   ],
   "techStack": [
     {
       "category": "Frontend",
-      "items": ["React", "Next.js", "Tailwind CSS"]
+      "items": ["React", "Next.js", "Tailwind CSS", "TypeScript", "Redux"]
+    },
+    {
+      "category": "Backend",
+      "items": ["Java", "Spring Boot", "Node.js", "Python", "FastAPI"]
+    },
+    {
+      "category": "Cloud",
+      "items": ["AWS", "Docker", "Kubernetes", "Terraform", "GitHub Actions"]
+    },
+    {
+      "category": "Data",
+      "items": ["PostgreSQL", "Redis", "MongoDB", "Elasticsearch"]
+    },
+    {
+      "category": "Tools",
+      "items": ["Git", "Linux", "Nginx", "Vim", "Postman"]
     }
   ]
 }

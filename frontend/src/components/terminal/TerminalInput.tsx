@@ -24,7 +24,8 @@ const SUPPORTED_COMMANDS = [
   'vi', 'vim', 'nano',
   'clear',
   'uname',
-  'help'
+  'help',
+  'matrix'
 ];
 
 export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(

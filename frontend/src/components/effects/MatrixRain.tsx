@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { useUIStore } from '@/store/ui-store';
+import { useEffect, useRef } from "react";
+import { useUIStore } from "@/stores/ui-store";
 
 export function MatrixRain() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -13,7 +13,7 @@ export function MatrixRain() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     // 1. 设置全屏
@@ -21,8 +21,9 @@ export function MatrixRain() {
     canvas.height = window.innerHeight;
 
     // 2. 字符集 (经典黑客帝国是用片假名+数字)
-    const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
-    const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const katakana =
+      "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン";
+    const latin = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     const alphabet = katakana + latin;
 
     const fontSize = 14; // 字体大小：14px（介于12px和16px之间）
@@ -51,12 +52,14 @@ export function MatrixRain() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // 提高不透明度到 0.7，让字符更清晰可见
-        ctx.fillStyle = 'rgba(0, 255, 0, 0.7)';
+        ctx.fillStyle = "rgba(0, 255, 0, 0.7)";
         ctx.font = `${fontSize}px monospace`;
 
         for (let i = 0; i < drops.length; i++) {
           // 随机取一个字符
-          const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+          const text = alphabet.charAt(
+            Math.floor(Math.random() * alphabet.length)
+          );
 
           // x = 列号 * 字体宽度, y = 当前下落高度 * 字体高度
           const y = drops[i] * fontSize;
@@ -67,7 +70,7 @@ export function MatrixRain() {
             const dropY = y - j * fontSize;
             if (dropY > 0 && dropY < canvas.height) {
               // 越靠前的字符越亮，尾部字符逐渐变暗
-              const brightness = 1 - (j * 0.1);
+              const brightness = 1 - j * 0.1;
               ctx.fillStyle = `rgba(0, 255, 0, ${0.7 * brightness})`;
               ctx.fillText(
                 alphabet.charAt(Math.floor(Math.random() * alphabet.length)),
@@ -104,21 +107,21 @@ export function MatrixRain() {
       setMatrixActive(false);
     };
 
-    window.addEventListener('click', exitMatrix);
-    window.addEventListener('keydown', exitMatrix);
+    window.addEventListener("click", exitMatrix);
+    window.addEventListener("keydown", exitMatrix);
 
     const handleResize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
       clearTimeout(autoExitTimer);
-      window.removeEventListener('click', exitMatrix);
-      window.removeEventListener('keydown', exitMatrix);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("click", exitMatrix);
+      window.removeEventListener("keydown", exitMatrix);
+      window.removeEventListener("resize", handleResize);
     };
   }, [isMatrixActive, setMatrixActive]);
 
@@ -128,7 +131,7 @@ export function MatrixRain() {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 z-[9999] cursor-pointer"
-      style={{ touchAction: 'none', pointerEvents: 'auto' }}
+      style={{ touchAction: "none", pointerEvents: "auto" }}
     />
   );
 }

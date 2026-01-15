@@ -112,7 +112,7 @@ const TerminalConversation = forwardRef<
           if (msg.id !== messageId || !msg.functionSteps) return msg;
           const updatedSteps = msg.functionSteps.map((step) =>
             step.id === "fn-init" && step.status === "running"
-              ? { ...step, status: "completed" }
+              ? { ...step, status: "completed" as const }
               : step
           );
           return { ...msg, functionSteps: updatedSteps };

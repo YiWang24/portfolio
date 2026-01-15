@@ -52,3 +52,9 @@ docs/
 .vscode/
 .turbo/
 .cache/
+_pagefind/
+!content/docs/
+!content/docs/**
+!src/app/docs/
+!src/app/docs/**
+.cursor/

@@ -23,7 +23,7 @@ export default function Home() {
       </div>
 
       {/* === 内容层 === */}
-      <main className="relative w-full selection:bg-emerald-500/30">
+      <main className="relative w-full ">
         {/* Hero Section - Full viewport minus nav */}
         <div className="w-full h-[calc(100vh-60px)]">
           <section className="hero-frame w-full h-full">
@@ -32,8 +32,8 @@ export default function Home() {
             </div>
           </section>
         </div>
-
-        {/* Portfolio Sections - Borderless Layout */}
+        
+        {/* Portfolio Sections */}
         <PortfolioSections data={profile} />
       </main>
     </>

@@ -2,12 +2,13 @@
 
 import { useMemo, useRef, useState } from "react";
 import { Mail, Download } from "lucide-react";
+import profile from "@/data/profile.json";
 import ContactModal from "./ContactModal";
 import { StatusBar } from "./StatusBar";
 import TerminalConversation, {
   TerminalConversationRef,
 } from "./TerminalConversation";
-import { useUIStore } from "@/store/ui-store";
+import { useUIStore } from "@/stores/ui-store";
 
 export default function TerminalPanel() {
   const sessionId = useMemo(
@@ -29,12 +30,22 @@ export default function TerminalPanel() {
       <div className="crt-overlay"></div>
 
       <div className="cli-header">
-        <div className="cli-title">
-          <span className="cli-prompt">$</span> portfolio-terminal
+        <div className="cli-traffic-lights" aria-hidden="true">
+          <span className="light red" />
+          <span className="light yellow" />
+          <span className="light green" />
         </div>
-        <div className="cli-actions">
+        <div className="cli-header-center">
+          <div className="cli-hero-info">
+            <div className="cli-hero-badge">
+              <span className="cli-status-dot-inline" aria-hidden="true" />
+              <span>{profile.hero.role}</span>
+            </div>
+          </div>
+        </div>
+        <div className="cli-header-actions">
           <button
-            className="cli-action-btn"
+            className="cli-btn cli-btn-primary cli-btn-small"
             onClick={(event) => {
               event.stopPropagation();
               setIsContactOpen(true);
@@ -44,7 +55,7 @@ export default function TerminalPanel() {
             Contact
           </button>
           <button
-            className="cli-action-btn"
+            className="cli-btn cli-btn-secondary cli-btn-small"
             onClick={(event) => {
               event.stopPropagation();
               window.open("/resume.pdf", "_blank");

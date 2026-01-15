@@ -91,7 +91,6 @@ public class ChatController {
             try {
                 // Send session start
                 sendEvent(emitter, new StreamEvents.SessionStartEvent(sessionId));
-                Thread.sleep(1000); // Test delay
 
                 // Get event stream from agent
                 Flowable<Event> events = agentService.processMessageStream(sessionId, message);
@@ -103,7 +102,6 @@ public class ChatController {
                         if (event.partial().orElse(false)) {
                             if (thinkingPhaseSent.compareAndSet(false, true)) {
                                 sendEvent(emitter, new StreamEvents.ThinkingStartEvent());
-                                Thread.sleep(1000); // Test delay
                             }
 
                             String content = extractTextContent(event);
@@ -111,7 +109,6 @@ public class ChatController {
                                 String delta = diffFromLast(thinkingContent, content);
                                 if (!delta.isEmpty()) {
                                     sendEvent(emitter, new StreamEvents.ThinkingDeltaEvent(delta));
-                                    Thread.sleep(1000); // Test delay
                                     thinkingContentSent.set(true);
                                 }
                             }
@@ -121,7 +118,6 @@ public class ChatController {
                         if (event.functionCalls() != null && !event.functionCalls().isEmpty()) {
                             if (thinkingContentSent.get() && thinkingPhaseSent.get()) {
                                 sendEvent(emitter, new StreamEvents.ThinkingEndEvent());
-                                Thread.sleep(1000); // Test delay
                                 thinkingPhaseSent.set(false);
                             }
 
@@ -133,7 +129,6 @@ public class ChatController {
 
                                     activeTools.put(toolId, new ToolCallState(toolId, toolName));
                                     sendEvent(emitter, new StreamEvents.ToolCallStartEvent(toolId, toolName, args));
-                                    Thread.sleep(1000); // Test delay
                                 } catch (Exception e) {
                                     log.error("Error sending tool start event", e);
                                 }
@@ -159,7 +154,6 @@ public class ChatController {
                                                         truncateResult(result),
                                                         true
                                                 ));
-                                                Thread.sleep(1000); // Test delay
                                             } catch (Exception e) {
                                                 log.error("Error sending tool end event", e);
                                             }
@@ -173,19 +167,16 @@ public class ChatController {
                             if (content != null && !content.isEmpty()) {
                                 if (thinkingPhaseSent.get()) {
                                     sendEvent(emitter, new StreamEvents.ThinkingEndEvent());
-                                    Thread.sleep(1000); // Test delay
                                     thinkingPhaseSent.set(false);
                                 }
 
                                 if (responsePhaseStarted.compareAndSet(false, true)) {
                                     sendEvent(emitter, new StreamEvents.ResponseStartEvent());
-                                    Thread.sleep(1000); // Test delay
                                 }
 
                                 String delta = diffFromLast(responseContent, content);
                                 if (!delta.isEmpty()) {
                                     sendEvent(emitter, new StreamEvents.ResponseDeltaEvent(delta));
-                                    Thread.sleep(1000); // Test delay
                                 }
                             }
                         }
@@ -199,7 +190,6 @@ public class ChatController {
 
                             if (responsePhaseStarted.get() && responseCompleteSent.compareAndSet(false, true)) {
                                 sendEvent(emitter, new StreamEvents.ResponseEndEvent());
-                                Thread.sleep(1000); // Test delay
                             }
                         }
 

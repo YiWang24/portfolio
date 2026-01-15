@@ -1,3 +1,16 @@
+export interface TechItem {
+  name: string;
+  version: string;
+  status: string;
+  icon?: string;
+}
+
+export interface TechDomain {
+  category: string;
+  path: string;
+  items: TechItem[];
+}
+
 export type ProfileData = {
   hero: {
     name: string;
@@ -61,8 +74,5 @@ export type ProfileData = {
       users?: string;
     };
   }[];
-  techStack: {
-    category: string;
-    items: string[];
-  }[];
+  modules: TechDomain[];
 };

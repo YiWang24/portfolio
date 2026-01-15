@@ -10,6 +10,7 @@ import { ProfileData } from "@/types/profile";
 import { AboutSection } from "./AboutSection";
 import { ExperienceSection } from "./ExperienceSection";
 import { ProjectsDashboard } from "./ProjectsDashboard";
+import { TechStackMatrix } from "./TechStackMatrix";
 import { SparklesCore } from "@/components/ui/sparkles";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import { motion } from "framer-motion";
@@ -55,6 +56,19 @@ export default function PortfolioSections({ data }: PortfolioSectionsProps) {
             <div className="absolute top-0 left-1/2 w-px h-24 bg-gradient-to-b from-violet-500/80 to-transparent hidden md:block" />
 
             <ProjectsDashboard projects={data.projects} />
+
+            {/* Connecting Line to Next Section */}
+            <div className="absolute bottom-0 left-1/2 w-px h-24 bg-gradient-to-b from-transparent to-violet-500/80 hidden md:block" />
+          </div>
+        </PerspectiveReveal>
+
+        {/* Tech Stack Matrix Section */}
+        <PerspectiveReveal className="w-full">
+          <div id="stack" className="snap-start relative">
+            {/* Connecting Line from Previous Section (Violet to Cyan transition) */}
+            <div className="absolute top-0 left-1/2 w-px h-24 bg-gradient-to-b from-violet-500/80 to-cyan-500/80 hidden md:block" />
+
+            <TechStackMatrix modules={data.modules} />
           </div>
         </PerspectiveReveal>
       </div>

@@ -3,7 +3,7 @@
     "name": "Yi Wang",
     "role": "FULL STACK AGENT ENGINEER",
     "intro": "Engineering the neural layer of the web. I bridge the gap between robust backend systems (Java/Spring) and adaptive AI agents. You are talking to my digital twin — go ahead, inspect my code.",
-    "avatar": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=cyber&backgroundColor=0a0a0a",
+    "avatar": "https://cdn-icons-png.freepik.com/512/763/763775.png",
     "status": "System Online",
     "github": "YiWang24",
     "techStack": {
@@ -16,7 +16,7 @@
   "about": {
     "name": "Yi Wang",
     "role": "Full Stack Agent Engineer",
-    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
+    "avatar": "https://cdn-icons-png.freepik.com/512/763/763775.png",
     "location": "San Francisco, CA",
     "experience": "5+",
     "tagline": "Building intelligent AI systems that bridge robust backend architecture with adaptive agent solutions.",
@@ -54,27 +54,6 @@
       }
     ]
   },
-  "education": [
-    {
-      "school": "York University",
-      "degree": "B.S. Computer Science",
-      "period": "2018 - 2022",
-      "highlights": [
-        "GPA 3.8/4.0",
-        "AI Lab Research Assistant",
-        "Dean's List 2020-2022"
-      ]
-    },
-    {
-      "school": "Online Certifications",
-      "degree": "AWS Solutions Architect",
-      "period": "2023",
-      "highlights": [
-        "AWS Certified Solutions Architect - Associate",
-        "Cloud Architecture Best Practices"
-      ]
-    }
-  ],
   "experience": [
     {
       "company": "Tech Innovations Inc.",
@@ -154,26 +133,50 @@
       }
     }
   ],
-  "techStack": [
+  "modules": [
     {
-      "category": "Frontend",
-      "items": ["React", "Next.js", "Tailwind CSS", "TypeScript", "Redux"]
+      "category": "AI / Machine Learning",
+      "path": "~/modules/ai-core",
+      "items": [
+        { "name": "Python", "version": "v3.12", "status": "stable", "icon": "Python" },
+        { "name": "LangChain", "version": "v0.1.0", "status": "active", "icon": "LangChain" },
+        { "name": "OpenAI API", "version": "latest", "status": "connected", "icon": "OpenAI" },
+        { "name": "PyTorch", "version": "v2.1", "status": "stable", "icon": "PyTorch" },
+        { "name": "R.A.G.", "version": "custom", "status": "optimized", "icon": "Database" }
+      ]
     },
     {
-      "category": "Backend",
-      "items": ["Java", "Spring Boot", "Node.js", "Python", "FastAPI"]
+      "category": "Frontend Architecture",
+      "path": "~/modules/ui-layer",
+      "items": [
+        { "name": "React", "version": "v18.2", "status": "stable", "icon": "React" },
+        { "name": "Next.js", "version": "v14.1", "status": "core", "icon": "Nextjs" },
+        { "name": "TypeScript", "version": "v5.3", "status": "strict", "icon": "TypeScript" },
+        { "name": "Tailwind", "version": "v3.4", "status": "JIT", "icon": "Tailwind" },
+        { "name": "Framer", "version": "v11.0", "status": "smooth", "icon": "Framer" }
+      ]
     },
     {
-      "category": "Cloud",
-      "items": ["AWS", "Docker", "Kubernetes", "Terraform", "GitHub Actions"]
+      "category": "Backend Systems",
+      "path": "~/modules/server-side",
+      "items": [
+        { "name": "Node.js", "version": "v20 LTS", "status": "active", "icon": "Nodejs" },
+        { "name": "FastAPI", "version": "v0.109", "status": "fast", "icon": "FastAPI" },
+        { "name": "PostgreSQL", "version": "v16.1", "status": "sharded", "icon": "PostgreSQL" },
+        { "name": "Redis", "version": "v7.2", "status": "cached", "icon": "Redis" },
+        { "name": "WebSocket", "version": "wss://", "status": "live", "icon": "Socket" }
+      ]
     },
     {
-      "category": "Data",
-      "items": ["PostgreSQL", "Redis", "MongoDB", "Elasticsearch"]
-    },
-    {
-      "category": "Tools",
-      "items": ["Git", "Linux", "Nginx", "Vim", "Postman"]
+      "category": "DevOps & Cloud",
+      "path": "~/modules/infrastructure",
+      "items": [
+        { "name": "Docker", "version": "v25.0", "status": "containerized", "icon": "Docker" },
+        { "name": "Kubernetes", "version": "v1.29", "status": "orchestrated", "icon": "Kubernetes" },
+        { "name": "AWS", "version": "us-east-1", "status": "deployed", "icon": "AWS" },
+        { "name": "GitHub Actions", "version": "CI/CD", "status": "automated", "icon": "GitHub" },
+        { "name": "Terraform", "version": "v1.7", "status": "iac", "icon": "Terraform" }
+      ]
     }
   ]
 }

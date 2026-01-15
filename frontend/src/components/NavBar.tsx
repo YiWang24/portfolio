@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 type HeroData = {
   name: string;
   status: string;
+  avatar?: string;
 };
 
 type Props = { hero: HeroData };
@@ -47,8 +48,12 @@ export default function Navbar({ hero }: Props) {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-black font-bold text-sm">
-            AI
+          <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/20 bg-zinc-900">
+            {hero.avatar ? (
+              <img src={hero.avatar} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-black font-bold text-sm">AI</div>
+            )}
           </div>
           <span className="font-semibold text-white text-sm tracking-wide hidden sm:block">
             {hero.name}

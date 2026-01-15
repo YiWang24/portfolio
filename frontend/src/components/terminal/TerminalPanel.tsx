@@ -3,9 +3,11 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import { Mail, Download } from "lucide-react";
-import { streamChat } from "../../services/sse";
+import { streamChat } from "@/services/sse";
+import type { StreamHandlers } from "@/types/stream";
 import { createMessageId } from "../../utils/terminal";
 import { processLocalCommand, getCommandAction } from "../../lib/command-processor";
+import { TypewriterQueue } from "@/utils/typewriter";
 import ThinkingChain from "./ThinkingChain";
 import { StatusBar } from "./StatusBar";
 import { TerminalInput, TerminalInputRef } from "./TerminalInput";
@@ -43,6 +45,10 @@ export default function TerminalPanel() {
   const contentRef = useRef<HTMLDivElement>(null);
   const setMatrixActive = useUIStore((state) => state.setMatrixActive);
   const isMatrixActive = useUIStore((state) => state.isMatrixActive);
+  
+  // Typewriter queue for gradual text display
+  const typewriterRef = useRef<TypewriterQueue | null>(null);
+  const fullContentRef = useRef<string>("");
 
   const scrollToBottom = useCallback(() => {
     if (contentRef.current) {
@@ -165,7 +171,7 @@ export default function TerminalPanel() {
     []
   );
 
-  const handleToken = useCallback((token: string) => {
+  const updateMessageContent = useCallback((content: string) => {
     const streamingId = streamingIdRef.current;
     if (!streamingId) return;
 
@@ -175,14 +181,29 @@ export default function TerminalPanel() {
         if (msg.status === "thinking") {
           return {
             ...msg,
-            content: token,
+            content: content,
             status: "streaming" as MessageStatus,
           };
         }
-        return { ...msg, content: msg.content + token };
+        return { ...msg, content: content };
       })
     );
   }, []);
+
+  const handleToken = useCallback((token: string) => {
+    fullContentRef.current += token;
+    
+    // Initialize typewriter if not exists
+    if (!typewriterRef.current) {
+      typewriterRef.current = new TypewriterQueue(
+        (content) => updateMessageContent(content),
+        { speed: 60, naturalVariation: true }
+      );
+    }
+    
+    // Enqueue the new token for typewriter effect
+    typewriterRef.current.enqueue(token);
+  }, [updateMessageContent]);
 
 
   // Handler for TerminalInput component
@@ -272,29 +293,65 @@ export default function TerminalPanel() {
 
     setIsStreaming(true);
 
-    await streamChat(trimmed, sessionId, {
-      onStatus: handleStatus,
-      onFunctionCall: handleFunctionCall,
-      onThought: handleThought,
-      onThinkingComplete: handleThinkingComplete,
-      onToken: handleToken,
+    // Create stream handlers
+    const handlers: StreamHandlers = {
+      onThinkingStart: () => {
+        handleStatus({ phase: "thinking" });
+      },
+      onThinkingDelta: (content) => {
+        handleThought({ message: content, status: "running" });
+      },
+      onThinkingEnd: () => {
+        handleThinkingComplete();
+      },
+      onToolStart: (tool) => {
+        handleFunctionCall({ name: tool.toolName, status: "running" });
+      },
+      onToolEnd: (tool) => {
+        handleFunctionCall({ name: tool.toolName, status: tool.status });
+      },
+      onResponseDelta: (content) => {
+        handleToken(content);
+      },
+      onResponseEnd: () => {
+        // Will be completed in onComplete
+      },
       onComplete: () => {
         const id = streamingIdRef.current;
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === id
-              ? {
-                  ...msg,
-                  status: "completed" as MessageStatus,
-                  functionSteps: undefined,
-                }
-              : msg
-          )
-        );
-        setIsStreaming(false);
-        streamingIdRef.current = null;
+        const finalContent = fullContentRef.current;
+        
+        const finalizeMessage = () => {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === id
+                ? {
+                    ...msg,
+                    content: finalContent,
+                    status: "completed" as MessageStatus,
+                    functionSteps: undefined,
+                  }
+                : msg
+            )
+          );
+          setIsStreaming(false);
+          streamingIdRef.current = null;
+          fullContentRef.current = "";
+          typewriterRef.current = null;
+        };
+        
+        // Complete the typewriter animation and then finalize
+        if (typewriterRef.current) {
+          typewriterRef.current.completeWithCallback(finalizeMessage);
+        } else {
+          finalizeMessage();
+        }
       },
-      onError: (message: string) => {
+      onError: (message) => {
+        // Cancel any ongoing typewriter animation
+        if (typewriterRef.current) {
+          typewriterRef.current.cancel();
+        }
+        
         const id = streamingIdRef.current;
         setMessages((prev) =>
           prev.map((msg) =>
@@ -310,8 +367,12 @@ export default function TerminalPanel() {
         setIsStreaming(false);
         setError(message);
         streamingIdRef.current = null;
+        fullContentRef.current = "";
+        typewriterRef.current = null;
       },
-    });
+    };
+
+    await streamChat(trimmed, sessionId, handlers);
   };
 
   return (

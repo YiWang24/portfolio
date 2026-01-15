@@ -2006,13 +2006,13 @@ main {
 /* ========== Mobile Layout Overrides ========== */
 @media (max-width: 767px) {
   .hero-frame {
-    height: auto;
-    max-height: none;
+    height: 100%;
     grid-template-columns: 1fr;
-    border-radius: 0;
-    border: none;
-    background: transparent;
-    backdrop-filter: none;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
   }
 
   .hero-terminal {
@@ -2201,6 +2201,23 @@ main {
   letter-spacing: 0.1em;
   font-family: var(--font-plex-mono), monospace;
   align-self: center;
+}
+
+@media (max-width: 640px) {
+  .cli-hero-badge {
+    padding: 4px 10px;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cli-header {
+    padding: 8px 12px;
+    gap: 8px;
+    height: 48px;
+  }
 }
 
 .cli-status-dot-inline {

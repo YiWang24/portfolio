@@ -81,29 +81,30 @@
       "title": "Senior Software Engineer",
       "period": "2022 - Present",
       "achievements": [
-        "Led platform migration to microservices architecture",
-        "Reduced API latency by 35% through optimization",
         "Mentored team of 4 junior developers"
-      ]
+      ],
+      "location": "San Francisco, CA",
+      "tech": ["Spring Boot", "React", "K8s", "AWS"]
     },
     {
       "company": "StartupXYZ",
       "title": "Full Stack Developer",
       "period": "2020 - 2022",
       "achievements": [
-        "Built real-time collaboration features using WebSocket",
-        "Implemented CI/CD pipeline reducing deployment time by 60%",
         "Developed RESTful APIs serving 10k+ daily users"
-      ]
+      ],
+      "location": "New York, NY",
+      "tech": ["Node.js", "Vue.js", "MongoDB", "Socket.io"]
     },
     {
       "company": "York University AI Lab",
       "title": "Research Assistant",
       "period": "2019 - 2020",
       "achievements": [
-        "Contributed to NLP research on sentiment analysis",
         "Published paper on transformer-based text classification"
-      ]
+      ],
+      "location": "Toronto, ON",
+      "tech": ["Python", "PyTorch", "NLP", "BERT"]
     }
   ],
   "projects": [

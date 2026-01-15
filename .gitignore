@@ -14,5 +14,7 @@
 .worktrees/
 .history/
 content/
+!frontend/content/
+!frontend/content/**
 .claude/
 .worktrees/

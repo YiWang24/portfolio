@@ -124,7 +124,7 @@ function FocusAreaCard({
       className="h-full"
     >
       <Card className="group h-full flex flex-col bg-gradient-to-b from-zinc-900 via-zinc-900/95 to-zinc-950 border border-white/10 hover:border-emerald-500/40 hover:from-zinc-800/90 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/5">
-        <CardHeader className="pb-3">
+        <CardHeader className="p-4 pb-2">
           {/* Icon container with rotation on hover */}
           <motion.div
             className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-3 group-hover:bg-emerald-500/20 transition-colors duration-300"
@@ -133,12 +133,12 @@ function FocusAreaCard({
           >
             <IconComponent className="w-6 h-6 text-emerald-400 group-hover:text-emerald-300 transition-colors duration-300" />
           </motion.div>
-          <CardTitle className="text-lg font-semibold text-zinc-100 group-hover:text-emerald-300 transition-colors duration-300">
+          <CardTitle className="text-base font-semibold text-zinc-100 group-hover:text-emerald-300 transition-colors duration-300">
             {area.title}
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col">
-          <CardDescription className="text-sm text-zinc-400 leading-relaxed mb-4">
+        <CardContent className="flex-1 flex flex-col p-4 pt-0">
+          <CardDescription className="text-xs text-zinc-400 leading-relaxed mb-3 line-clamp-2">
             {area.description}
           </CardDescription>
           {/* Tech Stack Badges - fills bottom space */}
@@ -155,7 +155,7 @@ function FocusAreaCard({
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </motion.div >
   );
 }
 
@@ -168,9 +168,9 @@ export function AboutSection({ about }: AboutSectionProps) {
   ].filter(Boolean) as Array<{ icon: React.ComponentType<{ className?: string }>; href: string; label: string }>;
 
   return (
-    <section className="relative w-full min-h-[calc(100vh-112px)] flex items-center justify-center overflow-hidden py-16">
+    <section className="relative w-full min-h-[calc(100vh-100px)] flex items-center justify-center overflow-hidden py-4 md:py-8">
       {/* Main Container - Asymmetric Split */}
-      <div className="relative z-10 w-full max-w-[90%] xl:max-w-[1400px] grid lg:grid-cols-[380px_1fr] gap-12 lg:gap-16 items-start">
+      <div className="relative z-10 w-full max-w-[95%] xl:max-w-[1300px] grid lg:grid-cols-[340px_1fr] gap-8 lg:gap-12 items-start">
         {/* ===== Left Column: Profile Sidebar ===== */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
@@ -339,7 +339,7 @@ export function AboutSection({ about }: AboutSectionProps) {
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="space-y-8"
+          className="space-y-6"
         >
           {/* Section Badge */}
           <motion.div
@@ -401,25 +401,7 @@ export function AboutSection({ about }: AboutSectionProps) {
         </motion.div>
       </div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1, duration: 1 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-zinc-500"
-      >
-        <span className="text-xs font-['DM_Sans']">Scroll to explore</span>
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        >
-          <ExternalLink className="w-5 h-5 rotate-90" />
-        </motion.div>
-      </motion.div>
+     
     </section>
   );
 }

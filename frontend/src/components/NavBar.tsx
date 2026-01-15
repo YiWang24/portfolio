@@ -35,7 +35,7 @@ export default function Navbar({ hero }: Props) {
       transition={{ duration: 0.5 }}
       className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-5xl px-4"
     >
-      <nav className="flex items-center justify-between px-6 py-3 rounded-full border border-white/10 bg-black/60 backdrop-blur-xl shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+      <nav className="flex items-center justify-between px-4 py-2 md:px-6 md:py-3 rounded-full border border-white/10 bg-black/60 backdrop-blur-xl shadow-[0_0_30px_rgba(0,0,0,0.5)]">
         {/* Brand */}
         <motion.a
           href="/"

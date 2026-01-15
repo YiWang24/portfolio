@@ -44,7 +44,9 @@ export type ProfileData = {
     company: string;
     title: string;
     period: string;
+    location: string;
     achievements: string[];
+    tech: string[];
   }[];
   projects: {
     title: string;

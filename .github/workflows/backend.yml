@@ -1,0 +1,182 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend.yml"
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - "backend/**"
+  release:
+    types: [published]
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: portfolio-backend
+  JAVA_VERSION: "21"
+
+jobs:
+  # ============================================
+  # Build and Test Job
+  # ============================================
+  build-and-push:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: "maven"
+
+      - name: Prepare Image Name
+        run: |
+          echo "IMAGE_TAG=$(echo ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Build with Maven
+        working-directory: ./backend
+        run: ./mvnw clean compile -B
+
+      - name: Package application
+        working-directory: ./backend
+        run: ./mvnw package -DskipTests -B
+
+      # 3. Login to Azure Container Registry
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      # 4. Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:latest
+            network=host
+
+      # 5. Build and push Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ env.IMAGE_TAG }}
+          cache-from: type=registry,ref=${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+  # ============================================
+  # Security Scan Job
+  # ============================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "./backend"
+          format: "sarif"
+          output: "trivy-results.sarif"
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+
+  # ============================================
+  # Deploy Job (Manual or on Release)
+  # ============================================
+  deploy:
+    name: Deploy to Internal Server
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://papi.yiw.me
+
+    steps:
+      - name: Deploy via SSH (ProxyJump)
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          ACR_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+          ACR_USER: ${{ secrets.ACR_USERNAME }}
+          ACR_PASS: ${{ secrets.ACR_PASSWORD }}
+          IMG_NAME: ${{ env.IMAGE_NAME }}
+        with:
+          host: ${{ secrets.INTERNAL_HOST }}
+          username: ${{ secrets.INTERNAL_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          proxy_host: ${{ secrets.BASTION_HOST }}
+          proxy_username: ${{ secrets.BASTION_USER }}
+          proxy_key: ${{ secrets.SSH_KEY }}
+          
+          envs: ACR_SERVER,ACR_USER,ACR_PASS,IMG_NAME
+          
+          script: |
+            # 1. Stop and remove existing container
+            FULL_IMAGE=$(echo $ACR_SERVER/$IMG_NAME:latest | tr '[:upper:]' '[:lower:]')
+            
+            echo "🚀 Starting deployment..."
+
+            # 2. Login to ACR
+            echo "$ACR_PASS" | docker login $ACR_SERVER -u "$ACR_USER" --password-stdin
+
+            # 3. Pull latest image
+            docker pull $FULL_IMAGE
+
+            # 4. Stop and remove existing container
+            docker stop $IMG_NAME || true
+            docker rm $IMG_NAME || true
+        
+
+            # 5. Run new container
+            docker run -d \
+              --name $IMG_NAME \
+              --restart unless-stopped \
+              -p 8080:8080 \
+              --env-file /home/azureuser/portfolio/.env \
+              --memory=700m \
+              --memory-reservation=200m \
+              --cpus=0.75 \
+              --log-opt max-size=10m \
+              --log-opt max-file=3 \
+              $FULL_IMAGE
+
+            # 6. Health check
+            echo "Waiting for service to start..."
+            sleep 10
+            if curl -s http://localhost:8080/actuator/health > /dev/null; then
+              echo "✅ Health check passed!"
+            else
+              echo "⚠️ Health check warning: Endpoint not reachable yet."
+            fi
+
+            # 7. Clean up old images
+            docker image prune -af --filter "until=24h"

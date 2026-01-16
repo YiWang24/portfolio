@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, Saira, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import AppToaster from "../components/ui/Toaster";
+import { Analytics } from "@vercel/analytics/next"
 import "./globals.css";
 
 const saira = Saira({

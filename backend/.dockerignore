@@ -1,0 +1,47 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!target/*.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Documentation
+*.md
+docs/
+
+# Environment (secrets should not be in image)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# Test coverage
+.coverage
+coverage/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

@@ -1,18 +1,5 @@
 {
-  "hero": {
-    "name": "Yi Wang",
-    "role": "FULL STACK AGENT ENGINEER",
-    "intro": "Engineering the neural layer of the web. I bridge the gap between robust backend systems (Java/Spring) and adaptive AI agents. You are talking to my digital twin — go ahead, inspect my code.",
-    "avatar": "https://cdn-icons-png.freepik.com/512/763/763775.png",
-    "status": "System Online",
-    "github": "YiWang24",
-    "techStack": {
-      "languages": ["Java", "TypeScript", "Python", "C"],
-      "frameworks": ["Spring", "Next.js", "React", "Node.js"],
-      "cloud": ["AWS", "Docker", "Kubernetes", "PostgreSQL"],
-      "tools": ["Git", "Linux", "Nginx", "Redis"]
-    }
-  },
+
   "about": {
     "name": "Yi Wang",
     "role": "Full Stack Agent Engineer",
@@ -30,10 +17,11 @@
     "socials": {
       "github": "https://github.com/YiWang24",
       "linkedin": "https://linkedin.com/in/yi-wang",
-      "email": "mailto:yi@example.com",
+      "email": "yiwang2457@gmail.com",
       "twitter": "https://twitter.com/yi_wang"
-    },
-    "educationList": [
+    }
+  },
+  "education": [
       {
         "degree": "M.S. Computer Science",
         "school": "Stanford University",
@@ -52,8 +40,7 @@
         "period": "2023",
         "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/200px-Amazon_Web_Services_Logo.svg.png"
       }
-    ]
-  },
+    ],
   "experience": [
     {
       "company": "Tech Innovations Inc.",
@@ -178,5 +165,116 @@
         { "name": "Terraform", "version": "v1.7", "status": "iac", "icon": "Terraform" }
       ]
     }
+  ],
+  "certifications": [
+    {
+      "id": "LIC-AWS-SA-001",
+      "name": "AWS Solutions Architect",
+      "provider": "Amazon Web Services",
+      "date": "2023-11",
+      "validUntil": "2026-11",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg",
+      "color": "from-amber-500/20 to-orange-600/20",
+      "iconColor": "text-amber-500",
+      "link": "https://aws.amazon.com/certification/certified-solutions-architect-associate/"
+    },
+    {
+      "id": "LIC-CKA-8842",
+      "name": "Certified Kubernetes Admin",
+      "provider": "Linux Foundation",
+      "date": "2023-05",
+      "validUntil": "2026-05",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/3/39/Kubernetes_logo_without_workmark.svg",
+      "color": "from-blue-500/20 to-cyan-600/20",
+      "iconColor": "text-blue-500",
+      "link": "https://training.linuxfoundation.org/certification/certified-kubernetes-administrator-cka/"
+    },
+    {
+      "id": "LIC-TENSOR-99",
+      "name": "TensorFlow Developer",
+      "provider": "Google",
+      "date": "2022-08",
+      "validUntil": "Permanent",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/2/2d/Tensorflow_logo.svg",
+      "color": "from-orange-500/20 to-red-600/20",
+      "iconColor": "text-orange-500",
+      "link": "https://www.tensorflow.org/certificate"
+    },
+    {
+      "id": "LIC-AZ-900",
+      "name": "Azure Fundamentals",
+      "provider": "Microsoft",
+      "date": "2023-01",
+      "validUntil": "Permanent",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Microsoft_Azure.svg",
+      "color": "from-blue-600/20 to-indigo-600/20",
+      "iconColor": "text-blue-500",
+      "link": "https://learn.microsoft.com/en-us/credentials/certifications/azure-fundamentals/"
+    },
+    {
+      "id": "LIC-META-FE",
+      "name": "Meta Front-End Dev",
+      "provider": "Meta",
+      "date": "2022-12",
+      "validUntil": "Permanent",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg",
+      "color": "from-sky-500/20 to-blue-600/20",
+      "iconColor": "text-sky-500",
+      "link": "https://www.coursera.org/professional-certificates/meta-front-end-developer"
+    },
+    {
+      "id": "LIC-JAVA-SE",
+      "name": "Oracle Java SE 11",
+      "provider": "Oracle",
+      "date": "2021-06",
+      "validUntil": "Permanent",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Oracle_Logo.svg/512px-Oracle_Logo.svg.png",
+      "color": "from-red-500/20 to-rose-600/20",
+      "iconColor": "text-red-500",
+      "link": "https://education.oracle.com/java/java-se-11-developer/trackp_OCPJSE11"
+    },
+    {
+      "id": "LIC-GCP-ACE",
+      "name": "Google Cloud Engineer",
+      "provider": "Google Cloud",
+      "date": "2023-03",
+      "validUntil": "2026-03",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/5/51/Google_Cloud_logo.svg",
+      "color": "from-yellow-500/20 to-amber-600/20",
+      "iconColor": "text-yellow-500",
+      "link": "https://cloud.google.com/learn/certification/cloud-engineer"
+    },
+    {
+      "id": "LIC-TERRA-001",
+      "name": "Terraform Associate",
+      "provider": "HashiCorp",
+      "date": "2023-09",
+      "validUntil": "2025-09",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/0/04/Terraform_Logo.svg",
+      "color": "from-purple-500/20 to-violet-600/20",
+      "iconColor": "text-purple-500",
+      "link": "https://www.hashicorp.com/certification/terraform-associate"
+    },
+    {
+      "id": "LIC-SEC-PLUS",
+      "name": "CompTIA Security+",
+      "provider": "CompTIA",
+      "date": "2022-02",
+      "validUntil": "2025-02",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/a/a2/CompTIA_logo.svg",
+      "color": "from-rose-500/20 to-red-600/20",
+      "iconColor": "text-rose-500",
+      "link": "https://www.comptia.org/certifications/security"
+    }
+  ],
+  "coursework": [
+    { "id": "CS-188", "name": "Artificial Intelligence", "provider": "UC Berkeley", "date": "2022", "grade": "A+" },
+    { "id": "CS-162", "name": "Operating Systems", "provider": "UC Berkeley", "date": "2022", "grade": "A" },
+    { "id": "CS-170", "name": "Efficient Algorithms", "provider": "UC Berkeley", "date": "2021", "grade": "A-" },
+    { "id": "CS-000", "name": "Distributed Systems", "provider": "MIT OpenCourseWare", "date": "2023", "grade": "Self-Paced" },
+    { "id": "MATH-55", "name": "Discrete Structures", "provider": "Harvard Univ", "date": "2021", "grade": "Pass" },
+    { "id": "DL-SPECIAL", "name": "Deep Learning Spec.", "provider": "Coursera / DeepLearning.AI", "date": "2023", "grade": "Completed" },
+    { "id": "SYS-ARC", "name": "System Architecture", "provider": "Udacity", "date": "2023", "grade": "N/A" },
+    { "id": "SEC-101", "name": "Network Security", "provider": "Stanford Online", "date": "2022", "grade": "A" }
   ]
 }

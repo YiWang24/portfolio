@@ -41,7 +41,7 @@ export default function Home() {
 
       {/* === Desktop Navbar (仅桌面端) === */}
       {/* === Navbar === */}
-      <NavBar hero={profile.hero} />
+      <NavBar about={profile.about} />
 
       {/* === 内容层 === */}
       <main

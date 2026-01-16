@@ -48,13 +48,10 @@ export default function TerminalPanel() {
           <span className="light yellow" />
           <span className="light green" />
         </div>
-        <div className="cli-header-center">
-          <div className="cli-hero-info">
-            <div className="cli-hero-badge">
-              <span className="cli-status-dot-inline" aria-hidden="true" />
-              <span>{profile.hero.role}</span>
-            </div>
-          </div>
+        <div className="cli-header-center flex items-center justify-center">
+          <span className="font-mono text-xs text-zinc-600 tracking-wide">
+            yiwang@dev: ~/portfolio
+          </span>
         </div>
         {/* Spacer for balanced layout */}
         <div className="cli-header-spacer" />

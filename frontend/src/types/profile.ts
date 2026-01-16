@@ -11,15 +11,27 @@ export interface TechDomain {
   items: TechItem[];
 }
 
+export interface Certification {
+  id: string;
+  name: string;
+  provider: string;
+  date: string;
+  validUntil: string;
+  logo: string;
+  color: string;
+  iconColor: string;
+  link: string;
+}
+
+export interface Coursework {
+  id: string;
+  name: string;
+  provider: string;
+  date: string;
+  grade: string;
+}
+
 export type ProfileData = {
-  hero: {
-    name: string;
-    role: string;
-    intro: string;
-    avatar: string;
-    status: string;
-    github?: string;
-  };
   about: {
     name: string;
     role: string;
@@ -40,18 +52,13 @@ export type ProfileData = {
       email?: string;
       twitter?: string;
     };
-    educationList: Array<{
-      degree: string;
-      school: string;
-      period: string;
-      logo: string;
-    }>;
+
   };
   education: {
     school: string;
     degree: string;
     period: string;
-    highlights: string[];
+    logo: string;
   }[];
   experience: {
     company: string;
@@ -75,4 +82,6 @@ export type ProfileData = {
     };
   }[];
   modules: TechDomain[];
+  certifications: Certification[];
+  coursework: Coursework[];
 };

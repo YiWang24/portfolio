@@ -11,9 +11,8 @@ import { AboutSection } from "./AboutSection";
 import { ExperienceSection } from "./ExperienceSection";
 import { ProjectsDashboard } from "./ProjectsDashboard";
 import { TechStackMatrix } from "./TechStackMatrix";
-import { SparklesCore } from "@/components/ui/sparkles";
-import { DotPattern } from "@/components/ui/dot-pattern";
-import { motion } from "framer-motion";
+import { CertificationsSection } from "./CertificationsSection";
+import { ContactSection } from "./ContactSection";
 import ScrollReveal from "../ui/ScrollReveal";
 import PerspectiveReveal from "../ui/PerspectiveReveal";
 
@@ -29,7 +28,7 @@ export default function PortfolioSections({ data }: PortfolioSectionsProps) {
         {/* About Section - Full Viewport with Scroll Snap */}
         <ScrollReveal width="full">
           <div id="about" className="min-h-screen w-full flex items-center justify-center snap-start pt-20 relative">
-            <AboutSection about={data.about} />
+            <AboutSection about={data.about} education={data.education} />
 
             {/* Connecting Line to Next Section */}
             <div className="absolute bottom-0 left-1/2 w-px h-24 bg-gradient-to-b from-transparent to-violet-500/80 hidden md:block" />
@@ -69,9 +68,41 @@ export default function PortfolioSections({ data }: PortfolioSectionsProps) {
             <div className="absolute top-0 left-1/2 w-px h-24 bg-gradient-to-b from-violet-500/80 to-cyan-500/80 hidden md:block" />
 
             <TechStackMatrix modules={data.modules} />
+
+            {/* Connecting Line to Next Section */}
+            <div className="absolute bottom-0 left-1/2 w-px h-24 bg-gradient-to-b from-transparent to-cyan-500/80 hidden md:block" />
           </div>
         </PerspectiveReveal>
+
+        {/* Certifications & Coursework Section */}
+        <PerspectiveReveal className="w-full">
+          <div id="licenses" className="snap-start relative">
+            {/* Connecting Line from Previous Section (Cyan to Emerald) */}
+            <div className="absolute top-0 left-1/2 w-px h-24 bg-gradient-to-b from-cyan-500/80 to-emerald-500/80 hidden md:block" />
+
+            <CertificationsSection
+              certifications={data.certifications}
+              coursework={data.coursework}
+            />
+
+            {/* Connecting Line to Next Section */}
+            <div className="absolute bottom-0 left-1/2 w-px h-24 bg-gradient-to-b from-transparent to-emerald-500/80 hidden md:block" />
+          </div>
+        </PerspectiveReveal>
+
+        {/* Contact Section */}
+        <PerspectiveReveal className="w-full">
+          <div id="contact" className="snap-start relative">
+            {/* Connecting Line from Previous Section */}
+            <div className="absolute top-0 left-1/2 w-px h-24 bg-gradient-to-b from-emerald-500/80 to-emerald-500/40 hidden md:block" />
+            <ContactSection
+              email={data.about.socials.email}
+              name={data.about.name}
+            />
+          </div>
+        </PerspectiveReveal>
+
       </div>
-    </div>
+    </div >
   );
 }

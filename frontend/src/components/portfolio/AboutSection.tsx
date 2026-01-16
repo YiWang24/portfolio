@@ -10,7 +10,7 @@
 
 "use client";
 
-import { Button } from "@/components/ui/button";
+
 import {
   Card,
   CardContent,
@@ -57,16 +57,18 @@ interface AboutData {
     email?: string;
     twitter?: string;
   };
-  educationList: Array<{
-    degree: string;
-    school: string;
-    period: string;
-    logo: string;
-  }>;
+}
+
+export interface EducationItem {
+  degree: string;
+  school: string;
+  period: string;
+  logo: string;
 }
 
 interface AboutSectionProps {
   about: AboutData;
+  education: EducationItem[];
 }
 
 // Social link component with glowing border effect
@@ -159,7 +161,7 @@ function FocusAreaCard({
   );
 }
 
-export function AboutSection({ about }: AboutSectionProps) {
+export function AboutSection({ about, education }: AboutSectionProps) {
   const socialLinks = [
     about.socials.github && { icon: Github, href: about.socials.github, label: "GitHub" },
     about.socials.linkedin && { icon: Linkedin, href: about.socials.linkedin, label: "LinkedIn" },
@@ -301,7 +303,7 @@ export function AboutSection({ about }: AboutSectionProps) {
 
             {/* Education List */}
             <div className="space-y-5">
-              {about.educationList.map((edu, index) => (
+              {education && education.map((edu, index) => (
                 <motion.div
                   key={edu.school}
                   initial={{ opacity: 0, x: -10 }}
@@ -401,7 +403,7 @@ export function AboutSection({ about }: AboutSectionProps) {
         </motion.div>
       </div>
 
-     
+
     </section>
   );
 }

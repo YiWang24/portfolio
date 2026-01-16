@@ -109,10 +109,6 @@ export default function ContactModal({ isOpen, onClose }: Props) {
       toast.success("Transmission complete", {
         description: "Your message has been securely delivered.",
       });
-      // Close modal after a short delay to let user see the success state
-      setTimeout(() => {
-        onClose();
-      }, 1500);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to send message.";

@@ -3,15 +3,14 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 
-type HeroData = {
+type NavbarProfile = {
   name: string;
-  status: string;
-  avatar?: string;
+  avatar: string;
 };
 
-type Props = { hero: HeroData };
+type Props = { about: NavbarProfile };
 
-export default function Navbar({ hero }: Props) {
+export default function Navbar({ about }: Props) {
   // Simulated latency for tech feel
   const [latency, setLatency] = useState(12);
 
@@ -27,6 +26,7 @@ export default function Navbar({ hero }: Props) {
     { href: "#experience", label: "Experience" },
     { href: "#projects", label: "Projects" },
     { href: "#stack", label: "Stack" },
+    { href: "#licenses", label: "Credentials" },
   ];
 
   return (
@@ -49,14 +49,14 @@ export default function Navbar({ hero }: Props) {
           whileTap={{ scale: 0.98 }}
         >
           <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/20 bg-zinc-900">
-            {hero.avatar ? (
-              <img src={hero.avatar} alt="Profile" className="w-full h-full object-cover" />
+            {about.avatar ? (
+              <img src={about.avatar} alt="Profile" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-black font-bold text-sm">AI</div>
             )}
           </div>
           <span className="font-semibold text-white text-sm tracking-wide hidden sm:block">
-            {hero.name}
+            {about.name}
           </span>
         </motion.div>
 
@@ -103,20 +103,6 @@ export default function Navbar({ hero }: Props) {
             </svg>
             <span className="hidden sm:inline">Contact</span>
           </motion.button>
-
-          {/* System Status */}
-          <div className="hidden md:flex items-center gap-2 text-xs font-mono ml-2 pl-3 border-l border-white/10">
-            <div className="relative">
-              <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-500 animate-ping opacity-75" />
-              <div className="relative w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-            </div>
-            <span className="text-emerald-400">
-              Online
-            </span>
-            <span className="text-zinc-500">
-              ({latency}ms)
-            </span>
-          </div>
         </div>
       </nav>
     </motion.header>

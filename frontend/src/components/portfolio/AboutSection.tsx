@@ -89,7 +89,7 @@ function SocialLink({
       aria-label={label}
       whileHover={{ y: -2, scale: 1.08 }}
       whileTap={{ scale: 0.95 }}
-      className="group relative flex items-center justify-center w-12 h-12 rounded-xl border border-white/10 text-zinc-400 hover:text-emerald-400 hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all duration-300"
+      className="group relative flex items-center justify-center w-12 h-12 rounded-xl border border-border text-muted-foreground hover:text-emerald-400 hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all duration-300"
     >
       {/* Glow effect on hover */}
       <div className="absolute inset-0 rounded-xl bg-emerald-500/0 group-hover:bg-emerald-500/5 transition-all duration-300" />
@@ -125,7 +125,7 @@ function FocusAreaCard({
       whileHover={{ y: -6, scale: 1.02 }}
       className="h-full"
     >
-      <Card className="group h-full flex flex-col bg-gradient-to-b from-zinc-900 via-zinc-900/95 to-zinc-950 border border-white/10 hover:border-emerald-500/40 hover:from-zinc-800/90 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/5">
+      <Card className="group h-full flex flex-col bg-white dark:bg-gradient-to-b dark:from-card dark:via-card/95 dark:to-background border border-slate-200 dark:border-border hover:border-teal-500/40 dark:hover:border-emerald-500/40 transition-all duration-300 shadow-sm hover:shadow-md dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-emerald-500/5">
         <CardHeader className="p-4 pb-2">
           {/* Icon container with rotation on hover */}
           <motion.div
@@ -133,14 +133,14 @@ function FocusAreaCard({
             whileHover={{ scale: 1.1, rotate: 5 }}
             transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
-            <IconComponent className="w-6 h-6 text-emerald-400 group-hover:text-emerald-300 transition-colors duration-300" />
+            <IconComponent className="w-6 h-6 text-teal-600 dark:text-emerald-400 group-hover:text-teal-500 dark:group-hover:text-emerald-300 transition-colors duration-300" />
           </motion.div>
-          <CardTitle className="text-base font-semibold text-zinc-100 group-hover:text-emerald-300 transition-colors duration-300">
+          <CardTitle className="text-base font-semibold text-foreground group-hover:text-teal-600 dark:group-hover:text-emerald-300 transition-colors duration-300">
             {area.title}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col p-4 pt-0">
-          <CardDescription className="text-xs text-zinc-400 leading-relaxed mb-3 line-clamp-2">
+          <CardDescription className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2">
             {area.description}
           </CardDescription>
           {/* Tech Stack Badges - fills bottom space */}
@@ -149,7 +149,7 @@ function FocusAreaCard({
               <Badge
                 key={tag}
                 variant="secondary"
-                className="bg-black/50 text-[10px] font-mono text-zinc-400 border border-zinc-700/50 hover:text-white hover:border-emerald-500/40 transition-colors duration-200 px-2 py-0.5"
+                className="bg-muted/50 text-[10px] font-mono text-muted-foreground border border-border hover:text-foreground hover:border-emerald-500/40 transition-colors duration-200 px-2 py-0.5"
               >
                 {tag}
               </Badge>
@@ -182,7 +182,7 @@ export function AboutSection({ about, education }: AboutSectionProps) {
         >
           {/* Profile Section */}
           <div className="relative">
-            <div className="relative p-4 rounded-2xl border border-zinc-800/50 flex flex-col gap-2">
+            <div className="relative p-4 rounded-2xl border border-slate-200 dark:border-border flex flex-col gap-2 bg-white dark:bg-transparent shadow-lg shadow-slate-200/50 dark:shadow-none">
               {/* Avatar with status indicator */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -198,7 +198,7 @@ export function AboutSection({ about, education }: AboutSectionProps) {
                         alt={about.name}
                         className="object-cover"
                       />
-                      <AvatarFallback className="bg-zinc-900 text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-emerald-300 to-emerald-500 font-['Outfit']">
+                      <AvatarFallback className="bg-card text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-emerald-300 to-emerald-500 font-['Outfit']">
                         {about.name.split(" ").map(n => n[0]).join("")}
                       </AvatarFallback>
                     </Avatar>
@@ -207,7 +207,7 @@ export function AboutSection({ about, education }: AboutSectionProps) {
                   {/* Online status indicator with pulse ring */}
                   <div className="absolute bottom-2 right-2">
                     <div className="absolute inset-0 w-5 h-5 rounded-full bg-emerald-500 animate-pulse-ring" />
-                    <div className="relative w-5 h-5 rounded-full bg-emerald-500 border-4 border-zinc-950" />
+                    <div className="relative w-5 h-5 rounded-full bg-emerald-500 border-4 border-background" />
                   </div>
                 </div>
               </motion.div>
@@ -218,7 +218,7 @@ export function AboutSection({ about, education }: AboutSectionProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
-                <h1 className="text-2xl font-bold tracking-tight text-white">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
                   {about.name}
                 </h1>
                 <p className="font-medium bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">
@@ -231,7 +231,7 @@ export function AboutSection({ about, education }: AboutSectionProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="text-sm text-zinc-500 leading-relaxed"
+                className="text-sm text-muted-foreground leading-relaxed"
               >
                 Helping startups build resilient systems and delightful user experiences through engineering excellence.
               </motion.p>
@@ -244,7 +244,7 @@ export function AboutSection({ about, education }: AboutSectionProps) {
                 className="flex items-center gap-3"
               >
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-sans text-sm text-zinc-400">
+                <span className="font-sans text-sm text-muted-foreground/80">
                   Available for new opportunities
                 </span>
               </motion.div>
@@ -289,7 +289,7 @@ export function AboutSection({ about, education }: AboutSectionProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
-            className="p-6 rounded-2xl border border-zinc-800/50"
+            className="p-6 rounded-2xl border border-border"
           >
             {/* Education Header */}
             <div className="flex items-center gap-3 mb-6">
@@ -312,21 +312,21 @@ export function AboutSection({ about, education }: AboutSectionProps) {
                   className="flex items-start gap-4 group"
                 >
                   {/* University Logo */}
-                  <div className="w-12 h-12 rounded-xl bg-zinc-800/50 border border-zinc-700/50 flex items-center justify-center flex-shrink-0 overflow-hidden group-hover:border-emerald-500/30 transition-colors duration-300">
+                  <div className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center flex-shrink-0 overflow-hidden group-hover:border-emerald-500/30 transition-colors duration-300">
                     <img
                       src={edu.logo}
                       alt={edu.school}
-                      className="w-8 h-8 object-contain"
+                      className="w-8 h-8 object-contain mix-blend-multiply dark:mix-blend-normal"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-semibold text-white mb-0.5 group-hover:text-emerald-300 transition-colors duration-300">
+                    <h3 className="text-base font-semibold text-foreground mb-0.5 group-hover:text-emerald-300 transition-colors duration-300">
                       {edu.degree}
                     </h3>
-                    <p className="text-sm text-zinc-400">
+                    <p className="text-sm text-muted-foreground">
                       {edu.school}
                     </p>
-                    <p className="font-sans text-xs text-zinc-500 mt-0.5">
+                    <p className="font-sans text-xs text-muted-foreground/80 mt-0.5">
                       {edu.period}
                     </p>
                   </div>
@@ -359,13 +359,13 @@ export function AboutSection({ about, education }: AboutSectionProps) {
             transition={{ duration: 0.5, delay: 0.35 }}
           >
             <h2 className="font-sans text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
-              <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-zinc-400">
+              <span className="text-zinc-900 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-b dark:from-foreground dark:via-foreground dark:to-muted-foreground">
                 Building intelligent AI systems that bridge robust backend architecture with{" "}
               </span>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 animate-shimmer">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-cyan-500 to-teal-500 dark:from-emerald-400 dark:via-cyan-400 dark:to-emerald-400 animate-shimmer">
                 adaptive agent solutions
               </span>
-              <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-zinc-400">
+              <span className="text-zinc-900 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-b dark:from-foreground dark:via-foreground dark:to-muted-foreground">
                 .
               </span>
             </h2>
@@ -378,7 +378,7 @@ export function AboutSection({ about, education }: AboutSectionProps) {
             transition={{ duration: 0.5, delay: 0.45 }}
             className="max-w-2xl"
           >
-            <p className="font-sans text-lg text-zinc-400 leading-7">
+            <p className="font-sans text-lg text-muted-foreground leading-7">
               {about.bio}
             </p>
           </motion.div>
@@ -389,7 +389,7 @@ export function AboutSection({ about, education }: AboutSectionProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
           >
-            <h3 className="font-sans text-sm font-medium text-zinc-500 uppercase tracking-wider mb-4">
+            <h3 className="font-sans text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
               Focus Areas
             </h3>
           </motion.div>

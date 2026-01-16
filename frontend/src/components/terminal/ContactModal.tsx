@@ -122,7 +122,7 @@ export default function ContactModal({ isOpen, onClose }: Props) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm"
+        className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -141,17 +141,16 @@ export default function ContactModal({ isOpen, onClose }: Props) {
             aria-labelledby="contact-modal-title"
           >
             {/* Main Terminal Container */}
-            <div className="relative rounded-2xl  overflow-hidden border border-emerald-500/30 bg-[#0a0a0a] shadow-2xl shadow-emerald-500/20 font-['JetBrains_Mono',monospace]">
-              {/* CRT Scanline Overlay */}
-              <div className="pointer-events-none absolute inset-0 z-20 opacity-40">
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.15)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.015),rgba(0,0,255,0.03))] bg-[length:100%_2px,3px_100%]" />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent animate-[scanline_8s_linear_infinite]" />
+            <div className="relative rounded-2xl overflow-hidden border border-slate-300 dark:border-white/10 bg-white dark:bg-[#0d1117] shadow-2xl shadow-slate-300 dark:shadow-black font-['JetBrains_Mono',monospace]">
+              {/* CRT Scanline Overlay - Dark Mode Only */}
+              <div className="pointer-events-none absolute inset-0 z-20 opacity-0 dark:opacity-40">
+                <div className="absolute inset-0 bg-[linear-gradient(hsl(var(--background)/0)_50%,hsl(var(--foreground)/0.15)_50%),linear-gradient(90deg,hsl(var(--destructive)/0.03),hsl(var(--success)/0.015),hsl(var(--primary)/0.03))] bg-[length:100%_2px,3px_100%]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent animate-[scanline_8s_linear_infinite]" />
               </div>
 
               {/* Terminal Header */}
               <div
-                className="relative flex items-center justify-between  bg-[#1a1b26] border-b border-emerald-500/20"
-                style={{ padding: "8px" }}
+                className="relative flex items-center justify-between bg-slate-100 dark:bg-white/5 border-b border-slate-200 dark:border-white/5 py-2 px-4"
               >
                 {/* Traffic Lights */}
                 <div className="flex  items-center gap-2.5">
@@ -166,8 +165,8 @@ export default function ContactModal({ isOpen, onClose }: Props) {
 
                 {/* Title */}
                 <div className="flex items-center gap-2 text-xs">
-                  <Terminal size={14} className="text-emerald-400" />
-                  <span className="text-emerald-400 font-semibold">
+                  <Terminal size={14} className="text-slate-500 dark:text-primary" />
+                  <span className="text-slate-600 dark:text-primary font-semibold">
                     secure-contact@portfolio:~
                   </span>
                 </div>
@@ -175,7 +174,7 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                 {/* Close Button */}
                 <button
                   onClick={onClose}
-                  className="text-slate-500 hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                   aria-label="Close"
                 >
                   <X size={18} />
@@ -189,9 +188,9 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                   {terminalLines.map((line, index) => (
                     <div
                       key={index}
-                      className="text-xs text-emerald-400/80 font-['IBM_Plex_Mono',monospace]"
+                      className="text-xs text-slate-500 dark:text-primary/80 font-['IBM_Plex_Mono',monospace]"
                     >
-                      <span className="text-emerald-500/50">
+                      <span className="text-slate-400 dark:text-primary/50">
                         [
                         {new Date().toLocaleTimeString("en-US", {
                           hour12: false,
@@ -206,7 +205,7 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                 {/* ASCII Art Header */}
                 <pre
                   style={{ marginBottom: "8px" }}
-                  className="text-[10px] leading-tight text-emerald-400/60 mb-8 select-none"
+                  className="text-[10px] leading-tight text-slate-300 dark:text-white/20 mb-8 select-none"
                 >
                   {`
 ██████╗ ██╗   ██╗ █████╗ ███╗   ██╗██╗ ██████╗ █████╗ ██████╗
@@ -227,17 +226,17 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                 >
                   {/* Status Bar */}
                   <div
-                    className="flex items-center justify-between px-4 py-3 bg-emerald-950/20 rounded text-[10px] font-['IBM_Plex_Mono',monospace]"
+                    className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-primary/10 rounded text-[10px] font-['IBM_Plex_Mono',monospace] border border-slate-200 dark:border-transparent"
                     style={{ marginBottom: "8px", padding: "4px" }}
                   >
                     <div
                       className="flex items-center gap-2"
                       style={{ margin: "2px" }}
                     >
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                      <span className="text-emerald-400">ENCRYPTED</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-primary animate-pulse"></span>
+                      <span className="text-slate-600 dark:text-primary">ENCRYPTED</span>
                     </div>
-                    <div className="flex items-center gap-4 text-emerald-400/70">
+                    <div className="flex items-center gap-4 text-slate-500 dark:text-primary/70">
                       <span>SSH-RSA 4096</span>
                       <span>AES-256</span>
                     </div>
@@ -250,10 +249,10 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                   >
                     <label
                       htmlFor="contact-email"
-                      className="flex items-center gap-2 text-xs font-['IBM_Plex_Mono',monospace] text-emerald-400/80 uppercase tracking-wider"
+                      className="flex items-center gap-2 text-xs font-['IBM_Plex_Mono',monospace] text-slate-500 dark:text-primary/80 uppercase tracking-wider"
                     >
-                      <span className="text-emerald-500">$</span>
-                      <span>var sender_email =</span>
+                      <span className="text-purple-600 dark:text-pink-400 font-bold">$</span>
+                      <span className="text-blue-600 dark:text-cyan-400 font-bold">var sender_email =</span>
                     </label>
                     <div className="relative">
                       <input
@@ -262,17 +261,17 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                         autoComplete="email"
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
-                        className="w-full bg-[#0c0c0c] rounded px-5 py-4 text-base text-emerald-100 placeholder:text-slate-600 focus:bg-[#0f0f0f] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 font-['JetBrains_Mono',monospace] transition-all duration-200"
+                        className="w-full bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 rounded px-5 py-4 text-base text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-700 focus:bg-white dark:focus:bg-black/50 focus:outline-none focus:border-purple-500 dark:focus:border-primary/40 font-['JetBrains_Mono',monospace] transition-all duration-200"
                         placeholder='"your@email.com";'
                         required
                         disabled={status === "sending" || status === "sent"}
                         style={{
                           padding: "4px",
                           boxShadow:
-                            "0 0 0 1px rgba(16,185,129,0.08), 0 0 30px rgba(16,185,129,0.05)",
+                            "0 0 0 1px hsl(var(--border)), 0 0 30px hsl(var(--primary)/0.05)",
                         }}
                       />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-emerald-500/50 pointer-events-none select-none">
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-primary/50 pointer-events-none select-none">
                         ;
                       </div>
                     </div>
@@ -285,10 +284,10 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                   >
                     <label
                       htmlFor="contact-message"
-                      className="flex items-center gap-2 text-xs font-['IBM_Plex_Mono',monospace] text-emerald-400/80 uppercase tracking-wider"
+                      className="flex items-center gap-2 text-xs font-['IBM_Plex_Mono',monospace] text-slate-500 dark:text-primary/80 uppercase tracking-wider"
                     >
-                      <span className="text-emerald-500">$</span>
-                      <span>const payload =</span>
+                      <span className="text-purple-600 dark:text-pink-400 font-bold">$</span>
+                      <span className="text-blue-600 dark:text-cyan-400 font-bold">const payload =</span>
                     </label>
                     <div className="relative">
                       <textarea
@@ -296,17 +295,15 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                         value={message}
                         onChange={(event) => setMessage(event.target.value)}
                         rows={6}
-                        className="w-full resize-none bg-[#0c0c0c] rounded px-5 py-4 text-base text-emerald-100 placeholder:text-slate-600 focus:bg-[#0f0f0f] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 font-['JetBrains_Mono',monospace] transition-all duration-200"
+                        className="w-full resize-none bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 rounded px-5 py-4 text-base text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-700 focus:bg-white dark:focus:bg-black/50 focus:outline-none focus:border-purple-500 dark:focus:border-primary/40 font-['JetBrains_Mono',monospace] transition-all duration-200"
                         placeholder={`\`Your message here...\`;`}
                         required
                         disabled={status === "sending" || status === "sent"}
                         style={{
-                          padding: "4px",
-                          boxShadow:
-                            "0 0 0 1px rgba(16,185,129,0.08), 0 0 30px rgba(16,185,129,0.05)",
+                          padding: "12px",
                         }}
                       />
-                      <div className="absolute right-3 bottom-3 text-xs text-emerald-500/50 pointer-events-none select-none">
+                      <div className="absolute right-3 bottom-3 text-xs text-primary/50 pointer-events-none select-none">
                         ;
                       </div>
                     </div>
@@ -328,47 +325,42 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                   )}
 
                   {/* Submit Button */}
-                  <div className="pt-4 flex justify-center">
+                  <div className="flex justify-end pt-2">
                     <button
                       type="submit"
-                      disabled={
-                        !canSubmit || status === "sending" || status === "sent"
-                      }
-                      className="group relative inline-flex items-center justify-center gap-2 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/15 hover:border-emerald-400/40 text-emerald-400 px-8 py-2.5 rounded text-xs font-['IBM_Plex_Mono',monospace] font-semibold uppercase tracking-wider transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-emerald-500/10 disabled:hover:border-emerald-500/30 overflow-hidden min-w-[160px]"
+                      disabled={!canSubmit || status === "sending" || status === "sent"}
+                      className="relative group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {/* Scanline effect on button */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-400/10 to-transparent translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-
-                      {status === "sending" ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" />
-                          <span>TRANSMITTING...</span>
-                        </>
-                      ) : status === "sent" ? (
-                        <>
-                          <CheckCircle2 size={14} />
-                          <span>SENT</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send
-                            size={14}
-                            className="group-hover:translate-x-0.5 transition-transform"
-                          />
-                          <span>SEND MESSAGE</span>
-                        </>
-                      )}
+                      <div className="absolute inset-0 bg-purple-500/20 dark:bg-primary/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="relative flex items-center gap-3 px-8 py-3 bg-slate-900 dark:bg-black/40 hover:bg-slate-800 dark:hover:bg-primary/10 border border-transparent dark:border-primary/50 text-white dark:text-primary font-bold font-['JetBrains_Mono',monospace] tracking-wider uppercase rounded overflow-hidden transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] dark:group-hover:shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+                        {status === "sending" ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Transmitting...</span>
+                          </>
+                        ) : status === "sent" ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Sent</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Send Message</span>
+                            <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          </>
+                        )}
+                      </div>
                     </button>
                   </div>
 
                   {/* Footer */}
                   <div className="pt-4 pb-3">
                     <div className="flex items-center justify-between text-[10px] font-['IBM_Plex_Mono',monospace]">
-                      <div className="flex items-center gap-2 text-slate-500">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
                         <span>CONNECTION: SECURE</span>
                       </div>
-                      <div className="text-slate-600">Press ESC to close</div>
+                      <div className="text-muted-foreground">Press ESC to close</div>
                     </div>
                   </div>
                 </form>

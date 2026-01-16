@@ -29,10 +29,10 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.2 }}
-                        className="text-3xl md:text-4xl font-bold text-center m-0 shrink-0"
+                        className="text-3xl md:text-4xl font-bold text-center m-0 shrink-0 font-mono tracking-tight"
                     >
-                        <span className="text-white">Execution </span>
-                        <span className="text-cyan-400">History</span>
+                        <span className="text-slate-900 dark:text-white">EXECUTION_</span>
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-500 to-cyan-500 dark:from-teal-400 dark:to-cyan-300">HISTORY</span>
                     </motion.h2>
 
                     {/* Right: Ghost Badge for Balance */}
@@ -43,8 +43,8 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
 
                 {/* Git Log Container */}
                 <div className="relative">
-                    {/* Vertical Git Line */}
-                    <div className="absolute left-[28px] md:left-[120px] top-4 bottom-0 w-0.5 bg-gradient-to-b from-cyan-500/50 via-zinc-800 to-transparent" />
+                    {/* Vertical Git Line - Light Mode: Solid slate, Dark Mode: Cyan Gradient */}
+                    <div className="absolute left-[28px] md:left-[120px] top-4 bottom-0 w-px bg-slate-300 dark:bg-gradient-to-b dark:from-cyan-500/60 dark:via-cyan-500/20 dark:to-transparent" />
 
                     <div className="space-y-12">
                         {experience.map((job, index) => (
@@ -58,81 +58,86 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
                             >
                                 {/* 1. Time Column (Desktop) */}
                                 <div className="hidden md:flex w-[100px] flex-col items-end pt-1 gap-1 text-right">
-                                    <span className="font-mono text-sm font-bold text-cyan-400/80">
+                                    <span className="font-mono text-sm font-bold text-primary/80">
                                         {job.period.split(" - ")[0]}
                                     </span>
-                                    <span className="font-mono text-xs text-zinc-500">
+                                    <span className="font-mono text-xs text-muted-foreground">
                                         {job.period.split(" - ")[1] || "Present"}
                                     </span>
                                 </div>
 
                                 {/* 2. Commit Node Column */}
                                 <div className="relative flex flex-col items-center flex-shrink-0 w-14 md:w-4">
-                                    {/* The Dot */}
-                                    <div className="relative z-10 w-4 h-4 rounded-full bg-[#0d1117] border-2 border-cyan-500 shadow-[0_0_0_rgba(6,182,212,0)] group-hover:scale-125 group-hover:shadow-[0_0_10px_0px_rgba(6,182,212,0.8)] transition-all duration-300">
-                                        <div className="absolute inset-0 rounded-full bg-cyan-500/20 animate-ping opacity-50" />
+                                    {/* The Dot - Light Mode: Teal border, Dark Mode: Neon Cyan Glow */}
+                                    <div className="relative z-10 w-4 h-4 rounded-full bg-white dark:bg-black border-2 border-teal-600 dark:border-cyan-500 shadow-sm dark:shadow-[0_0_10px_rgba(6,182,212,0.5)] group-hover:scale-125 dark:group-hover:shadow-[0_0_15px_rgba(6,182,212,0.8)] transition-all duration-300">
+                                        {/* Inner pulse for current role */}
+                                        <div className="absolute inset-1 rounded-full bg-teal-500 dark:bg-cyan-400 animate-pulse opacity-60" />
                                     </div>
                                     {/* Mobile Time (below dot) */}
                                     <div className="md:hidden mt-2 flex flex-col items-center gap-0.5 w-max">
-                                        <span className="font-mono text-[10px] text-cyan-400/80 tracking-tighter">
+                                        <span className="font-mono text-[10px] text-primary/80 tracking-tighter">
                                             {job.period.split(" - ")[0]}
                                         </span>
-                                        <div className="w-0.5 h-2 bg-zinc-800" />
+                                        <div className="w-0.5 h-2 bg-muted" />
                                     </div>
                                 </div>
 
-                                {/* 3. Content Card (The Log) - IDE Block Style */}
-                                <Card className="flex-1 bg-[#0d1117]/80 border-white/5 backdrop-blur-sm overflow-hidden group-hover:border-cyan-500/30 group-hover:bg-[#0d1117]/95 transition-all duration-300 shadow-xl">
+                                {/* 3. Content Card (The Log) - Blueprint for Light, Glassmorphism for Dark */}
+                                <Card className="flex-1 bg-white/90 dark:bg-black/40 border border-slate-300 dark:border-white/10 backdrop-blur-sm overflow-hidden shadow-[4px_4px_0px_rgba(203,213,225,0.6)] dark:shadow-none hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] dark:hover:translate-x-0 dark:hover:translate-y-0 dark:hover:border-cyan-500/50 dark:hover:bg-zinc-900/80 transition-all duration-300">
                                     {/* Code Editor Top Bar Decoration */}
-                                    <div className="h-1 w-full bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                    <div className="h-1 w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                                     <CardContent className="p-5 md:p-6 space-y-5">
                                         {/* Header */}
                                         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
                                             <div className="space-y-1">
-                                                <h3 className="text-lg md:text-xl font-bold text-zinc-100 font-mono tracking-tight flex items-center gap-3">
+                                                <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white font-mono tracking-tight flex items-center gap-3">
                                                     {job.title}
                                                     {index === 0 && (
-                                                        <Badge variant="outline" className="text-[10px] border-cyan-500/40 text-cyan-400 bg-cyan-500/10 animate-pulse rounded-sm px-1.5 py-0">
+                                                        <Badge variant="outline" className="text-[10px] border-teal-500/40 dark:border-cyan-500/40 text-teal-600 dark:text-cyan-400 bg-teal-50 dark:bg-cyan-500/10 animate-pulse rounded-sm px-1.5 py-0">
                                                             HEAD
                                                         </Badge>
                                                     )}
                                                 </h3>
                                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-mono">
-                                                    <span className="text-cyan-400 font-semibold">@{job.company}</span>
-                                                    <span className="text-zinc-700 hidden sm:inline">|</span>
-                                                    <span className="text-zinc-500 flex items-center gap-1.5">
+                                                    <span className="text-teal-700 dark:text-cyan-400 font-bold">@{job.company}</span>
+                                                    <span className="text-slate-400 dark:text-muted-foreground hidden sm:inline">|</span>
+                                                    <span className="text-slate-500 dark:text-muted-foreground flex items-center gap-1.5">
                                                         <MapPin className="w-3.5 h-3.5" />
                                                         {job.location}
                                                     </span>
                                                 </div>
                                             </div>
+                                            {/* Fake Git Hash */}
+                                            <span className="font-mono text-xs text-slate-400 dark:text-zinc-600 hidden sm:block">
+                                                #{Math.random().toString(36).substring(2, 8)}
+                                            </span>
                                         </div>
 
                                         {/* Commit Messages (Achievements) - Code Comment Style */}
-                                        <div className="space-y-2.5 font-mono text-xs md:text-sm text-zinc-400 relative">
+                                        <div className="space-y-2.5 font-mono text-xs md:text-sm text-slate-700 dark:text-muted-foreground relative">
                                             {/* Vertical line specifically for comments block */}
-                                            <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-zinc-800/50 rounded-full" />
+                                            <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-slate-200 dark:bg-muted/50 rounded-full" />
 
                                             {job.achievements.map((achievement, i) => (
                                                 <div key={i} className="flex items-start gap-3 pl-4 group/line">
-                                                    <span className="text-zinc-600 select-none mt-0.5 flex-shrink-0 opacity-50 font-sans">
+                                                    <span className="text-slate-400 dark:text-muted-foreground/50 select-none mt-0.5 flex-shrink-0 opacity-50 font-sans">
                                                         {/* Line number simulation */}
                                                         {i + 1}.
                                                     </span>
-                                                    <span className="leading-relaxed group-hover/line:text-zinc-300 transition-colors">
-                                                        <span className="text-purple-400/80">feat:</span> {achievement}
+                                                    <span className="leading-relaxed group-hover/line:text-slate-900 dark:group-hover/line:text-foreground transition-colors">
+                                                        <span className="text-purple-600 dark:text-purple-400/80">feat:</span> {achievement}
                                                     </span>
                                                 </div>
                                             ))}
                                         </div>
 
-                                        {/* Footer: Tech Stack - Tags Style */}
-                                        <div className="flex flex-wrap gap-2 pt-1 border-t border-white/5 mt-4">
+                                        {/* Footer: Tech Stack - Code Snippet Style */}
+                                        <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-200 dark:border-white/10 mt-4">
                                             {job.tech.map((tech) => (
                                                 <div
                                                     key={tech}
-                                                    className="font-mono text-[10px] md:text-xs px-2 py-1 rounded-md bg-cyan-500/5 text-cyan-400/90 border border-cyan-500/10 hover:bg-cyan-500/10 hover:border-cyan-500/30 transition-colors cursor-default"
+                                                    className="font-mono text-[10px] md:text-xs px-2 py-1 rounded-md bg-slate-100 dark:bg-cyan-500/10 text-slate-700 dark:text-cyan-400 border border-slate-200 dark:border-cyan-500/20 hover:bg-slate-200 dark:hover:bg-cyan-500/20 dark:hover:border-cyan-500/40 transition-colors cursor-default"
                                                 >
                                                     {tech}
                                                 </div>
@@ -145,6 +150,6 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
                     </div>
                 </div>
             </div>
-        </section>
+        </section >
     );
 }

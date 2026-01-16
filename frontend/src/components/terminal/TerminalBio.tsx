@@ -53,11 +53,11 @@ export function TerminalBio() {
 
     return (
         <div className="cli-motd text-center py-4">
-            <p className="font-mono text-base text-zinc-300">
-                <span className="text-emerald-400">{">"}</span>
-                <span className="text-zinc-400">{" "}</span>
-                <span className="text-zinc-200">{displayText}</span>
-                <span className="text-emerald-400 animate-pulse">▊</span>
+            <p className="font-mono text-base text-muted-foreground">
+                <span className="text-primary">{">"}</span>
+                <span className="text-muted-foreground">{" "}</span>
+                <span className="text-foreground">{displayText}</span>
+                <span className="text-primary animate-pulse">▊</span>
             </p>
         </div>
     );

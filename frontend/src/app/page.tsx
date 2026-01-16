@@ -28,6 +28,15 @@ export default function Home() {
     return () => window.removeEventListener('openContact', handleOpenContact);
   }, []);
 
+  // Detect mobile to disable blur effect on keyboard open
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <>
       {/* === Matrix Rain Effect === */}
@@ -47,43 +56,54 @@ export default function Home() {
       <main
         id="main-scroll-container"
         ref={containerRef}
-        className="relative w-full z-10 h-screen overflow-y-scroll snap-y snap-proximity scroll-smooth"
-
+        className="relative w-full z-10 h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth"
       >
-        {/* Hero Section - Full viewport fixed height with Parallax Exit */}
+        {/* Hero Section */}
         <motion.div
-          style={{ opacity: heroOpacity, scale: heroScale, filter: heroFilter }}
-          className="relative w-full h-screen flex items-start justify-center pt-8 md:pt-12 overflow-hidden snap-start shrink-0"
+          style={{
+            opacity: heroOpacity,
+            scale: heroScale,
+            filter: isMobile ? "none" : heroFilter
+          }}
+          // 修改 1: 使用 flex-col, items-center (水平居中), justify-center (垂直居中)
+          // pt-32 (increased from pt-16) to prevent overlap with navbar on mobile
+          className="mobile-hero-no-blur relative w-full h-screen flex flex-col items-center justify-center pt-32 md:pt-16 overflow-hidden snap-start shrink-0"
         >
-          <section className="hero-frame w-[95%] md:w-[85%] lg:w-[80%] h-[calc(100vh-160px)] md:h-[calc(100vh-200px)] mt-16 md:mt-0">
-            <div className="hero-terminal h-full">
+
+          {/* Terminal Frame */}
+          <section
+            // Removed 'hidden' to show on mobile
+            className="hero-frame flex w-full md:w-full max-w-[1800px] h-[90vh] relative z-20"
+          >
+            <div className="hero-terminal h-full w-full">
               <TerminalPanel />
             </div>
           </section>
 
-          {/* Scroll Down Indicator - Neon Chevron Style */}
+          {/* Scroll Down Indicator */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, duration: 1 }}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer z-10"
+            // 修改 3: 调整 bottom 位置，让它刚好处于剩下的 10% 空间里
+            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer z-10"
             onClick={() => {
               const nextSection = document.getElementById('about');
               if (nextSection) {
                 nextSection.scrollIntoView({ behavior: 'smooth' });
-              } else {
-                window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
               }
             }}
           >
-            <div className="relative">
-              <div className="absolute inset-0 bg-cyan-400 blur-lg opacity-20 animate-pulse rounded-full" />
-              <ChevronsDown className="w-6 h-6 text-cyan-400 animate-bounce relative z-10 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+            <div className="relative group">
+              {/* 加了一点 hover 效果让它更明显 */}
+              <div className="absolute inset-0 bg-primary blur-xl opacity-20 group-hover:opacity-40 transition-opacity animate-pulse rounded-full" />
+              <ChevronsDown className="w-8 h-8 text-primary animate-bounce relative z-10 drop-shadow-[0_0_10px_rgba(var(--primary),0.8)]" />
             </div>
           </motion.div>
+
         </motion.div>
 
-        {/* Portfolio Sections */}
+        {/* 其他 Sections... */}
         <PortfolioSections data={profile} />
       </main>
 

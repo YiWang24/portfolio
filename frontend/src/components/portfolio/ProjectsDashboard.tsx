@@ -102,8 +102,8 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                         transition={{ delay: 0.2 }}
                         className="text-3xl md:text-4xl font-bold text-center m-0 shrink-0"
                     >
-                        <span className="text-white">Active </span>
-                        <span className="text-cyan-400">Deployments</span>
+                        <span className="text-slate-900 dark:text-white">Active </span>
+                        <span className="text-teal-600 dark:text-cyan-400 dark:drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">Deployments</span>
                     </motion.h2>
                     <div className="flex-1 pl-4 flex justify-start opacity-0 pointer-events-none" aria-hidden="true">
                         <SectionBadge icon="projects">Mission Control</SectionBadge>
@@ -119,43 +119,44 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                         transition={{ duration: 0.5 }}
                         className="w-full"
                     >
-                        <Card className="group relative bg-zinc-900/40 backdrop-blur-md border border-white/10 overflow-hidden hover:border-cyan-500/50 transition-all duration-500 hover:shadow-[0_0_30px_rgba(6,182,212,0.15)]">
-                            <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-[1] bg-[length:100%_4px,6px_100%] pointer-events-none opacity-20" />
+                        <Card className="group relative bg-white dark:bg-black/40 backdrop-blur-md border border-slate-300 dark:border-white/10 overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-none hover:border-teal-500/50 dark:hover:border-cyan-500/50 transition-all duration-500 dark:hover:shadow-[0_0_30px_rgba(6,182,212,0.15)]">
+                            {/* CRT Scanline Overlay - Dark Mode Only */}
+                            <div className="absolute inset-0 bg-[linear-gradient(hsl(var(--background)/0)_50%,hsl(var(--foreground)/0.05)_50%),linear-gradient(90deg,hsl(var(--primary)/0.06),hsl(var(--secondary)/0.02),hsl(var(--primary)/0.06))] z-[1] bg-[length:100%_4px,6px_100%] pointer-events-none opacity-0 dark:opacity-20" />
 
                             <div className="grid lg:grid-cols-2 gap-0 h-full">
                                 {/* Content Side */}
-                                <div className="p-6 md:p-8 flex flex-col justify-between relative z-10 border-b lg:border-b-0 lg:border-r border-white/5 bg-zinc-950/30">
+                                <div className="p-6 md:p-8 flex flex-col justify-between relative z-10 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-white/10 bg-white/50 dark:bg-card/30">
                                     <div className="space-y-6">
                                         <div className="flex items-start justify-between">
                                             <div className="space-y-2">
                                                 <div className="flex items-center gap-2">
-                                                    <Terminal className="w-5 h-5 text-cyan-500" />
-                                                    <h3 className="text-2xl font-bold font-mono text-white tracking-tight">
+                                                    <Terminal className="w-5 h-5 text-primary" />
+                                                    <h3 className="text-2xl font-bold font-mono text-slate-900 dark:text-white tracking-tight">
                                                         {featuredProject.title}
                                                     </h3>
                                                 </div>
-                                                <div className="flex items-center gap-2 text-xs font-mono text-cyan-400/80">
+                                                <div className="flex items-center gap-2 text-xs font-mono text-teal-600 dark:text-cyan-400">
                                                     <Activity className="w-3 h-3 animate-pulse" />
                                                     <span>System Active</span>
-                                                    <span className="text-zinc-600">|</span>
+                                                    <span className="text-muted-foreground">|</span>
                                                     <span>v2.4.0</span>
                                                 </div>
                                             </div>
 
                                             {featuredProject.metrics && (
-                                                <Badge variant="outline" className="border-cyan-500/30 bg-cyan-500/10 text-cyan-400 font-mono text-xs gap-1.5">
+                                                <Badge variant="outline" className="border-teal-500/30 dark:border-cyan-500/30 bg-teal-50 dark:bg-cyan-500/10 text-teal-700 dark:text-cyan-400 font-mono text-xs gap-1.5">
                                                     ★ {featuredProject.metrics.stars}
                                                 </Badge>
                                             )}
                                         </div>
 
-                                        <p className="text-zinc-400 leading-relaxed text-sm md:text-base">
+                                        <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
                                             {featuredProject.summary}
                                         </p>
 
                                         <div className="flex flex-wrap gap-2">
                                             {featuredProject.tech.map((t) => (
-                                                <div key={t} className="px-2 py-0.5 border border-white/10 text-xs font-mono text-zinc-400 rounded-sm hover:text-cyan-300 hover:border-cyan-500/30 transition-colors">
+                                                <div key={t} className="px-2 py-0.5 border border-slate-200 dark:border-transparent text-xs font-mono text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 rounded-sm hover:text-teal-600 dark:hover:text-cyan-400 hover:border-teal-500/30 dark:hover:border-transparent transition-colors">
                                                     {t}
                                                 </div>
                                             ))}
@@ -166,7 +167,7 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                                         {featuredProject.links?.demo && (
                                             <Button
                                                 variant="default"
-                                                className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold font-mono tracking-wide cursor-pointer"
+                                                className="bg-teal-600 hover:bg-teal-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-black font-bold font-mono tracking-wide cursor-pointer"
                                                 onClick={() => window.open(featuredProject.links?.demo, '_blank')}
                                             >
                                                 <Globe className="w-4 h-4 mr-2" />
@@ -176,7 +177,7 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                                         {featuredProject.links?.repo && (
                                             <Button
                                                 variant="outline"
-                                                className="border-white/20 text-zinc-300 hover:text-white hover:bg-white/10 font-mono tracking-wide bg-transparent cursor-pointer"
+                                                className="border-slate-300 dark:border-white/20 text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white font-mono tracking-wide bg-transparent cursor-pointer"
                                                 onClick={() => window.open(featuredProject.links?.repo, '_blank')}
                                             >
                                                 <Github className="w-4 h-4 mr-2" />
@@ -187,22 +188,22 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                                 </div>
 
                                 {/* Visual Side - Holographic View */}
-                                <div className="relative min-h-[300px] lg:min-h-full bg-black/40 p-0 flex items-center justify-center overflow-hidden group-hover:bg-black/30 transition-colors duration-500">
+                                <div className="relative min-h-[300px] lg:min-h-full bg-background/40 p-0 flex items-center justify-center overflow-hidden group-hover:bg-background/30 transition-colors duration-500">
                                     {/* Background Grid */}
-                                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+                                    <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--muted)/0.1)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--muted)/0.1)_1px,transparent_1px)] bg-[size:24px_24px]" />
 
                                     {/* Window Container - Full Size */}
-                                    <div className="relative z-10 w-full h-full border-l border-white/10 bg-black overflow-hidden group-hover:shadow-[inset_0_0_50px_rgba(34,211,238,0.1)] transition-all duration-500">
+                                    <div className="relative z-10 w-full h-full border-l border-slate-200 dark:border-white/10 bg-white dark:bg-background overflow-hidden dark:group-hover:shadow-[inset_0_0_50px_rgba(6,182,212,0.1)] transition-all duration-500">
                                         {/* Window Header Overlay */}
-                                        <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black/80 to-transparent flex items-center px-4 gap-2 z-20">
+                                        <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-background/80 to-transparent flex items-center px-4 gap-2 z-20">
                                             <div className="w-2 h-2 rounded-full bg-red-500/80" />
                                             <div className="w-2 h-2 rounded-full bg-yellow-500/80" />
                                             <div className="w-2 h-2 rounded-full bg-green-500/80" />
-                                            <div className="ml-auto text-[10px] font-mono text-cyan-500/50">PREVIEW_MODE</div>
+                                            <div className="ml-auto text-[10px] font-mono text-primary/50">PREVIEW_MODE</div>
                                         </div>
 
                                         {/* Video Player with Scanlines */}
-                                        <div className="relative w-full h-full bg-zinc-900 flex items-center justify-center">
+                                        <div className="relative w-full h-full bg-card flex items-center justify-center">
                                             <video
                                                 src={featuredProject.links?.demo}
                                                 autoPlay
@@ -211,9 +212,9 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                                                 playsInline
                                                 className="w-full h-full object-cover opacity-90"
                                             />
-                                            {/* CRT Overlay */}
-                                            <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,6px_100%] pointer-events-none z-10" />
-                                            <div className="absolute inset-0 bg-cyan-500/5 mix-blend-overlay z-10" />
+                                            {/* CRT Overlay - Dark Mode Only */}
+                                            <div className="absolute inset-0 bg-[linear-gradient(hsl(var(--background)/0)_50%,hsl(var(--foreground)/0.05)_50%),linear-gradient(90deg,hsl(var(--primary)/0.06),hsl(var(--secondary)/0.02),hsl(var(--primary)/0.06))] bg-[length:100%_4px,6px_100%] pointer-events-none z-10 opacity-0 dark:opacity-100" />
+                                            <div className="absolute inset-0 bg-cyan-500/5 dark:bg-cyan-500/10 mix-blend-overlay z-10 opacity-0 dark:opacity-100" />
                                         </div>
                                     </div>
                                 </div>
@@ -236,16 +237,16 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                                         const url = project.links?.demo || project.links?.repo;
                                         if (url) window.open(url, '_blank');
                                     }}
-                                    className="group h-full flex flex-col bg-zinc-900/40 backdrop-blur-md border border-white/10 hover:border-cyan-500/40 transition-all duration-300 hover:-translate-y-1 overflow-hidden relative cursor-pointer"
+                                    className="group h-full flex flex-col bg-white dark:bg-zinc-900/20 backdrop-blur-md border border-slate-300 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-none hover:border-teal-500/50 dark:hover:border-cyan-500/50 transition-all duration-300 hover:-translate-y-1 overflow-hidden relative cursor-pointer"
                                 >
                                     <div className="p-1 h-full">
-                                        <div className="bg-zinc-950/50 border border-white/5 p-5 h-full flex flex-col relative overflow-hidden">
+                                        <div className="bg-white/80 dark:bg-card/50 border border-slate-200 dark:border-white/10 p-5 h-full flex flex-col relative overflow-hidden">
 
                                             {/* Header */}
                                             <div className="flex justify-between items-start mb-4 relative z-10">
                                                 <div className="flex items-center gap-2">
-                                                    <Hash className="w-4 h-4 text-cyan-600" />
-                                                    <h4 className="font-bold font-mono text-zinc-100 text-sm group-hover:text-cyan-400 transition-colors">{project.title}</h4>
+                                                    <Hash className="w-4 h-4 text-teal-600 dark:text-cyan-400" />
+                                                    <h4 className="font-bold font-mono text-slate-900 dark:text-white text-sm group-hover:text-teal-600 dark:group-hover:text-cyan-400 transition-colors">{project.title}</h4>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
                                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/50 shadow-[0_0_5px_rgba(16,185,129,0.5)] animate-pulse" />
@@ -253,32 +254,32 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                                             </div>
 
                                             {/* Description */}
-                                            <p className="text-xs text-zinc-400 flex-1 mb-6 leading-relaxed line-clamp-3 relative z-10">
+                                            <p className="text-xs text-muted-foreground flex-1 mb-6 leading-relaxed line-clamp-3 relative z-10">
                                                 {project.summary}
                                             </p>
 
                                             {/* Tech Stack - Outlined Tags */}
                                             <div className="flex flex-wrap gap-1.5 mb-6 relative z-10">
                                                 {project.tech.slice(0, 3).map(t => (
-                                                    <span key={t} className="text-[10px] font-mono text-zinc-500 border border-white/10 px-1.5 py-0.5 rounded-sm group-hover:text-zinc-300 group-hover:border-white/20 transition-colors">
+                                                    <span key={t} className="text-[10px] font-mono text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-transparent px-1.5 py-0.5 rounded-sm group-hover:text-slate-700 dark:group-hover:text-zinc-300 transition-colors">
                                                         {t}
                                                     </span>
                                                 ))}
                                             </div>
 
                                             {/* Footer / Links */}
-                                            <div className="flex items-center justify-between pt-3 border-t border-white/5 relative z-10 mt-auto">
-                                                <span className="text-[10px] font-mono text-zinc-600 uppercase">
+                                            <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-white/10 relative z-10 mt-auto">
+                                                <span className="text-[10px] font-mono text-muted-foreground uppercase">
                                                     ID: {1024 + index}
                                                 </span>
                                                 <div className="flex gap-2">
                                                     {project.links?.repo && (
-                                                        <a href={project.links.repo} target="_blank" onClick={(e) => e.stopPropagation()} className="text-zinc-500 hover:text-white transition-colors">
+                                                        <a href={project.links.repo} target="_blank" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-foreground transition-colors">
                                                             <Github className="w-4 h-4" />
                                                         </a>
                                                     )}
                                                     {project.links?.demo && (
-                                                        <a href={project.links.demo} target="_blank" onClick={(e) => e.stopPropagation()} className="text-zinc-500 hover:text-cyan-400 transition-colors">
+                                                        <a href={project.links.demo} target="_blank" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-primary transition-colors">
                                                             <ExternalLink className="w-4 h-4" />
                                                         </a>
                                                     )}
@@ -287,7 +288,7 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
 
                                             {/* Bottom Live Sparkline */}
                                             <div className="absolute bottom-0 left-0 right-0 h-10 opacity-30 group-hover:opacity-60 transition-opacity duration-300 pointer-events-none">
-                                                <LiveSparkline seed={index} color="text-cyan-500" />
+                                                <LiveSparkline seed={index} color="text-slate-300 dark:text-cyan-900" />
                                             </div>
                                         </div>
                                     </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Saira, JetBrains_Mono } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
 import AppToaster from "../components/ui/Toaster";
 import "./globals.css";
 
@@ -31,12 +32,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${saira.variable} ${plexMono.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        {children}
-        <AppToaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <AppToaster />
+        </ThemeProvider>
       </body>
     </html>
   );

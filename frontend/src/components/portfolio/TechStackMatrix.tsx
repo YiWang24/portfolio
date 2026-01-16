@@ -64,6 +64,7 @@ const VISUAL_THEMES = [
         border: "group-hover:border-l-cyan-400",
         lineColor: "bg-cyan-500/20",
         dotColor: "bg-cyan-500/40",
+        hoverStyles: "dark:hover:border-cyan-500/50 dark:hover:bg-cyan-500/5 dark:hover:shadow-[0_0_15px_rgba(6,182,212,0.1)]",
     },
     // Frontend
     {
@@ -72,6 +73,7 @@ const VISUAL_THEMES = [
         border: "group-hover:border-l-violet-400",
         lineColor: "bg-violet-500/20",
         dotColor: "bg-violet-500/40",
+        hoverStyles: "dark:hover:border-violet-500/50 dark:hover:bg-violet-500/5 dark:hover:shadow-[0_0_15px_rgba(139,92,246,0.1)]",
     },
     // Backend
     {
@@ -80,6 +82,7 @@ const VISUAL_THEMES = [
         border: "group-hover:border-l-emerald-400",
         lineColor: "bg-emerald-500/20",
         dotColor: "bg-emerald-500/40",
+        hoverStyles: "dark:hover:border-emerald-500/50 dark:hover:bg-emerald-500/5 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.1)]",
     },
     // DevOps
     {
@@ -88,6 +91,7 @@ const VISUAL_THEMES = [
         border: "group-hover:border-l-fuchsia-400",
         lineColor: "bg-fuchsia-500/20",
         dotColor: "bg-fuchsia-500/40",
+        hoverStyles: "dark:hover:border-fuchsia-500/50 dark:hover:bg-fuchsia-500/5 dark:hover:shadow-[0_0_15px_rgba(232,121,249,0.1)]",
     },
 ];
 
@@ -117,8 +121,8 @@ export function TechStackMatrix({ modules }: TechStackMatrixProps) {
                         transition={{ delay: 0.2 }}
                         className="text-3xl md:text-4xl font-bold text-center m-0 shrink-0 font-mono tracking-tight"
                     >
-                        <span className="text-white">SYSTEM_</span>
-                        <span className="text-cyan-400">MATRIX</span>
+                        <span className="text-slate-900 dark:text-white">SYSTEM_</span>
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-fuchsia-500 dark:from-violet-400 dark:to-fuchsia-300">MATRIX</span>
                     </motion.h2>
                     <div className="flex-1 pl-4 flex justify-start opacity-0 pointer-events-none" aria-hidden="true">
                         <SectionBadge icon={Layers}>Dependencies</SectionBadge>
@@ -145,10 +149,10 @@ export function TechStackMatrix({ modules }: TechStackMatrixProps) {
                                 <div className="flex items-center gap-3 pb-3 mb-2 group relative z-10">
                                     <FolderOpen className={cn("w-5 h-5 transition-colors", theme.color)} />
                                     <div className="flex flex-col">
-                                        <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
+                                        <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
                                             Directory
                                         </span>
-                                        <span className={cn("text-xs font-mono font-bold transition-colors group-hover:text-white", theme.color)}>
+                                        <span className={cn("text-xs font-mono font-bold transition-colors group-hover:text-foreground", theme.color)}>
                                             {moduleData.path}
                                         </span>
                                     </div>
@@ -185,8 +189,9 @@ export function TechStackMatrix({ modules }: TechStackMatrixProps) {
                                                 )} />
 
                                                 <div className={cn(
-                                                    "group relative flex items-center justify-between p-3 bg-zinc-900/40 backdrop-blur-sm border border-white/5 hover:bg-zinc-900/80 hover:shadow-[0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300 cursor-default overflow-hidden rounded-r-md border-l-2 border-l-white/10",
-                                                    theme.border
+                                                    "group relative flex items-center justify-between p-3 bg-white border border-slate-300 shadow-sm dark:bg-black/40 dark:backdrop-blur-sm dark:border-white/10 dark:shadow-none hover:bg-slate-50 hover:shadow-md hover:border-slate-400 transition-all duration-300 cursor-default overflow-hidden rounded-r-md border-l-2 border-l-slate-300 dark:border-l-white/10 dark:hover:backdrop-blur-xl",
+                                                    theme.border,
+                                                    theme.hoverStyles
                                                 )}>
                                                     {/* Matrix Rain / Grid Overlay on Hover */}
                                                     <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:10px_10px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
@@ -194,14 +199,14 @@ export function TechStackMatrix({ modules }: TechStackMatrixProps) {
                                                     {/* Left: Tech Name & Icon */}
                                                     <div className="flex items-center gap-3 relative z-10">
                                                         <TechIcon className={cn("w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity", theme.color)} />
-                                                        <span className="font-bold text-zinc-300 group-hover:text-white text-sm tracking-wide">
+                                                        <span className="font-bold text-slate-800 dark:text-muted-foreground group-hover:text-black dark:group-hover:text-foreground text-sm tracking-wide">
                                                             {item.name}
                                                         </span>
                                                     </div>
 
                                                     {/* Right: Version Pill */}
                                                     <div className="relative z-10">
-                                                        <span className="inline-block px-1.5 py-0.5 bg-white/5 rounded text-[10px] font-mono text-zinc-500 group-hover:text-zinc-400 transition-colors border border-white/5">
+                                                        <span className="inline-block px-1.5 py-0.5 bg-slate-100 text-slate-500 border-slate-200 dark:bg-muted/50 dark:text-muted-foreground dark:border-border rounded text-[10px] font-mono group-hover:text-slate-600 dark:group-hover:text-muted-foreground/80 transition-colors border">
                                                             {item.version}
                                                         </span>
                                                     </div>

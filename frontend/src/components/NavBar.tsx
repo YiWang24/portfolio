@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
+import { ModeToggle } from "./mode-toggle";
 
 type NavbarProfile = {
   name: string;
@@ -36,7 +37,7 @@ export default function Navbar({ about }: Props) {
       transition={{ duration: 0.5 }}
       className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-5xl px-4"
     >
-      <nav className="flex items-center justify-between px-4 py-2 md:px-6 md:py-3 rounded-full border border-white/10 bg-black/60 backdrop-blur-xl shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+      <nav className="flex items-center justify-between px-4 py-2 md:px-6 md:py-3 rounded-full border border-border bg-background/80 backdrop-blur-xl shadow-lg supports-[backdrop-filter]:bg-background/60">
         {/* Brand */}
         <motion.div
           className="flex items-center gap-3 cursor-pointer"
@@ -48,14 +49,14 @@ export default function Navbar({ about }: Props) {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/20 bg-zinc-900">
+          <div className="w-8 h-8 rounded-lg overflow-hidden border border-border bg-muted">
             {about.avatar ? (
               <img src={about.avatar} alt="Profile" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-black font-bold text-sm">AI</div>
             )}
           </div>
-          <span className="font-semibold text-white text-sm tracking-wide hidden sm:block">
+          <span className="font-semibold text-foreground text-sm tracking-wide hidden sm:block">
             {about.name}
           </span>
         </motion.div>
@@ -66,7 +67,7 @@ export default function Navbar({ about }: Props) {
             <motion.a
               key={link.href}
               href={link.href}
-              className="px-4 py-2 font-mono text-xs uppercase tracking-wider text-zinc-400 rounded-lg hover:bg-white/10 hover:text-emerald-400 transition-all duration-200"
+              className="px-4 py-2 font-mono text-xs uppercase tracking-wider text-muted-foreground rounded-lg hover:bg-accent hover:text-accent-foreground transition-all duration-200"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -77,11 +78,14 @@ export default function Navbar({ about }: Props) {
 
         {/* Right Section: Actions + Status */}
         <div className="flex items-center gap-3">
+
+          <ModeToggle />
+
           {/* Resume Button */}
           <motion.a
             href="/resume.pdf"
             target="_blank"
-            className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-xs uppercase tracking-wider text-zinc-300 border border-white/10 bg-white/5 hover:bg-white/10 hover:text-white transition-all duration-200"
+            className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-xs uppercase tracking-wider text-muted-foreground border border-border bg-secondary/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
           >

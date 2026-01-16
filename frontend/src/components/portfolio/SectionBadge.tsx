@@ -98,24 +98,22 @@ export function SectionBadge({
       className={cn(
         // Base shape & size
         "rounded-full px-4 py-1.5",
-        // Border
-        "border-zinc-800",
-        // Background
-        "bg-zinc-900/50 backdrop-blur-sm",
+        // Light Mode: Technical Spec Label
+        "bg-slate-100 border-slate-200 text-slate-600",
+        // Dark Mode: Neon terminal style
+        "dark:bg-zinc-900/50 dark:border-white/10 dark:text-zinc-400",
         // Typography
-        "text-xs font-medium uppercase tracking-widest",
-        // Colors
-        "text-cyan-400",
+        "text-xs font-mono font-medium uppercase tracking-wider",
         // Spacing & layout
         "gap-2",
         // Transitions
         "transition-all duration-300",
         // Hover effects
-        "hover:border-cyan-500/30 hover:bg-zinc-800/70 hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]",
+        "hover:border-teal-500/30 hover:bg-slate-200 dark:hover:border-primary/30 dark:hover:bg-muted dark:hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)]",
         className
       )}
     >
-      {customIcon || <IconComponent className="w-[14px] h-[14px]" />}
+      {customIcon ? (() => { const CustomIcon = customIcon; return <CustomIcon className="w-[14px] h-[14px] text-teal-600 dark:text-cyan-400" />; })() : <IconComponent className="w-[14px] h-[14px] text-teal-600 dark:text-cyan-400" />}
       {children}
     </Badge>
   );

@@ -30,13 +30,13 @@ export function StatusBar({ isInputFocused }: { isInputFocused: boolean }) {
       {/* 1. VIM MODE: 聚焦时变色 */}
       <div className={`
         cli-powerline-mode
-        ${isInputFocused ? 'bg-yellow-500' : 'bg-emerald-500'}
+        ${isInputFocused ? 'bg-yellow-500' : 'bg-primary'}
       `}>
         {isInputFocused ? 'INSERT' : 'NORMAL'}
       </div>
 
       {/* Arrow: Mode -> Git */}
-      <div className={`cli-powerline-arrow ${isInputFocused ? 'bg-yellow-500' : 'bg-emerald-500'}`}></div>
+      <div className={`cli-powerline-arrow ${isInputFocused ? 'bg-yellow-500' : 'bg-primary'}`}></div>
 
       {/* 2. GIT BRANCH */}
       <div className="cli-powerline-section cli-powerline-git">
@@ -45,7 +45,7 @@ export function StatusBar({ isInputFocused }: { isInputFocused: boolean }) {
       </div>
 
       {/* Arrow: Git -> Background */}
-      <div className="cli-powerline-arrow bg-[#2f334d]"></div>
+      <div className="cli-powerline-arrow bg-secondary"></div>
 
 
       {/* --- CENTER SECTION: AGENT METRICS --- */}
@@ -59,13 +59,13 @@ export function StatusBar({ isInputFocused }: { isInputFocused: boolean }) {
 
         {/* RAG Status */}
         <div className="cli-powerline-metric">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
           <span>RAG Active</span>
         </div>
 
         {/* Latency (Dynamic) */}
         <div className="cli-powerline-metric w-16 justify-end hidden sm:flex">
-          <Zap size={10} className={latency > 30 ? 'text-yellow-500' : 'text-emerald-500'} />
+          <Zap size={10} className={latency > 30 ? 'text-yellow-500' : 'text-primary'} />
           <span>{latency}ms</span>
         </div>
       </div>
@@ -80,11 +80,11 @@ export function StatusBar({ isInputFocused }: { isInputFocused: boolean }) {
       </div>
 
       {/* Arrow: Location -> Time */}
-      <div className="cli-powerline-arrow bg-[#2f334d]"></div>
+      <div className="cli-powerline-arrow bg-secondary"></div>
 
       {/* Time */}
       <div className="cli-powerline-time">
-         {time}
+        {time}
       </div>
 
     </div>

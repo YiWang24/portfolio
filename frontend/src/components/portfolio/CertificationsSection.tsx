@@ -45,21 +45,21 @@ export function CertificationsSection({ certifications, coursework }: Certificat
                             viewport={{ once: true }}
                             className="text-3xl md:text-5xl font-bold font-mono text-center tracking-tight shrink-0"
                         >
-                            <span className="text-white">SYSTEM_</span>
-                            <span className="text-emerald-400">LICENSES</span>
+                            <span className="text-slate-900 dark:text-white">SYSTEM_</span>
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500 dark:text-emerald-400">LICENSES</span>
                         </motion.h2>
 
                         <div className="flex-1 pl-6 flex justify-start opacity-0 pointer-events-none" aria-hidden="true">
                             <SectionBadge icon={ShieldCheck}>Credentials</SectionBadge>
                         </div>
                     </div>
-                    <p className="text-zinc-500 font-mono text-sm text-center">
+                    <p className="text-slate-500 dark:text-zinc-500 font-mono text-sm text-center">
                         // Verified active credentials and knowledge packages.
                     </p>
                 </div>
 
                 {/* Part 1: Featured Certifications (Active Licenses) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {certifications.map((cert, index) => (
                         <motion.div
                             key={cert.id}
@@ -67,24 +67,24 @@ export function CertificationsSection({ certifications, coursework }: Certificat
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: index * 0.1 }}
-                            className="group relative h-64 perspective-1000 cursor-pointer"
+                            className="group relative h-40 w-full perspective-1000 cursor-pointer"
                             onClick={() => handleCardClick(cert.link)}
                         >
-                            <div className="relative w-full h-full bg-zinc-900/40 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-emerald-500/50 transition-all duration-500 group-hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] group-hover:-translate-y-2">
+                            <div className="relative w-full h-full bg-white dark:bg-zinc-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden hover:border-emerald-500/50 shadow-sm dark:shadow-none transition-all duration-500 hover:shadow-md dark:hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] group-hover:-translate-y-2">
 
-                                {/* Holographic Gradient Overlay */}
-                                <div className={cn("absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none", cert.color)} />
+                                {/* Holographic Gradient Overlay - Dark Mode Only */}
+                                <div className={cn("absolute inset-0 bg-gradient-to-br opacity-0 dark:group-hover:opacity-100 transition-opacity duration-500 pointer-events-none", cert.color)} />
 
                                 {/* Content Container */}
-                                <div className="relative z-10 p-6 h-full flex flex-col justify-between">
+                                <div className="relative z-10 p-4 h-full flex flex-col justify-between">
                                     {/* Top: Header & Badge */}
-                                    <div className="flex justify-between items-start">
-                                        <div className="p-2 bg-white/5 rounded-lg border border-white/5 group-hover:bg-white/10 transition-colors">
-                                            <ShieldCheck className={cn("w-6 h-6", cert.iconColor)} />
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="p-1.5 bg-slate-50 dark:bg-white/5 rounded-md border border-slate-100 dark:border-white/5 group-hover:bg-slate-100 dark:group-hover:bg-white/10 transition-colors">
+                                            <ShieldCheck className={cn("w-5 h-5 text-slate-700 dark:text-white", cert.iconColor?.replace('text-', '') !== 'white' ? cert.iconColor : '')} />
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-[10px] font-mono text-zinc-500 uppercase">Status</div>
-                                            <div className="text-xs font-bold text-emerald-400 flex items-center gap-1 justify-end">
+                                            <div className="text-[10px] font-mono text-slate-500 dark:text-zinc-500 uppercase">Status</div>
+                                            <div className="text-xs font-bold text-teal-600 dark:text-emerald-400 flex items-center gap-1 justify-end">
                                                 <span className="relative flex h-2 w-2">
                                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -95,27 +95,26 @@ export function CertificationsSection({ certifications, coursework }: Certificat
                                     </div>
 
                                     {/* Middle: Cert Info */}
-                                    <div className="space-y-2 my-auto text-center">
-                                        <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest border-b border-white/5 pb-2 mb-2 inline-block">
+                                    <div className="space-y-1 my-auto">
+                                        <div className="text-[9px] font-mono text-slate-500 dark:text-zinc-400 uppercase tracking-widest inline-block">
                                             {cert.provider}
                                         </div>
-                                        <h3 className="text-lg font-bold text-white group-hover:text-emerald-100 transition-colors leading-tight">
+                                        <h3 className="text-base font-bold text-slate-800 dark:text-white group-hover:text-teal-700 dark:group-hover:text-emerald-100 transition-colors leading-tight line-clamp-2">
                                             {cert.name}
                                         </h3>
                                     </div>
 
                                     {/* Bottom: ID & Barcode */}
-                                    <div className="flex justify-between items-end pt-4 border-t border-white/5 mt-auto">
+                                    <div className="flex justify-between items-end pt-2 mt-auto">
                                         <div className="text-left">
-                                            <div className="text-[9px] font-mono text-zinc-600 uppercase">License ID</div>
-                                            <div className="text-xs font-mono text-zinc-400">{cert.id}</div>
+                                            <div className="text-[8px] font-mono text-slate-400 dark:text-zinc-600 uppercase">ID: {cert.id}</div>
                                         </div>
-                                        <ScanBarcode className="w-8 h-8 text-zinc-700 group-hover:text-emerald-500/50 transition-colors" />
+                                        <ScanBarcode className="absolute bottom-4 right-4 w-6 h-6 text-slate-300 dark:text-zinc-800 group-hover:text-teal-600/30 dark:group-hover:text-emerald-500/30 transition-colors" />
                                     </div>
 
                                     {/* Verify Stamp Overlay (Hover) */}
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 scale-150 group-hover:scale-100 pointer-events-none rotate-[-15deg] border-4 border-dashed border-emerald-500/40 rounded px-4 py-2">
-                                        <span className="text-2xl font-black text-emerald-500/40 tracking-widest font-mono">VERIFIED</span>
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 scale-150 group-hover:scale-100 pointer-events-none rotate-[-15deg] border-2 border-dashed border-emerald-500/40 rounded px-2 py-1">
+                                        <span className="text-lg font-black text-emerald-500/40 tracking-widest font-mono">VERIFIED</span>
                                     </div>
                                 </div>
                             </div>
@@ -128,13 +127,13 @@ export function CertificationsSection({ certifications, coursework }: Certificat
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="w-full mt-12 bg-black/40 border border-white/10 rounded-lg overflow-hidden backdrop-blur-sm"
+                    className="w-full mt-12 bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-lg overflow-hidden backdrop-blur-sm shadow-sm dark:shadow-none"
                 >
                     {/* Terminal Header */}
-                    <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/5">
+                    <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/5">
                         <div className="flex items-center gap-2">
-                            <Terminal className="w-4 h-4 text-zinc-500" />
-                            <span className="text-sm font-mono text-zinc-400 font-bold">~/logs/knowledge_base.log</span>
+                            <Terminal className="w-4 h-4 text-slate-400 dark:text-zinc-500" />
+                            <span className="text-sm font-mono text-slate-500 dark:text-zinc-400 font-bold">~/logs/knowledge_base.log</span>
                         </div>
                         <div className="flex gap-1.5">
                             <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
@@ -144,7 +143,7 @@ export function CertificationsSection({ certifications, coursework }: Certificat
                     </div>
 
                     {/* Table Header Row */}
-                    <div className="grid grid-cols-12 px-4 py-3 border-b border-white/5 text-xs font-mono text-zinc-500 font-bold uppercase tracking-wider">
+                    <div className="grid grid-cols-12 px-4 py-3 border-b border-slate-200 dark:border-white/5 text-xs font-mono text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider">
                         <div className="col-span-2">ID</div>
                         <div className="col-span-6 md:col-span-5">Module Name</div>
                         <div className="col-span-3 hidden md:block">Provider</div>
@@ -161,22 +160,22 @@ export function CertificationsSection({ certifications, coursework }: Certificat
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, height: 0 }}
                                     transition={{ delay: index * 0.05 }}
-                                    className="grid grid-cols-12 px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors text-sm font-mono items-center group"
+                                    className="grid grid-cols-12 px-4 py-3 border-b border-slate-200 dark:border-border hover:bg-slate-50 dark:hover:bg-muted/50 transition-colors text-sm font-mono items-center group"
                                 >
-                                    <div className="col-span-2 text-emerald-500/80 group-hover:text-emerald-400">
+                                    <div className="col-span-2 text-teal-600 dark:text-emerald-500/80 group-hover:text-teal-700 dark:group-hover:text-emerald-400">
                                         {course.id}
                                     </div>
-                                    <div className="col-span-6 md:col-span-5 text-zinc-300 font-semibold group-hover:text-white truncate pr-2">
+                                    <div className="col-span-6 md:col-span-5 text-slate-700 dark:text-muted-foreground font-semibold group-hover:text-slate-900 dark:group-hover:text-foreground truncate pr-2">
                                         {course.name}
                                     </div>
-                                    <div className="col-span-3 hidden md:block text-zinc-500 group-hover:text-zinc-400 truncate pr-2">
+                                    <div className="col-span-3 hidden md:block text-slate-500 dark:text-muted-foreground group-hover:text-slate-600 dark:group-hover:text-muted-foreground/80 truncate pr-2">
                                         {course.provider}
                                     </div>
-                                    <div className="col-span-4 md:col-span-2 text-right text-zinc-600 group-hover:text-zinc-500">
+                                    <div className="col-span-4 md:col-span-2 text-right text-slate-500 dark:text-muted-foreground group-hover:text-slate-600 dark:group-hover:text-muted-foreground/80">
                                         <span className="mr-2">{course.date}</span>
                                         <span className={cn(
                                             "px-1.5 py-0.5 rounded text-[10px]",
-                                            course.grade.startsWith("A") || course.grade === "Completed" ? "bg-emerald-500/10 text-emerald-500" : "bg-zinc-800 text-zinc-400"
+                                            course.grade.startsWith("A") || course.grade === "Completed" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-500" : "bg-slate-100 dark:bg-muted text-slate-500 dark:text-muted-foreground"
                                         )}>
                                             {course.grade}
                                         </span>
@@ -187,15 +186,15 @@ export function CertificationsSection({ certifications, coursework }: Certificat
 
                         {/* Fade Out Overlay (only if collapsed and needed) */}
                         {!isExpanded && coursework.length > 5 && (
-                            <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none" />
+                            <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-white dark:from-black via-white/80 dark:via-black/80 to-transparent pointer-events-none" />
                         )}
                     </div>
 
                     {/* Footer / Load More Action */}
-                    <div className="p-2 bg-white/[0.02] border-t border-white/5">
+                    <div className="p-2 bg-slate-50 dark:bg-muted/20 border-t border-slate-200 dark:border-border">
                         <Button
                             variant="ghost"
-                            className="w-full text-zinc-500 hover:text-emerald-400 font-mono text-xs h-8 hover:bg-white/5 group"
+                            className="w-full text-muted-foreground hover:text-primary font-mono text-xs h-8 hover:bg-muted/50 group"
                             onClick={() => setIsExpanded(!isExpanded)}
                         >
                             <span className="mr-2 opacity-50">$</span>

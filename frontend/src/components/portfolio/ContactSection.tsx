@@ -7,12 +7,15 @@ import { SectionBadge } from "./SectionBadge";
 import { cn } from "@/lib/utils";
 import { sendContactMessage } from "@/services/contact";
 
+import type { ProfileData } from "@/types/profile";
+
 interface ContactSectionProps {
     email?: string;
     name?: string;
+    socials: ProfileData["about"]["socials"]; // New Prop
 }
 
-export function ContactSection({ email, name }: ContactSectionProps) {
+export function ContactSection({ email, name, socials }: ContactSectionProps) {
     const [formState, setFormState] = useState({ email: "", message: "" });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSent, setIsSent] = useState(false);
@@ -21,7 +24,8 @@ export function ContactSection({ email, name }: ContactSectionProps) {
 
     const currentYear = new Date().getFullYear();
     const developerName = name || "Yi Wang";
-    const contactEmail = email || "yi@example.com";
+    // Prefer email from socials, fallback to prop, then default
+    const contactEmail = socials.email || email || "yi@example.com";
 
     const handleCopyEmail = () => {
         navigator.clipboard.writeText(contactEmail);
@@ -239,10 +243,10 @@ export function ContactSection({ email, name }: ContactSectionProps) {
                         {/* Social Links - Compact 2x2 Grid */}
                         <div className="grid grid-cols-2 gap-3">
                             {[
-                                { name: "GitHub", icon: Github, href: "https://github.com", color: "hover:text-foreground group-hover:border-foreground/20" },
-                                { name: "LinkedIn", icon: Linkedin, href: "https://linkedin.com", color: "hover:text-blue-400 group-hover:border-blue-400/30" },
-                                { name: "Twitter", icon: Twitter, href: "https://twitter.com", color: "hover:text-sky-400 group-hover:border-sky-400/30" },
-                                { name: "Email", icon: Mail, href: `mailto:${contactEmail}`, color: "hover:text-primary group-hover:border-primary/30" },
+                                { name: "GitHub", icon: Github, href: socials.github || "https://github.com", color: "hover:text-foreground group-hover:border-foreground/20" },
+                                { name: "LinkedIn", icon: Linkedin, href: socials.linkedin || "https://linkedin.com", color: "hover:text-blue-400 group-hover:border-blue-400/30" },
+                                { name: "Twitter", icon: Twitter, href: socials.twitter || "https://twitter.com", color: "hover:text-sky-400 group-hover:border-sky-400/30" },
+                                { name: "Email", icon: Mail, href: `mailto:${socials.email || "yi@example.com"}`, color: "hover:text-primary group-hover:border-primary/30" },
                             ].map((social) => (
                                 <a
                                     key={social.name}

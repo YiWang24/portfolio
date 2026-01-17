@@ -24,18 +24,9 @@ import {
 } from "@/utils/thinking";
 import type { TerminalMessage, MessageStatus, ItemStatus } from "@/types/message";
 import { TerminalBio } from "./TerminalBio";
+import { motion, useAnimation } from "framer-motion";
 
-export type TerminalConversationRef = {
-  focus: () => void;
-};
-
-type TerminalConversationProps = {
-  sessionId?: string;
-  isMatrixActive: boolean;
-  setMatrixActive: (active: boolean) => void;
-  onOpenContact: () => void;
-  onInputFocusChange?: (focused: boolean) => void;
-};
+// ... existing imports ...
 
 // ASCII Logo - Agent (centered, no leading spaces)
 const ASCII_LOGO = `
@@ -45,6 +36,77 @@ const ASCII_LOGO = `
   ╚██╔╝  ██║    ██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║   
    ██║   ██║    ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║   
    ╚═╝   ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝`;
+
+// Neon Flicker Logo Component with Periodic Glitch
+function NeonFlickerLogo() {
+  const controls = useAnimation();
+
+  useEffect(() => {
+    const sequence = async () => {
+      // 1. Initial Start-up (The "Big Bang") - Hard Boot
+      await controls.start({
+        opacity: [0, 1, 0, 1, 0.1, 1, 0, 0.8, 0.2, 1],
+        filter: [
+          "brightness(0) blur(2px)",
+          "brightness(3) blur(0px)",       // Hard flash
+          "brightness(0) blur(2px)",       // Blackout
+          "brightness(2.5) blur(0px)",     // Bright
+          "brightness(0.2) blur(1px)",     // Dim
+          "brightness(2) blur(0px)",       // Bright
+          "brightness(0) blur(2px)",       // Blackout
+          "brightness(1.5) blur(0px) drop-shadow(0 0 10px rgba(16, 185, 129, 0.8))", // Surge
+          "brightness(0.5) blur(0.5px)",   // Low voltage
+          "brightness(1.2) blur(0px) drop-shadow(0 0 8px rgba(16, 185, 129, 0.8))" // Stable
+        ],
+        scale: [0.99, 1.02, 0.99, 1.01, 1, 1.01, 0.99, 1.02, 1, 1],
+        transition: {
+          duration: 0.8,
+          times: [0, 0.1, 0.2, 0.3, 0.35, 0.5, 0.6, 0.7, 0.9, 1],
+          ease: "easeInOut"
+        }
+      });
+
+      // 2. Periodic Glitches (Simulating loose connection)
+      while (true) {
+        // Random wait between 3s and 10s
+        const waitTime = Math.random() * 7000 + 3000;
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+
+        // Quick Glitch Animation
+        await controls.start({
+          opacity: [1, 0.8, 1, 0.5, 1], // Quick brownout
+          filter: [
+            "brightness(1.2) blur(0px) drop-shadow(0 0 8px rgba(16, 185, 129, 0.8))",
+            "brightness(0.8) blur(0.5px)",
+            "brightness(1.5) blur(0px) drop-shadow(0 0 12px rgba(16, 185, 129, 1))", // Surge
+            "brightness(0.6) blur(1px)",
+            "brightness(1.2) blur(0px) drop-shadow(0 0 8px rgba(16, 185, 129, 0.8))"
+          ],
+          scale: [1, 1.01, 0.995, 1],
+          transition: { duration: 0.15, ease: "linear" }
+        });
+      }
+    };
+
+    sequence();
+  }, [controls]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, filter: "brightness(0) blur(1px)" }}
+      animate={controls}
+      className="cli-ascii-logo relative"
+    >
+      <pre className="relative z-10 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 text-transparent bg-clip-text font-bold">
+        {ASCII_LOGO}
+      </pre>
+      {/* Glow layer behind */}
+      <pre className="absolute inset-0 text-emerald-500/20 blur-sm select-none z-0">
+        {ASCII_LOGO}
+      </pre>
+    </motion.div>
+  );
+}
 
 const TerminalConversation = forwardRef<
   TerminalConversationRef,
@@ -482,8 +544,8 @@ const TerminalConversation = forwardRef<
 
   return (
     <div className="cli-content" ref={contentRef}>
-      {/* ASCII Logo */}
-      <pre className="cli-ascii-logo">{ASCII_LOGO}</pre>
+      {/* ASCII Logo with Neon Flicker */}
+      <NeonFlickerLogo />
 
       {/* Terminal Hero - Dynamic Typewriter */}
       <TerminalBio />

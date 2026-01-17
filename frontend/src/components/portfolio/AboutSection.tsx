@@ -50,6 +50,7 @@ interface AboutData {
     icon: string;
     description: string;
     tags: string[];
+    image?: string;
   }>;
   socials: {
     github?: string;
@@ -106,7 +107,7 @@ const focusAreaIcons: Record<string, LucideIcon> = {
   Brain,
 };
 
-// Focus Area Feature Card - Tech Bento Style
+// Focus Area Feature Card - Refined Light/Dark Mode
 function FocusAreaCard({
   area,
   index,
@@ -115,6 +116,7 @@ function FocusAreaCard({
   index: number;
 }) {
   const IconComponent = focusAreaIcons[area.icon] || Bot;
+  const bgImage = area.image || "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=800&auto=format&fit=crop";
 
   return (
     <motion.div
@@ -123,33 +125,57 @@ function FocusAreaCard({
       viewport={{ once: true }}
       transition={{ duration: 0.4, delay: index * 0.1 }}
       whileHover={{ y: -6, scale: 1.02 }}
-      className="h-full"
+      className="h-full min-h-[200px]"
     >
-      <Card className="group h-full flex flex-col bg-white dark:bg-gradient-to-b dark:from-card dark:via-card/95 dark:to-background border border-slate-200 dark:border-border hover:border-teal-500/40 dark:hover:border-emerald-500/40 transition-all duration-300 shadow-sm hover:shadow-md dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-emerald-500/5">
-        <CardHeader className="p-4 pb-2">
-          {/* Icon container with rotation on hover */}
-          <motion.div
-            className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-3 group-hover:bg-emerald-500/20 transition-colors duration-300"
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          >
-            <IconComponent className="w-6 h-6 text-teal-600 dark:text-emerald-400 group-hover:text-teal-500 dark:group-hover:text-emerald-300 transition-colors duration-300" />
-          </motion.div>
-          <CardTitle className="text-base font-semibold text-foreground group-hover:text-teal-600 dark:group-hover:text-emerald-300 transition-colors duration-300">
+      <Card className="group relative h-full flex flex-col overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 shadow-sm hover:shadow-lg hover:-translate-y-1 dark:hover:shadow-2xl transition-all duration-500">
+
+        {/* Background Image Layer - Visible ONLY in Dark Mode */}
+        <div className="hidden dark:block absolute inset-0 z-0 overflow-hidden">
+          <img
+            src={bgImage}
+            alt={area.title}
+            className="w-full h-full object-cover opacity-40 transition-transform duration-700 ease-out group-hover:scale-110 grayscale-[30%] group-hover:grayscale-0"
+          />
+          {/* Cinematic Overlay - Gradient for Text Readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent opacity-90 transition-opacity duration-300 group-hover:opacity-80" />
+        </div>
+
+        <CardHeader className="relative z-10 p-5 pb-2">
+          {/* Icon container */}
+          <div className="flex items-center justify-between mb-3">
+            <motion.div
+              className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-300
+                         bg-slate-100 border border-slate-200 text-teal-700
+                         dark:bg-white/10 dark:backdrop-blur-md dark:border-white/20 dark:text-zinc-100 dark:group-hover:text-teal-300"
+              whileHover={{ rotate: 5 }}
+            >
+              <IconComponent className="w-5 h-5" />
+            </motion.div>
+          </div>
+
+          <CardTitle className="text-lg font-bold tracking-tight transition-colors duration-300
+                                text-slate-900 group-hover:text-teal-600
+                                dark:text-white dark:drop-shadow-md dark:group-hover:text-teal-200">
             {area.title}
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col p-4 pt-0">
-          <CardDescription className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2">
+
+        <CardContent className="relative z-10 flex-1 flex flex-col p-5 pt-1">
+          <CardDescription className="text-sm mb-4 line-clamp-2 font-medium transition-colors
+                                      text-slate-500
+                                      dark:text-zinc-300 dark:drop-shadow-sm">
             {area.description}
           </CardDescription>
-          {/* Tech Stack Badges - fills bottom space */}
+
+          {/* Tech Stack Badges */}
           <div className="mt-auto flex flex-wrap gap-1.5">
             {area.tags.map((tag) => (
               <Badge
                 key={tag}
                 variant="secondary"
-                className="bg-muted/50 text-[10px] font-mono text-muted-foreground border border-border hover:text-foreground hover:border-emerald-500/40 transition-colors duration-200 px-2 py-0.5"
+                className="text-[10px] font-mono px-2 py-0.5 transition-all duration-300
+                           bg-white border border-slate-200 text-slate-600 hover:border-teal-500
+                           dark:bg-white/10 dark:backdrop-blur-sm dark:text-zinc-200 dark:border-white/10 dark:hover:bg-teal-500/30 dark:hover:text-white dark:hover:border-teal-400/50"
               >
                 {tag}
               </Badge>

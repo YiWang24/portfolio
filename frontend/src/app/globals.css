@@ -3080,3 +3080,28 @@ main {
     @apply bg-background text-foreground;
   }
 }
+
+/* ========== Smooth Scroll Enhancements ========== */
+/* Enable smooth scrolling for the entire page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Enhance scroll smoothness for main container */
+#main-scroll-container {
+  scroll-behavior: smooth !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hardware acceleration for smooth animations */
+.smooth-scroll-section {
+  will-change: scroll-position;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Smooth scroll snap with proximity instead of mandatory */
+.snap-proximity-smooth {
+  scroll-snap-type: y proximity;
+  scroll-behavior: smooth;
+}

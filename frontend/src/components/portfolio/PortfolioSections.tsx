@@ -98,6 +98,7 @@ export default function PortfolioSections({ data }: PortfolioSectionsProps) {
             <ContactSection
               email={data.about.socials.email}
               name={data.about.name}
+              socials={data.about.socials}
             />
           </div>
         </PerspectiveReveal>

@@ -1,280 +1,549 @@
 {
-
   "about": {
     "name": "Yi Wang",
-    "role": "Full Stack Agent Engineer",
+    "role": "Full Stack & Spring AI Engineer",
     "avatar": "https://cdn-icons-png.freepik.com/512/763/763775.png",
-    "location": "San Francisco, CA",
-    "experience": "5+",
-    "tagline": "Building intelligent AI systems that bridge robust backend architecture with adaptive agent solutions.",
-    "bio": "I'm a Full Stack Engineer specializing in AI agents and distributed systems. With experience scaling platforms to 10,000+ users, I combine production-grade Java/Spring backends with cutting-edge AI technologies. Previously contributed to NLP research on transformer-based architectures.",
+    "location": "Toronto, ON",
+    "experience": "3+",
+    "tagline": "Architecting enterprise-grade AI agents with Spring Boot and statistical rigour.",
+    "bio": "Developer combining an MSc in Applied Statistics with full-stack engineering to build autonomous enterprise systems. Specialized in Spring AI and Agentic workflows. Recently co-architected a tax automation platform reducing processing time by 98% through LLM integration.",
     "focusAreas": [
-      { "title": "AI Agents", "icon": "Bot", "description": "Building autonomous agents with LangChain & AutoGen", "tags": ["LangChain", "AutoGen", "OpenAI", "Python"] },
-      { "title": "Backend Systems", "icon": "Server", "description": "Scalable Java/Spring microservices", "tags": ["Java", "Spring Boot", "Redis", "PostgreSQL"] },
-      { "title": "Cloud Infrastructure", "icon": "Cloud", "description": "AWS, Docker, K8s deployment", "tags": ["AWS", "Docker", "Kubernetes", "Terraform"] },
-      { "title": "NLP Research", "icon": "Brain", "description": "Transformers & LLM integration", "tags": ["HuggingFace", "PyTorch", "GPT-4", "RAG"] }
+      {
+        "title": "Enterprise AI",
+        "icon": "Bot",
+        "description": "RAG systems & Agents with Spring AI",
+        "tags": ["Spring AI", "Google ADK", "RAG", "Context Engineering"],
+        "image": "https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=1000&auto=format&fit=crop"
+      },
+      {
+        "title": "Backend Engineering",
+        "icon": "Server",
+        "description": "High-concurrency Java microservices",
+        "tags": ["Java", "Spring Boot", "Redis", "Microservices"],
+        "image": "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000&auto=format&fit=crop"
+      },
+      {
+        "title": "Cloud & DevOps",
+        "icon": "Cloud",
+        "description": "Containerized deployment pipelines",
+        "tags": ["Azure", "Docker Compose", "CI/CD", "Linux"],
+        "image": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1000&auto=format&fit=crop"
+      },
+      {
+        "title": "Data Science",
+        "icon": "Chart",
+        "description": "Statistical modeling & Credit analysis",
+        "tags": ["Python", "Hive SQL", "Pandas", "Statistics"],
+        "image": "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?q=80&w=1000&auto=format&fit=crop"
+      }
     ],
     "socials": {
       "github": "https://github.com/YiWang24",
-      "linkedin": "https://linkedin.com/in/yi-wang",
+      "linkedin": "https://www.linkedin.com/in/yiwang2025/",
       "email": "yiwang2457@gmail.com",
-      "twitter": "https://twitter.com/yi_wang"
+      "twitter": "https://x.com/wang_yi13857"
     }
   },
   "education": [
-      {
-        "degree": "M.S. Computer Science",
-        "school": "Stanford University",
-        "period": "2022 - 2024",
-        "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Stanford_Cardinal_logo.svg/200px-Stanford_Cardinal_logo.svg.png"
-      },
-      {
-        "degree": "B.S. Computer Science",
-        "school": "UC Berkeley",
-        "period": "2018 - 2022",
-        "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Seal_of_University_of_California%2C_Berkeley.svg/200px-Seal_of_University_of_California%2C_Berkeley.svg.png"
-      },
-      {
-        "degree": "AWS Solutions Architect",
-        "school": "Amazon Web Services",
-        "period": "2023",
-        "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/200px-Amazon_Web_Services_Logo.svg.png"
-      }
-    ],
+    {
+      "degree": "B.S. Computer Science",
+      "school": "York University",
+      "period": "2024 - 2027",
+      "logo": "https://media.licdn.com/dms/image/v2/D560BAQFI_4JbiEOmPQ/company-logo_200_200/company-logo_200_200/0/1688670035445?e=1770249600&v=beta&t=LNZ1YvdUmOP8UX65jmzWjLw2MJN5a_SG7OeU8xKSQfA"
+    },
+    {
+      "degree": "M.S. Statistics",
+      "school": "Henan University of Economics and Law",
+      "period": "2020 - 2022",
+      "logo": "https://media.licdn.com/dms/image/v2/C510BAQF9MujiNJ81Cw/company-logo_100_100/company-logo_100_100/0/1631415516998/henan_university_of_economics_and_law_logo?e=1770249600&v=beta&t=q-tRhdNQGaBywLTZaPW4KelwkQEUs38SevGmScUrvpc"
+    },
+    {
+      "degree": "B.S. AWS Economics",
+      "school": "Zhengzhou University",
+      "period": "2016 - 2020",
+      "logo": "https://media.licdn.com/dms/image/v2/C560BAQHjxVjUniEPdg/company-logo_100_100/company-logo_100_100/0/1631362913675?e=1770249600&v=beta&t=dEzpdk7gJAuhy25Dlwot7xgUFuFgrMvq7Oymj1xwfpY"
+    }
+  ],
   "experience": [
     {
-      "company": "Tech Innovations Inc.",
-      "title": "Senior Software Engineer",
-      "period": "2022 - Present",
+      "company": "SREDSimplify",
+      "title": "Co-Founder & Full Stack Developer",
+      "period": "Jul 2025 - Present",
       "achievements": [
-        "Mentored team of 4 junior developers"
-      ],
-      "location": "San Francisco, CA",
-      "tech": ["Spring Boot", "React", "K8s", "AWS"]
-    },
-    {
-      "company": "StartupXYZ",
-      "title": "Full Stack Developer",
-      "period": "2020 - 2022",
-      "achievements": [
-        "Developed RESTful APIs serving 10k+ daily users"
-      ],
-      "location": "New York, NY",
-      "tech": ["Node.js", "Vue.js", "MongoDB", "Socket.io"]
-    },
-    {
-      "company": "York University AI Lab",
-      "title": "Research Assistant",
-      "period": "2019 - 2020",
-      "achievements": [
-        "Published paper on transformer-based text classification"
+        "Engineered an AI tax platform using Spring AI & GPT-5, achieving 95%+ accuracy in narrative generation.",
+        "Reduced filing workflows from 5 days to <1 hour via automated pipelines.",
+        "Implemented RBAC with Spring Security, supporting 500+ concurrent users on Azure."
       ],
       "location": "Toronto, ON",
-      "tech": ["Python", "PyTorch", "NLP", "BERT"]
+      "tech": ["Java", "Spring AI", "React", "TypeScript", "Azure"]
+    },
+    {
+      "company": "Beijing Ruitian Xinshi Data Tech",
+      "title": "Data Analyst",
+      "period": "May 2022 - Mar 2024",
+      "achievements": [
+        "Developed credit scoring models using Python and Hive SQL to predict default risks.",
+        "Optimized credit approval workflows, significantly reducing processing time.",
+        "Built data-driven dashboards for executive decision-making."
+      ],
+      "location": "Beijing, China",
+      "tech": ["Python", "Hive SQL", "MySQL", "Data Modeling"]
     }
   ],
   "projects": [
     {
-      "title": "AI Chat Platform",
-      "summary": "Real-time chat application with AI-powered responses and intelligent conversation routing.",
-      "tech": ["React", "TypeScript", "OpenAI", "WebSocket", "Redis"],
+      "title": "SREDSimplify",
+      "summary": "Enterprise-grade SaaS for automating SR&ED tax filings. Leverages Spring AI to parse unstructured technical data, reducing claim processing time from 5 days to under 1 hour.",
+      "tech": [
+        "Spring AI",
+        "Spring Boot",
+        "React",
+        "TypeScript",
+        "Azure",
+        "Docker"
+      ],
       "links": {
-        "demo": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-        "repo": "https://github.com/user/ai-chat"
+        "demo": "https://sredsimplify.com/demo.mp4",
+        "website": "https://sredsimplify.com/",
+        "repo": "https://sredsimplify.com/"
       },
       "metrics": {
-        "stars": "245",
-        "users": "5k"
+        "stars": "1",
+        "efficiency": "50x Faster"
       }
     },
     {
-      "title": "DevOps Dashboard",
-      "summary": "Unified monitoring dashboard for microservices with real-time metrics and alerting.",
-      "tech": ["Next.js", "Spring Boot", "Prometheus", "Grafana"],
+      "title": "Nand2Tetris",
+      "summary": "This repository contains implementations of the projects from the book The Elements of Computing Systems, also known as Nand2Tetris. It involves building a full computer system from logic gates up to an operating system. This was a deep dive into computer architecture!",
+      "tech": ["JavaScript", "Assembly", "Hack", "Java"],
       "links": {
-        "repo": "https://github.com/user/devops-dash"
-      },
-      "metrics": {
-        "stars": "89"
+        "repo": "https://github.com/YiWang24/Nand2Tetris"
       }
     },
     {
-      "title": "Code Review Bot",
-      "summary": "Automated code review assistant using LLMs to provide intelligent feedback on PRs.",
-      "tech": ["Python", "FastAPI", "GPT-4", "GitHub Actions"],
+      "title": "CS61B-21SP: Data Structures",
+      "summary": "This repository showcases my solutions and implementations for UC Berkeley's CS61B: Data Structures course. It was a rigorous exploration of fundamental data structures and algorithms, primarily implemented in Java.",
+      "tech": ["Java", "Python"],
       "links": {
-        "demo": "https://codereview.example.com",
-        "repo": "https://github.com/user/code-review-bot"
-      },
-      "metrics": {
-        "stars": "312",
-        "users": "1.2k"
+        "repo": "https://github.com/YiWang24/CS61B-21SP"
       }
     },
     {
-      "title": "Portfolio Digital Twin",
-      "summary": "This interactive portfolio site featuring a terminal interface and AI-powered chat.",
-      "tech": ["Next.js", "Tailwind CSS", "TypeScript", "Vercel"],
+      "title": "DbHub",
+      "summary": "DbHub is a lightweight solution for running and managing multiple databases using Docker. I built it using shell scripting and JavaScript to create a robust and easy-to-use database hub.",
+      "tech": ["Shell Scripting", "Docker", "JavaScript"],
       "links": {
-        "repo": "https://github.com/user/portfolio"
+        "repo": "https://github.com/YiWang24/DbHub"
       }
     }
   ],
   "modules": [
     {
-      "category": "AI / Machine Learning",
+      "category": "Agentic AI & Data",
       "path": "~/modules/ai-core",
       "items": [
-        { "name": "Python", "version": "v3.12", "status": "stable", "icon": "Python" },
-        { "name": "LangChain", "version": "v0.1.0", "status": "active", "icon": "LangChain" },
-        { "name": "OpenAI API", "version": "latest", "status": "connected", "icon": "OpenAI" },
-        { "name": "PyTorch", "version": "v2.1", "status": "stable", "icon": "PyTorch" },
-        { "name": "R.A.G.", "version": "custom", "status": "optimized", "icon": "Database" }
+        {
+          "name": "Spring AI",
+          "version": "v1.0.0",
+          "status": "core",
+          "icon": "Spring"
+        },
+        {
+          "name": "Java Agents",
+          "version": "custom",
+          "status": "autonomous",
+          "icon": "Cpu"
+        },
+        {
+          "name": "R.A.G.",
+          "version": "pipeline",
+          "status": "integrated",
+          "icon": "Database"
+        },
+        {
+          "name": "Python (Stats)",
+          "version": "v3.12",
+          "status": "analysis",
+          "icon": "Python"
+        },
+        {
+          "name": "OpenAI API",
+          "version": "GPT-4",
+          "status": "connected",
+          "icon": "OpenAI"
+        }
+      ]
+    },
+    {
+      "category": "Enterprise Backend",
+      "path": "~/modules/server-side",
+      "items": [
+        {
+          "name": "Java 21",
+          "version": "LTS",
+          "status": "rock-solid",
+          "icon": "Java"
+        },
+        {
+          "name": "Spring Boot",
+          "version": "v3.2",
+          "status": "framework",
+          "icon": "Spring"
+        },
+        {
+          "name": "Spring Security",
+          "version": "Oauth2",
+          "status": "guarded",
+          "icon": "Shield"
+        },
+        {
+          "name": "PostgreSQL",
+          "version": "v16",
+          "status": "relational",
+          "icon": "PostgreSQL"
+        },
+        {
+          "name": "Redis",
+          "version": "v7.2",
+          "status": "cached",
+          "icon": "Redis"
+        }
       ]
     },
     {
       "category": "Frontend Architecture",
       "path": "~/modules/ui-layer",
       "items": [
-        { "name": "React", "version": "v18.2", "status": "stable", "icon": "React" },
-        { "name": "Next.js", "version": "v14.1", "status": "core", "icon": "Nextjs" },
-        { "name": "TypeScript", "version": "v5.3", "status": "strict", "icon": "TypeScript" },
-        { "name": "Tailwind", "version": "v3.4", "status": "JIT", "icon": "Tailwind" },
-        { "name": "Framer", "version": "v11.0", "status": "smooth", "icon": "Framer" }
+        {
+          "name": "React",
+          "version": "v18.2",
+          "status": "view",
+          "icon": "React"
+        },
+        {
+          "name": "TypeScript",
+          "version": "v5.3",
+          "status": "strict",
+          "icon": "TypeScript"
+        },
+        {
+          "name": "Next.js",
+          "version": "v14",
+          "status": "ssr",
+          "icon": "Nextjs"
+        },
+        {
+          "name": "Tailwind",
+          "version": "v3.4",
+          "status": "styling",
+          "icon": "Tailwind"
+        },
+        {
+          "name": "Framer",
+          "version": "Motion",
+          "status": "smooth",
+          "icon": "Framer"
+        }
       ]
     },
     {
-      "category": "Backend Systems",
-      "path": "~/modules/server-side",
-      "items": [
-        { "name": "Node.js", "version": "v20 LTS", "status": "active", "icon": "Nodejs" },
-        { "name": "FastAPI", "version": "v0.109", "status": "fast", "icon": "FastAPI" },
-        { "name": "PostgreSQL", "version": "v16.1", "status": "sharded", "icon": "PostgreSQL" },
-        { "name": "Redis", "version": "v7.2", "status": "cached", "icon": "Redis" },
-        { "name": "WebSocket", "version": "wss://", "status": "live", "icon": "Socket" }
-      ]
-    },
-    {
-      "category": "DevOps & Cloud",
+      "category": "Cloud & DevOps",
       "path": "~/modules/infrastructure",
       "items": [
-        { "name": "Docker", "version": "v25.0", "status": "containerized", "icon": "Docker" },
-        { "name": "Kubernetes", "version": "v1.29", "status": "orchestrated", "icon": "Kubernetes" },
-        { "name": "AWS", "version": "us-east-1", "status": "deployed", "icon": "AWS" },
-        { "name": "GitHub Actions", "version": "CI/CD", "status": "automated", "icon": "GitHub" },
-        { "name": "Terraform", "version": "v1.7", "status": "iac", "icon": "Terraform" }
+        {
+          "name": "Azure",
+          "version": "Cloud",
+          "status": "deployed",
+          "icon": "Azure"
+        },
+        {
+          "name": "Docker",
+          "version": "Compose",
+          "status": "containerized",
+          "icon": "Docker"
+        },
+        {
+          "name": "Cloudflare",
+          "version": "Zero Trust",
+          "status": "network",
+          "icon": "Cloudflare"
+        },
+        {
+          "name": "Linux",
+          "version": "Ubuntu",
+          "status": "host",
+          "icon": "Linux"
+        },
+        {
+          "name": "CI/CD",
+          "version": "Pipeline",
+          "status": "automated",
+          "icon": "GitHub"
+        }
       ]
     }
   ],
   "certifications": [
     {
-      "id": "LIC-AWS-SA-001",
-      "name": "AWS Solutions Architect",
-      "provider": "Amazon Web Services",
-      "date": "2023-11",
-      "validUntil": "2026-11",
-      "logo": "https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg",
-      "color": "from-amber-500/20 to-orange-600/20",
-      "iconColor": "text-amber-500",
-      "link": "https://aws.amazon.com/certification/certified-solutions-architect-associate/"
-    },
-    {
-      "id": "LIC-CKA-8842",
-      "name": "Certified Kubernetes Admin",
-      "provider": "Linux Foundation",
-      "date": "2023-05",
-      "validUntil": "2026-05",
-      "logo": "https://upload.wikimedia.org/wikipedia/commons/3/39/Kubernetes_logo_without_workmark.svg",
-      "color": "from-blue-500/20 to-cyan-600/20",
-      "iconColor": "text-blue-500",
-      "link": "https://training.linuxfoundation.org/certification/certified-kubernetes-administrator-cka/"
-    },
-    {
-      "id": "LIC-TENSOR-99",
-      "name": "TensorFlow Developer",
-      "provider": "Google",
-      "date": "2022-08",
+      "id": "UC-1e3dee61-0608-4b84-bcbb-bc318bf0f695",
+      "name": "Spring Boot & AI eCommerce Masterclass",
+      "provider": "Udemy",
+      "date": "2025-06",
       "validUntil": "Permanent",
-      "logo": "https://upload.wikimedia.org/wikipedia/commons/2/2d/Tensorflow_logo.svg",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/e/e3/Udemy_logo.svg",
+      "color": "from-green-500/20 to-emerald-600/20",
+      "iconColor": "text-green-600",
+      "link": "https://www.udemy.com/certificate/UC-1e3dee61-0608-4b84-bcbb-bc318bf0f695/"
+    },
+    {
+      "id": "UC-04de2a11-2194-46f4-b4da-3dad23b0953e",
+      "name": "Linux Training Course",
+      "provider": "Udemy",
+      "date": "2025-06",
+      "validUntil": "Permanent",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/e/e3/Udemy_logo.svg",
+      "color": "from-gray-500/20 to-slate-600/20",
+      "iconColor": "text-gray-600",
+      "link": "https://www.udemy.com/certificate/UC-04de2a11-2194-46f4-b4da-3dad23b0953e/"
+    },
+    {
+      "id": "GitHubFoundations_Badge20250526-28-tmqddd",
+      "name": "GitHub Foundations",
+      "provider": "GitHub",
+      "date": "2025-05",
+      "validUntil": "Permanent",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/c/c2/GitHub_Invertocat_Logo.svg",
+      "color": "from-zinc-500/20 to-neutral-600/20",
+      "iconColor": "text-zinc-800",
+      "link": "#"
+    },
+    {
+      "id": "UC-98869684-47ac-480f-9dc0-15fbbd5c0b0b",
+      "name": "Master Microservices with Spring Boot",
+      "provider": "Udemy",
+      "date": "2025-05",
+      "validUntil": "Permanent",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/e/e3/Udemy_logo.svg",
+      "color": "from-green-500/20 to-teal-600/20",
+      "iconColor": "text-teal-600",
+      "link": "https://www.udemy.com/certificate/UC-98869684-47ac-480f-9dc0-15fbbd5c0b0b/"
+    },
+    {
+      "id": "UC-0c74d817-ed37-4526-933e-94420326edcd",
+      "name": "Java Programming for Beginners",
+      "provider": "Udemy",
+      "date": "2025-01",
+      "validUntil": "Permanent",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/e/e3/Udemy_logo.svg",
       "color": "from-orange-500/20 to-red-600/20",
-      "iconColor": "text-orange-500",
-      "link": "https://www.tensorflow.org/certificate"
+      "iconColor": "text-orange-600",
+      "link": "https://www.udemy.com/certificate/UC-0c74d817-ed37-4526-933e-94420326edcd/"
     },
     {
-      "id": "LIC-AZ-900",
-      "name": "Azure Fundamentals",
-      "provider": "Microsoft",
-      "date": "2023-01",
+      "id": "UC-357f2e84-d9ee-4223-854e-b4ca45389fe4",
+      "name": "Understanding TypeScript",
+      "provider": "Udemy",
+      "date": "2025-01",
       "validUntil": "Permanent",
-      "logo": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Microsoft_Azure.svg",
-      "color": "from-blue-600/20 to-indigo-600/20",
-      "iconColor": "text-blue-500",
-      "link": "https://learn.microsoft.com/en-us/credentials/certifications/azure-fundamentals/"
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/e/e3/Udemy_logo.svg",
+      "color": "from-blue-500/20 to-sky-600/20",
+      "iconColor": "text-blue-600",
+      "link": "https://www.udemy.com/certificate/UC-357f2e84-d9ee-4223-854e-b4ca45389fe4/"
     },
     {
-      "id": "LIC-META-FE",
-      "name": "Meta Front-End Dev",
-      "provider": "Meta",
-      "date": "2022-12",
+      "id": "3ee2dbfc-2b53-4fe3-9d67-69fcf4c9cd2f",
+      "name": "CS50X: Computer Science",
+      "provider": "Harvard University",
+      "date": "2024-12",
       "validUntil": "Permanent",
-      "logo": "https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg",
-      "color": "from-sky-500/20 to-blue-600/20",
-      "iconColor": "text-sky-500",
-      "link": "https://www.coursera.org/professional-certificates/meta-front-end-developer"
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Harvard_shield_wreath.svg/1200px-Harvard_shield_wreath.svg.png",
+      "color": "from-red-600/20 to-rose-700/20",
+      "iconColor": "text-red-700",
+      "link": "https://cs50.harvard.edu/certificates/3ee2dbfc-2b53-4fe3-9d67-69fcf4c9cd2f"
     },
     {
-      "id": "LIC-JAVA-SE",
-      "name": "Oracle Java SE 11",
-      "provider": "Oracle",
-      "date": "2021-06",
+      "id": "UC-0e1908a5-2a14-450c-9c63-9ce7c63a224c",
+      "name": "React - The Complete Guide",
+      "provider": "Udemy",
+      "date": "2024-12",
       "validUntil": "Permanent",
-      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Oracle_Logo.svg/512px-Oracle_Logo.svg.png",
-      "color": "from-red-500/20 to-rose-600/20",
-      "iconColor": "text-red-500",
-      "link": "https://education.oracle.com/java/java-se-11-developer/trackp_OCPJSE11"
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/e/e3/Udemy_logo.svg",
+      "color": "from-cyan-500/20 to-blue-600/20",
+      "iconColor": "text-cyan-500",
+      "link": "https://www.udemy.com/certificate/UC-0e1908a5-2a14-450c-9c63-9ce7c63a224c/"
     },
     {
-      "id": "LIC-GCP-ACE",
-      "name": "Google Cloud Engineer",
-      "provider": "Google Cloud",
-      "date": "2023-03",
-      "validUntil": "2026-03",
-      "logo": "https://upload.wikimedia.org/wikipedia/commons/5/51/Google_Cloud_logo.svg",
-      "color": "from-yellow-500/20 to-amber-600/20",
-      "iconColor": "text-yellow-500",
-      "link": "https://cloud.google.com/learn/certification/cloud-engineer"
-    },
-    {
-      "id": "LIC-TERRA-001",
-      "name": "Terraform Associate",
-      "provider": "HashiCorp",
-      "date": "2023-09",
-      "validUntil": "2025-09",
-      "logo": "https://upload.wikimedia.org/wikipedia/commons/0/04/Terraform_Logo.svg",
-      "color": "from-purple-500/20 to-violet-600/20",
-      "iconColor": "text-purple-500",
-      "link": "https://www.hashicorp.com/certification/terraform-associate"
-    },
-    {
-      "id": "LIC-SEC-PLUS",
-      "name": "CompTIA Security+",
-      "provider": "CompTIA",
-      "date": "2022-02",
-      "validUntil": "2025-02",
-      "logo": "https://upload.wikimedia.org/wikipedia/commons/a/a2/CompTIA_logo.svg",
-      "color": "from-rose-500/20 to-red-600/20",
-      "iconColor": "text-rose-500",
-      "link": "https://www.comptia.org/certifications/security"
+      "id": "UC-ab81d013-18ce-482e-a54a-ebb7554cdbe1",
+      "name": "The Web Developer Bootcamp",
+      "provider": "Udemy",
+      "date": "2024-09",
+      "validUntil": "Permanent",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/e/e3/Udemy_logo.svg",
+      "color": "from-purple-500/20 to-indigo-600/20",
+      "iconColor": "text-purple-600",
+      "link": "https://www.udemy.com/certificate/UC-ab81d013-18ce-482e-a54a-ebb7554cdbe1/"
     }
   ],
   "coursework": [
-    { "id": "CS-188", "name": "Artificial Intelligence", "provider": "UC Berkeley", "date": "2022", "grade": "A+" },
-    { "id": "CS-162", "name": "Operating Systems", "provider": "UC Berkeley", "date": "2022", "grade": "A" },
-    { "id": "CS-170", "name": "Efficient Algorithms", "provider": "UC Berkeley", "date": "2021", "grade": "A-" },
-    { "id": "CS-000", "name": "Distributed Systems", "provider": "MIT OpenCourseWare", "date": "2023", "grade": "Self-Paced" },
-    { "id": "MATH-55", "name": "Discrete Structures", "provider": "Harvard Univ", "date": "2021", "grade": "Pass" },
-    { "id": "DL-SPECIAL", "name": "Deep Learning Spec.", "provider": "Coursera / DeepLearning.AI", "date": "2023", "grade": "Completed" },
-    { "id": "SYS-ARC", "name": "System Architecture", "provider": "Udacity", "date": "2023", "grade": "N/A" },
-    { "id": "SEC-101", "name": "Network Security", "provider": "Stanford Online", "date": "2022", "grade": "A" }
+    {
+      "id": "MIT-6.S081",
+      "name": "Operating System Engineering (xv6)",
+      "provider": "MIT OpenCourseWare",
+      "date": "2025",
+      "grade": "Completed",
+      "type": "OS"
+    },
+    {
+      "id": "EECS-3221",
+      "name": "Operating System Fundamentals",
+      "provider": "York University",
+      "date": "2025",
+      "grade": "A",
+      "type": "OS"
+    },
+    {
+      "id": "CS-61C",
+      "name": "Great Ideas in Computer Architecture",
+      "provider": "UC Berkeley (Open)",
+      "date": "2025",
+      "grade": "Completed",
+      "type": "Architecture"
+    },
+    {
+      "id": "Nand2Tetris",
+      "name": "Build a Modern Computer from First Principles",
+      "provider": "Coursera",
+      "date": "2025",
+      "grade": "Completed",
+      "type": "Architecture"
+    },
+    {
+      "id": "EECS-2021",
+      "name": "Computer Organization",
+      "provider": "York University",
+      "date": "2025",
+      "grade": "A",
+      "type": "Architecture"
+    },
+    {
+      "id": "CS-168",
+      "name": "Introduction to the Internet Architecture",
+      "provider": "UC Berkeley (Open)",
+      "date": "2025",
+      "grade": "Completed",
+      "type": "Networking"
+    },
+    {
+      "id": "CS-146S",
+      "name": "The Modern Software Developer",
+      "provider": "Stanford University",
+      "date": "2026",
+      "grade": "Completed",
+      "type": "AI"
+    },
+    {
+      "id": "EECS-1012",
+      "name": "Net-centric Introduction to Computing",
+      "provider": "York University",
+      "date": "2024",
+      "grade": "A+",
+      "type": "Fundamentals"
+    },
+    {
+      "id": "CS-186",
+      "name": "Introduction to Database Systems",
+      "provider": "UC Berkeley (Open)",
+      "date": "2025",
+      "grade": "Completed",
+      "type": "Database"
+    },
+    {
+      "id": "EECS-3421",
+      "name": "Introduction to Database Systems",
+      "provider": "York University",
+      "date": "2025",
+      "grade": "A",
+      "type": "Database"
+    },
+    {
+      "id": "CS-61B",
+      "name": "Data Structures",
+      "provider": "UC Berkeley (Open)",
+      "date": "2024",
+      "grade": "Completed",
+      "type": "Data Struct"
+    },
+    {
+      "id": "EECS-2101",
+      "name": "Fundamentals of Data Structures",
+      "provider": "York University",
+      "date": "2025",
+      "grade": "A",
+      "type": "Data Struct"
+    },
+    {
+      "id": "EECS-3101",
+      "name": "Design and Analysis of Algorithms",
+      "provider": "York University",
+      "date": "2025",
+      "grade": "In Progress",
+      "type": "Algorithms"
+    },
+    {
+      "id": "EECS-2030",
+      "name": "Advanced Object Oriented Programming",
+      "provider": "York University",
+      "date": "2025",
+      "grade": "A+",
+      "type": "OOP"
+    },
+    {
+      "id": "CS-61A",
+      "name": "Structure and Interpretation of Computer Programs",
+      "provider": "UC Berkeley (Open)",
+      "date": "2024",
+      "grade": "Completed",
+      "type": "Fundamentals"
+    },
+    {
+      "id": "EECS-3311",
+      "name": "Software Design",
+      "provider": "York University",
+      "date": "2025",
+      "grade": "In Progress",
+      "type": "Design"
+    },
+    {
+      "id": "EECS-1022",
+      "name": "Intro to Object Oriented Programming",
+      "provider": "York University",
+      "date": "2024",
+      "grade": "A+",
+      "type": "OOP"
+    },
+    {
+      "id": "EECS-1019",
+      "name": "Discrete Math for Computer Science",
+      "provider": "York University",
+      "date": "2024",
+      "grade": "A",
+      "type": "Math"
+    },
+    {
+      "id": "MATH-1090",
+      "name": "Intro to Logic for Computer Science",
+      "provider": "York University",
+      "date": "2024",
+      "grade": "A",
+      "type": "Math"
+    },
+    {
+      "id": "MATH-1013/14",
+      "name": "Applied Calculus I & II",
+      "provider": "York University",
+      "date": "2024",
+      "grade": "A",
+      "type": "Math"
+    }
   ]
 }

@@ -10,6 +10,8 @@ import { MatrixRain } from "../components/effects/MatrixRain";
 import HyperTunnel from "../components/ui/HyperTunnel";
 import PortfolioSections from "../components/portfolio/PortfolioSections";
 import ContactModal from "../components/terminal/ContactModal";
+import { ScrollProgress } from "../components/ui/ScrollProgress";
+import { smoothScrollTo } from "@/lib/utils/scroll";
 
 export default function Home() {
   const [isContactOpen, setIsContactOpen] = useState(false);
@@ -48,6 +50,9 @@ export default function Home() {
         <HyperTunnel />
       </div>
 
+      {/* === Scroll Progress Indicator === */}
+      <ScrollProgress containerRef={containerRef} />
+
       {/* === Desktop Navbar (仅桌面端) === */}
       {/* === Navbar === */}
       <NavBar about={profile.about} />
@@ -56,7 +61,7 @@ export default function Home() {
       <main
         id="main-scroll-container"
         ref={containerRef}
-        className="relative w-full z-10 h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth"
+        className="relative w-full z-10 h-screen overflow-y-scroll snap-y snap-proximity scroll-smooth"
       >
         {/* Hero Section */}
         <motion.div
@@ -85,20 +90,19 @@ export default function Home() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, duration: 1 }}
-            // 修改 3: 调整 bottom 位置，让它刚好处于剩下的 10% 空间里
-            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer z-10"
+            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer z-10 group"
             onClick={() => {
-              const nextSection = document.getElementById('about');
-              if (nextSection) {
-                nextSection.scrollIntoView({ behavior: 'smooth' });
-              }
+              smoothScrollTo('#about', { duration: 1200, easing: 'ios', offset: 60 });
             }}
           >
-            <div className="relative group">
-              {/* 加了一点 hover 效果让它更明显 */}
-              <div className="absolute inset-0 bg-primary blur-xl opacity-20 group-hover:opacity-40 transition-opacity animate-pulse rounded-full" />
-              <ChevronsDown className="w-8 h-8 text-primary animate-bounce relative z-10 drop-shadow-[0_0_10px_rgba(var(--primary),0.8)]" />
-            </div>
+            <motion.div
+              className="relative"
+              animate={{ y: [0, 8, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <div className="absolute inset-0 bg-primary blur-xl opacity-20 group-hover:opacity-40 transition-opacity rounded-full" />
+              <ChevronsDown className="w-8 h-8 text-primary drop-shadow-[0_0_10px_rgba(var(--primary),0.8)]" />
+            </motion.div>
           </motion.div>
 
         </motion.div>

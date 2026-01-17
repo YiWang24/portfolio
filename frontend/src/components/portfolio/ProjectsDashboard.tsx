@@ -168,7 +168,7 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                                             <Button
                                                 variant="default"
                                                 className="bg-teal-600 hover:bg-teal-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-black font-bold font-mono tracking-wide cursor-pointer"
-                                                onClick={() => window.open(featuredProject.links?.demo, '_blank')}
+                                                onClick={() => window.open(featuredProject.links?.website, '_blank')}
                                             >
                                                 <Globe className="w-4 h-4 mr-2" />
                                                 LAUNCH_

@@ -29,6 +29,7 @@ export interface Coursework {
   provider: string;
   date: string;
   grade: string;
+  type: string;
 }
 
 export type ProfileData = {
@@ -74,6 +75,7 @@ export type ProfileData = {
     tech: string[];
     links?: {
       demo?: string;
+      website?: string;
       repo?: string;
     };
     metrics?: {

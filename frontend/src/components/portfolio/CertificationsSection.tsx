@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldCheck, ChevronDown, ScanBarcode, Terminal } from "lucide-react";
+import { ShieldCheck, ChevronDown, ScanBarcode, Terminal, ArrowUpDown } from "lucide-react";
 import { SectionBadge } from "./SectionBadge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -13,14 +13,34 @@ interface CertificationsSectionProps {
     coursework: ProfileData["coursework"];
 }
 
+type SortKey = keyof ProfileData["coursework"][0];
+
 export function CertificationsSection({ certifications, coursework }: CertificationsSectionProps) {
     const [isExpanded, setIsExpanded] = useState(false);
+    const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
+        key: 'date',
+        direction: 'desc'
+    });
 
     // Guard clause if data is missing
     if (!certifications || !coursework) return null;
 
-    // Sort coursework by date descending (Newest first)
-    const sortedCoursework = [...coursework].sort((a, b) => b.date.localeCompare(a.date));
+    // Sorting Logic
+    const handleSort = (key: SortKey) => {
+        setSortConfig((current) => ({
+            key,
+            direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+        }));
+    };
+
+    const sortedCoursework = [...coursework].sort((a, b) => {
+        const aValue = a[sortConfig.key] || "";
+        const bValue = b[sortConfig.key] || "";
+
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+    });
 
     const displayedCourses = isExpanded ? sortedCoursework : sortedCoursework.slice(0, 5);
 
@@ -143,39 +163,61 @@ export function CertificationsSection({ certifications, coursework }: Certificat
                     </div>
 
                     {/* Table Header Row */}
-                    <div className="grid grid-cols-12 px-4 py-3 border-b border-slate-200 dark:border-white/5 text-xs font-mono text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider">
+                    <div className="grid grid-cols-12 px-4 py-3 border-b border-slate-200 dark:border-white/5 text-xs font-mono text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider items-center">
                         <div className="col-span-2">ID</div>
-                        <div className="col-span-6 md:col-span-5">Module Name</div>
-                        <div className="col-span-3 hidden md:block">Provider</div>
-                        <div className="col-span-4 md:col-span-2 text-right">Date/Grade</div>
+                        <div className="col-span-6 md:col-span-4">Module Name</div>
+
+                        {/* Provider Header with Sort */}
+                        <div className="col-span-2 hidden md:flex items-center gap-1 cursor-pointer hover:text-teal-500 transition-colors" onClick={() => handleSort('provider')}>
+                            Provider
+                            <ArrowUpDown className={cn("w-3 h-3", sortConfig.key === 'provider' ? "opacity-100" : "opacity-30")} />
+                        </div>
+
+                        {/* Type Header with Sort */}
+                        <div className="col-span-2 hidden md:flex items-center gap-1 cursor-pointer hover:text-teal-500 transition-colors" onClick={() => handleSort('type')}>
+                            Type
+                            <ArrowUpDown className={cn("w-3 h-3", sortConfig.key === 'type' ? "opacity-100" : "opacity-30")} />
+                        </div>
+
+                        {/* Date Header with Sort */}
+                        <div className="col-span-4 md:col-span-2 flex items-center justify-end gap-1 cursor-pointer hover:text-teal-500 transition-colors" onClick={() => handleSort('date')}>
+                            Date/Grade
+                            <ArrowUpDown className={cn("w-3 h-3", sortConfig.key === 'date' ? "opacity-100" : "opacity-30")} />
+                        </div>
                     </div>
 
                     {/* Table Rows */}
                     <div className="relative">
-                        <AnimatePresence>
+                        <AnimatePresence mode="popLayout">
                             {displayedCourses.map((course, index) => (
                                 <motion.div
                                     key={course.id}
+                                    layout
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    className="grid grid-cols-12 px-4 py-3 border-b border-slate-200 dark:border-border hover:bg-slate-50 dark:hover:bg-muted/50 transition-colors text-sm font-mono items-center group"
+                                    transition={{ duration: 0.2 }}
+                                    className="grid grid-cols-12 px-4 py-3 border-b border-slate-200 dark:border-border hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-sm font-mono items-center group"
                                 >
-                                    <div className="col-span-2 text-teal-600 dark:text-emerald-500/80 group-hover:text-teal-700 dark:group-hover:text-emerald-400">
+                                    <div className="col-span-2 text-teal-600 dark:text-cyan-400 group-hover:text-teal-700 text-xs md:text-sm">
                                         {course.id}
                                     </div>
-                                    <div className="col-span-6 md:col-span-5 text-slate-700 dark:text-muted-foreground font-semibold group-hover:text-slate-900 dark:group-hover:text-foreground truncate pr-2">
+                                    <div className="col-span-6 md:col-span-4 text-slate-700 dark:text-zinc-100 font-semibold group-hover:text-slate-900 truncate pr-2">
                                         {course.name}
                                     </div>
-                                    <div className="col-span-3 hidden md:block text-slate-500 dark:text-muted-foreground group-hover:text-slate-600 dark:group-hover:text-muted-foreground/80 truncate pr-2">
+                                    <div className="col-span-2 hidden md:block text-slate-500 dark:text-zinc-400 group-hover:text-slate-600 truncate pr-2 text-xs">
                                         {course.provider}
                                     </div>
-                                    <div className="col-span-4 md:col-span-2 text-right text-slate-500 dark:text-muted-foreground group-hover:text-slate-600 dark:group-hover:text-muted-foreground/80">
+                                    <div className="col-span-2 hidden md:block text-slate-500 dark:text-zinc-400 group-hover:text-slate-600 truncate pr-2 text-xs">
+                                        {course.type}
+                                    </div>
+                                    <div className="col-span-4 md:col-span-2 text-right text-slate-500 dark:text-zinc-500 group-hover:text-slate-600">
                                         <span className="mr-2">{course.date}</span>
                                         <span className={cn(
                                             "px-1.5 py-0.5 rounded text-[10px]",
-                                            course.grade.startsWith("A") || course.grade === "Completed" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-500" : "bg-slate-100 dark:bg-muted text-slate-500 dark:text-muted-foreground"
+                                            course.grade.startsWith("A") || course.grade === "Completed"
+                                                ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border dark:border-emerald-500/20"
+                                                : "bg-slate-100 dark:bg-muted text-slate-500 dark:text-muted-foreground"
                                         )}>
                                             {course.grade}
                                         </span>

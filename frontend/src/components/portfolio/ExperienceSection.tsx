@@ -16,7 +16,6 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
         <section className="relative w-full min-h-screen flex items-center justify-center py-20 px-4">
             <div className="w-full max-w-4xl">
                 {/* Section Header */}
-                {/* Section Header */}
                 <div className="flex flex-row items-center justify-between w-full mb-16">
                     {/* Left: Real Badge */}
                     <div className="flex-1 flex justify-end pr-4">

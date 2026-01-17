@@ -7,7 +7,7 @@ export function StatusBar({ isInputFocused }: { isInputFocused: boolean }) {
   const [time, setTime] = useState('');
   const [latency, setLatency] = useState(24);
 
-  // 1. 实时时间
+  // 1. time
   useEffect(() => {
     const timer = setInterval(() => {
       setTime(new Date().toLocaleTimeString('en-US', { hour12: false }));
@@ -15,7 +15,7 @@ export function StatusBar({ isInputFocused }: { isInputFocused: boolean }) {
     return () => clearInterval(timer);
   }, []);
 
-  // 2. 模拟延迟波动 (让界面看起来是活的)
+  // 2. latency
   useEffect(() => {
     const ping = setInterval(() => {
       setLatency(20 + Math.floor(Math.random() * 15));
@@ -27,7 +27,7 @@ export function StatusBar({ isInputFocused }: { isInputFocused: boolean }) {
     <div className="cli-powerline-statusbar">
       {/* --- LEFT SECTION: MODE & GIT --- */}
 
-      {/* 1. VIM MODE: 聚焦时变色 */}
+      {/* 1. VIM MODE */}
       <div className={`
         cli-powerline-mode
         ${isInputFocused ? 'bg-yellow-500' : 'bg-primary'}

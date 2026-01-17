@@ -1,40 +1,40 @@
 /**
- * 统一的消息流状态定义
- * 前后端共享的统一状态规范
+ * unified message stream state definition
+ * front-end and back-end shared unified state specification
  */
 
 /**
- * 消息生命周期状态
+ * message lifecycle state
  */
 export type MessageStatus =
-  | "thinking"      // 正在思考（工具调用、思维链等）
-  | "streaming"     // 正在流式输出内容
-  | "completed"     // 完成
-  | "error";        // 错误
+  | "thinking"      // thinking (tool calls, chain of thought, etc.)
+  | "streaming"     // streaming
+  | "completed"     // completed
+  | "error";        // error
 
 /**
- * SSE流事件类型（后端发送）
+ * SSE stream event type (backend sends)
  */
 export type StreamEventType =
-  | "token"              // 文本内容
-  | "delta"              // 增量文本内容
-  | "function_call"      // 工具调用事件（用于思维链）
-  | "thought"            // 思维日志
-  | "status"             // 阶段状态
-  | "thinking_complete"  // 思考阶段完成
-  | "complete"           // 整体完成
-  | "error";             // 错误
+  | "token"              // token
+  | "delta"              // delta
+  | "function_call"      // function call event (for chain of thought)
+  | "thought"            // thought
+  | "status"             // status
+  | "thinking_complete"  // thinking complete
+  | "complete"           // complete
+  | "error";             // error
 
 /**
- * 子项状态（用于function_call和thought）
+ * sub-item status (for function_call and thought)
  */
 export type ItemStatus =
-  | "running"     // 执行中
-  | "completed"   // 已完成
-  | "failed";     // 失败
+  | "running"     // running
+  | "completed"   // completed
+  | "failed";     // failed
 
 /**
- * 工具调用步骤
+ * function call step
  */
 export type FunctionStep = {
   id: string;
@@ -43,7 +43,7 @@ export type FunctionStep = {
 };
 
 /**
- * 思维日志
+ * thought log
  */
 export type ThoughtLog = {
   id: string;
@@ -52,7 +52,7 @@ export type ThoughtLog = {
 };
 
 /**
- * 终端消息
+ * terminal message
  */
 export type TerminalMessage = {
   id: string;
@@ -64,7 +64,7 @@ export type TerminalMessage = {
 };
 
 /**
- * SSE事件结构
+ * SSE event structure
  */
 export type StreamEvent =
   | { type: "token"; content: string }
@@ -77,7 +77,7 @@ export type StreamEvent =
   | { type: "error"; message: string };
 
 /**
- * 流处理回调
+ * stream processing callback
  */
 export type StreamHandlers = {
   onToken: (token: string) => void;

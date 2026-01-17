@@ -26,7 +26,17 @@ import type { TerminalMessage, MessageStatus, ItemStatus } from "@/types/message
 import { TerminalBio } from "./TerminalBio";
 import { motion, useAnimation } from "framer-motion";
 
-// ... existing imports ...
+export type TerminalConversationRef = {
+  focus: () => void;
+};
+
+type TerminalConversationProps = {
+  sessionId?: string;
+  isMatrixActive: boolean;
+  setMatrixActive: (active: boolean) => void;
+  onOpenContact: () => void;
+  onInputFocusChange?: (focused: boolean) => void;
+};
 
 // ASCII Logo - Agent (centered, no leading spaces)
 const ASCII_LOGO = `

@@ -281,14 +281,16 @@ export function AboutSection({ about, education }: AboutSectionProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.5 }}
               >
-                <motion.button
+                <motion.a
+                  href="/resume.pdf"
+                  download="YiWang_Resume.pdf"
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  className="h-10 px-8 rounded-full bg-transparent border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-400 font-sans text-sm font-medium transition-colors duration-300 flex items-center"
+                  className="h-10 px-8 rounded-full bg-transparent border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-400 font-sans text-sm font-medium transition-colors duration-300 flex items-center cursor-pointer"
                 >
                   <Download className="mr-2 w-4 h-4" />
                   Download Resume
-                </motion.button>
+                </motion.a>
               </motion.div>
 
               {/* Social Links */}

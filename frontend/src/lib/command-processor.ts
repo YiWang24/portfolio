@@ -1,19 +1,19 @@
 import type { TerminalMessage } from "@/types/message";
 
-// 命令上下文
+// command context
 export interface CommandContext {
   userIp?: string;
 }
 
-// 命令动作类型
+// command action type
 export type CommandAction = 'contact-modal' | 'resume-download' | 'clear-screen' | 'matrix-trigger' | null;
 
-// 系统消息（带特殊动作）
+// system message (with special action)
 interface SystemMessageWithAction extends TerminalMessage {
   action?: CommandAction;
 }
 
-// 虚拟文件系统
+// virtual file system
 const FILE_SYSTEM: Record<string, { content: string; type: 'file' | 'folder' }> = {
   'README.md': {
     content: `# Yi Wang
@@ -76,7 +76,7 @@ export const portfolio = {
   }
 };
 
-// 格式化的 ls 输出
+// formatted ls output
 const LIST_OUTPUT = `
 drwxr-xr-x  user  staff   192 Jan 13 10:00 .
 drwxr-xr-x  root  root    320 Jan 13 09:00 ..
@@ -87,7 +87,7 @@ drwxr-xr-x  user  staff   --- Jan 01 00:00 projects/
 -rw-r--r--  user  staff    64 Jan 15 09:30 .secrets
 `;
 
-// projects 目录内容
+// projects directory content 
 const PROJECTS_LIST = `
 total 24
 drwxr-xr-x  user  staff    64 Jan 15 09:30 .
@@ -97,17 +97,17 @@ drwxr-xr-x  root  root    320 Jan 13 09:00 ..
 `;
 
 /**
- * 处理本地命令
- * @param input 用户输入
- * @param context 命令上下文（包含用户IP等信息）
- * @returns 如果是本地命令，返回系统消息；否则返回 null
+ * process local command
+ * @param input user input
+ * @param context command context (including user IP and other information)
+ * @returns If it is a local command, return the system message; otherwise return null
  */
 export function processLocalCommand(input: string, context?: CommandContext): SystemMessageWithAction | null {
   const parts = input.trim().split(' ');
   const command = parts[0].toLowerCase();
   const args = parts.slice(1);
 
-  // 创建系统消息
+  // create system message
   const createSystemMsg = (content: string, status: 'completed' | 'error' = 'completed', action?: CommandAction): SystemMessageWithAction => ({
     id: `sys-${Date.now()}-${Math.random()}`,
     role: 'system',
@@ -165,11 +165,11 @@ Available Commands:
 
       if (file) {
         if (filename === 'contact.sh') {
-          // 特殊标记，用于触发弹窗
+          // special tag, used to trigger pop-up window
           return createSystemMsg('CONTACT_MODAL_TRIGGER');
         }
         if (filename === 'resume.pdf') {
-          // 特殊标记，用于触发下载
+          // special tag, used to trigger download
           return createSystemMsg('RESUME_DOWNLOAD_TRIGGER');
         }
         return createSystemMsg(file.content);
@@ -190,7 +190,7 @@ Available Commands:
       return createSystemMsg(`cd: ${args[0]}: No such file or directory`, 'error');
 
     case 'whoami':
-      // 使用真实的IP地址，如果有的话
+      // use real IP address, if available
       const displayIp = context?.userIp || `${Math.floor(Math.random() * 255)}.x.x.x`;
       return createSystemMsg(`visitor@${displayIp} (Guest User)\nSession: terminal-session-${Math.floor(Math.random() * 1000)}\nShell: zsh\nTerminal: cli-terminal-v1.0`);
 
@@ -230,20 +230,20 @@ Nice try though! \uD83D\uDE09`);
 Try "cat <file>" to view file contents instead.`);
 
     case 'clear':
-      // 返回特殊标记，让组件知道要清屏
+      // return special tag, let the component know to clear the screen
       return createSystemMsg('CLEAR_SCREEN_TRIGGER', 'completed', 'clear-screen');
 
     case 'matrix':
-      // 触发 Matrix 数字雨特效
+      // trigger Matrix digital rain effect
       return createSystemMsg('>> Entering the Matrix...\n>> (Auto-exit in 5 seconds or press any key to exit)', 'completed', 'matrix-trigger');
 
     default:
-      return null; // 不是本地命令，交给 AI 处理
+      return null; // not a local command, let AI handle it
   }
 }
 
 /**
- * 检查命令是否需要触发特殊操作
+ * check whether the command needs to trigger a special operation
  */
 export function getCommandAction(message: TerminalMessage): CommandAction {
   if (message.role !== 'system') return null;

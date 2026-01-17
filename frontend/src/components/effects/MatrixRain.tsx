@@ -16,27 +16,27 @@ export function MatrixRain() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // 1. 设置全屏
+    // 1. set full screen
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // 2. 字符集 (经典黑客帝国是用片假名+数字)
+    // 2. character set (classic matrix uses katakana + numbers)
     const katakana =
       "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン";
     const latin = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     const alphabet = katakana + latin;
 
-    const fontSize = 14; // 字体大小：14px（介于12px和16px之间）
-    const columns = Math.floor(canvas.width / fontSize); // 计算列数
+    const fontSize = 14; // font size: 14px (between 12px and 16px)
+    const columns = Math.floor(canvas.width / fontSize); // calculate column count
 
-    // 3. 每一列当前下落到的 Y 坐标 (随机初始化，实现全屏效果)
+    // 3. Y coordinate of each column (random initialization to achieve full screen effect)
     const drops: number[] = [];
     for (let x = 0; x < columns; x++) {
-      // 随机初始化位置，让字符雨从屏幕不同高度开始下落
-      drops[x] = Math.floor(Math.random() * -100); // 从屏幕上方不同位置开始
+      // random initialization position, let the character rain start from different heights of the screen
+      drops[x] = Math.floor(Math.random() * -100); // start from different positions above the screen
     }
 
-    // 4. 绘图循环 - 使用 requestAnimationFrame 提高流畅度
+    // 4. drawing loop - use requestAnimationFrame to improve smoothness
     let lastTime = 0;
     const fps = 60;
     const frameInterval = 1000 / fps;
@@ -48,28 +48,28 @@ export function MatrixRain() {
       if (elapsed > frameInterval) {
         lastTime = currentTime - (elapsed % frameInterval);
 
-        // 使用完全透明的清除，让背景保持透明
+        // use completely transparent clearing to keep the background transparent
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 提高不透明度到 0.7，让字符更清晰可见
+        // increase opacity to 0.7 to make characters more clearly visible
         ctx.fillStyle = "rgba(0, 255, 0, 0.7)";
         ctx.font = `${fontSize}px monospace`;
 
         for (let i = 0; i < drops.length; i++) {
-          // 随机取一个字符
+          // random取一个字符
           const text = alphabet.charAt(
             Math.floor(Math.random() * alphabet.length)
           );
 
-          // x = 列号 * 字体宽度, y = 当前下落高度 * 字体高度
+          // x = column number * font width, y = current drop height * font height
           const y = drops[i] * fontSize;
 
-          // 增加字符显示密度：每列绘制多个字符而不是只绘制一个
-          // 从当前位置向上绘制8个字符，形成雨滴效果
+          // increase character display density: draw multiple characters per column instead of just one
+          // draw 8 characters from the current position upwards to form a raindrop effect
           for (let j = 0; j < 8; j++) {
             const dropY = y - j * fontSize;
             if (dropY > 0 && dropY < canvas.height) {
-              // 越靠前的字符越亮，尾部字符逐渐变暗
+              // the earlier the character, the brighter it is, and the tail characters gradually dim
               const brightness = 1 - j * 0.1;
               ctx.fillStyle = `rgba(0, 255, 0, ${0.7 * brightness})`;
               ctx.fillText(
@@ -80,8 +80,8 @@ export function MatrixRain() {
             }
           }
 
-          // 随机重置机制：如果掉出屏幕，或者随机因子触发，重置到顶部
-          // Math.random() > 0.975 让每一列的重置时间不同，造成错落感
+          // random reset mechanism: if it falls out of the screen, or the random factor is triggered, reset to the top
+          // Math.random() > 0.975 makes the reset time of each column different, creating a sense of错落感
           if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
             drops[i] = 0;
           }
@@ -95,13 +95,13 @@ export function MatrixRain() {
 
     let animationFrameId = requestAnimationFrame(draw);
 
-    // 5. 自动退出机制：5秒后自动退出
+    // 5. auto exit mechanism: exit automatically after 5 seconds
     const autoExitTimer = setTimeout(() => {
       cancelAnimationFrame(animationFrameId);
       setMatrixActive(false);
     }, 5000);
 
-    // 6. 手动退出机制：点击或按任意键退出
+    // 6. manual exit mechanism: click or press any key to exit
     const exitMatrix = () => {
       cancelAnimationFrame(animationFrameId);
       setMatrixActive(false);

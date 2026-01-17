@@ -21,14 +21,14 @@ export function useTypewriter(
         : fullText.substring(0, text.length + 1)
       );
 
-      // 动态调整速度
+      // dynamic speed adjustment
       setTypingSpeed(isDeleting ? deleteSpeed : typeSpeed);
 
-      // 1. 打字完成，准备暂停
+      // 1. typing completed, prepare to pause
       if (!isDeleting && text === fullText) {
         setTimeout(() => setIsDeleting(true), pauseDuration);
       }
-      // 2. 删除完成，切换到下一个词
+      // 2. deletion completed, switch to the next word
       else if (isDeleting && text === '') {
         setIsDeleting(false);
         setLoopNum(loopNum + 1);

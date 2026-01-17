@@ -50,9 +50,10 @@ type UseGitHubStatsReturn = {
   error: string | null;
 };
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
-
+/**
+ * Hook to fetch GitHub statistics
+ * Now uses the internal proxy API which forwards requests with Cloudflare headers
+ */
 export function useGitHubStats(): UseGitHubStatsReturn {
   const [data, setData] = useState<GitHubStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,7 +65,8 @@ export function useGitHubStats(): UseGitHubStatsReturn {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`${BACKEND_URL}/api/v1/github/stats`, {
+        // Use internal proxy API route
+        const response = await fetch("/api/github/stats", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

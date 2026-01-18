@@ -99,6 +99,7 @@ jobs:
           ACR_USER: ${{ secrets.ACR_USERNAME }}
           ACR_PASS: ${{ secrets.ACR_PASSWORD }}
           IMG_NAME: ${{ env.IMAGE_NAME }}
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
         with:
           host: ${{ secrets.INTERNAL_HOST }}
           username: ${{ secrets.INTERNAL_USER }}
@@ -107,9 +108,15 @@ jobs:
           proxy_username: ${{ secrets.BASTION_USER }}
           proxy_key: ${{ secrets.SSH_KEY }}
           
-          envs: ACR_SERVER,ACR_USER,ACR_PASS,IMG_NAME
+          envs: ACR_SERVER,ACR_USER,ACR_PASS,IMG_NAME,DOPPLER_TOKEN
           
           script: |
+            # 0. Ensure Doppler CLI is available
+            if ! command -v doppler &> /dev/null; then
+              echo "Doppler CLI not installed on server."
+              exit 1
+            fi
+
             # 1. Stop and remove existing container
             FULL_IMAGE=$(echo $ACR_SERVER/$IMG_NAME:latest | tr '[:upper:]' '[:lower:]')
             
@@ -127,11 +134,16 @@ jobs:
         
 
             # 5. Run new container
-            docker run -d \
+            if ! doppler secrets download --no-file --format env > /dev/null; then
+              echo "Failed to fetch secrets from Doppler."
+              exit 1
+            fi
+
+            doppler secrets download --no-file --format env | docker run -d \
               --name $IMG_NAME \
               --restart unless-stopped \
               -p 8080:8080 \
-              --env-file /home/azureuser/portfolio/.env \
+              --env-file - \
               --memory=700m \
               --memory-reservation=200m \
               --cpus=0.75 \

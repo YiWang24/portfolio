@@ -1,4 +1,6 @@
--- Enable pgvector extension
+-- Enable pgvector extension (skip if not available)
+-- Note: If this fails, install pgvector on your PostgreSQL server:
+-- https://github.com/pgvector/pgvector#installation
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Create vector_store table for RAG knowledge base

@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Uses SseEmitter (Spring MVC) instead of Sinks.Many (WebFlux)
  */
 @RestController
-@RequestMapping("/api/v1/chat")
+@RequestMapping("/chat")
 public class ChatController {
 
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);

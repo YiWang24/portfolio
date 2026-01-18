@@ -9,10 +9,10 @@ import java.time.Instant;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/health")
 public class HealthController {
 
-    @GetMapping("/health")
+    @GetMapping
     public ResponseEntity<Map<String, Object>> health() {
         return ResponseEntity.ok(Map.of(
             "status", "UP",

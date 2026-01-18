@@ -90,7 +90,7 @@ doppler run --project portfolio-api --config dev_personal -- mvn spring-boot:run
 ### 4. Verify Health Check
 
 ```bash
-curl http://localhost:8080/api/v1/api/v1/health
+curl http://localhost:8080/health
 ```
 
 Response:
@@ -113,30 +113,22 @@ Tables are created via `schema.sql` using Spring Boot's initialization feature.
 
 ## API Endpoints
 
-### POST /api/v1/chat/message
+### POST /chat/message
 
 Synchronous message processing
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/chat/message \
+curl -X POST http://localhost:8080/chat/message \
   -H "Content-Type: application/json" \
   -d '{"message": "Introduce yourself"}'
 ```
 
-Response:
-```json
-{
-  "sessionId": "session-1234567890",
-  "response": "Hi, I'm Yi Wang..."
-}
-```
-
-### POST /api/v1/chat/stream
+### POST /chat/stream
 
 Server-Sent Events (SSE) streaming response
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/chat/stream \
+curl -X POST http://localhost:8080/chat/stream \
   -H "Content-Type: application/json" \
   -d '{"sessionId": "session-123", "message": "Show your GitHub projects"}'
 ```
@@ -152,15 +144,15 @@ curl -X POST http://localhost:8080/api/v1/chat/stream \
 | `complete` | Response complete | `{"type":"complete"}` |
 | `error` | Error occurred | `{"type":"error","message":"error details"}` |
 
-### DELETE /api/v1/chat/session/{sessionId}
+### DELETE /chat/session/{sessionId}
 
 Clear session context
 
-### POST /api/rag/sync
+### POST /rag/sync
 
 Sync documents to vector store (requires `RAG_SYNC_KEY` header)
 
-### GET /api/rag/health
+### GET /rag/health
 
 Get RAG service health status
 

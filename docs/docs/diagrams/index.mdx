@@ -1,0 +1,179 @@
+---
+title: Diagrams
+sidebar_position: 3
+---
+
+# Diagrams with Mermaid 📊
+
+Create beautiful diagrams using simple text syntax.
+
+## Flowcharts
+
+### System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Client["🖥️ Client Layer"]
+        Web[Web App]
+        Mobile[Mobile App]
+    end
+    
+    subgraph Gateway["🌐 API Gateway"]
+        Kong[Kong Gateway]
+        Auth[Auth Middleware]
+    end
+    
+    subgraph Services["⚙️ Microservices"]
+        User[User Service]
+        Order[Order Service]
+        Payment[Payment Service]
+        Notification[Notification Service]
+    end
+    
+    subgraph Data["💾 Data Layer"]
+        PostgreSQL[(PostgreSQL)]
+        Redis[(Redis Cache)]
+        Kafka[Kafka]
+    end
+    
+    Web --> Kong
+    Mobile --> Kong
+    Kong --> Auth
+    Auth --> User
+    Auth --> Order
+    Auth --> Payment
+    Order --> Kafka
+    Kafka --> Notification
+    User --> PostgreSQL
+    Order --> PostgreSQL
+    Payment --> PostgreSQL
+    Services --> Redis
+```
+
+## Sequence Diagrams
+
+### Authentication Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as 👤 User
+    participant C as 📱 Client
+    participant G as 🌐 Gateway
+    participant A as 🔐 Auth Service
+    participant D as 🗄️ Database
+
+    U->>C: Enter credentials
+    C->>G: POST /auth/login
+    G->>A: Validate credentials
+    A->>D: Query user
+    D-->>A: User data
+    
+    alt Valid credentials
+        A->>A: Generate JWT
+        A-->>G: Token + Refresh token
+        G-->>C: 200 OK + Tokens
+        C->>C: Store tokens
+        C-->>U: Login successful
+    else Invalid credentials
+        A-->>G: 401 Unauthorized
+        G-->>C: Error response
+        C-->>U: Show error
+    end
+```
+
+## State Diagrams
+
+### Order Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: Order Created
+    Pending --> Processing: Payment Received
+    Pending --> Cancelled: User Cancels
+    Processing --> Shipped: Items Shipped
+    Processing --> Cancelled: Out of Stock
+    Shipped --> Delivered: Customer Receives
+    Shipped --> Returned: Return Requested
+    Delivered --> [*]
+    Returned --> Refunded: Refund Processed
+    Refunded --> [*]
+    Cancelled --> [*]
+```
+
+## Entity Relationship Diagrams
+
+### Database Schema
+
+```mermaid
+erDiagram
+    USER ||--o{ ORDER : places
+    USER {
+        uuid id PK
+        string email UK
+        string password_hash
+        timestamp created_at
+    }
+    ORDER ||--|{ ORDER_ITEM : contains
+    ORDER {
+        uuid id PK
+        uuid user_id FK
+        enum status
+        decimal total
+        timestamp created_at
+    }
+    ORDER_ITEM }|--|| PRODUCT : references
+    ORDER_ITEM {
+        uuid id PK
+        uuid order_id FK
+        uuid product_id FK
+        int quantity
+        decimal price
+    }
+    PRODUCT {
+        uuid id PK
+        string name
+        text description
+        decimal price
+        int stock
+    }
+```
+
+## Git Graphs
+
+### Git Flow
+
+```mermaid
+gitGraph
+    commit id: "Initial commit"
+    branch develop
+    checkout develop
+    commit id: "Setup project"
+    branch feature/auth
+    checkout feature/auth
+    commit id: "Add login"
+    commit id: "Add JWT"
+    checkout develop
+    merge feature/auth
+    branch feature/orders
+    checkout feature/orders
+    commit id: "Add orders API"
+    checkout develop
+    merge feature/orders
+    checkout main
+    merge develop tag: "v1.0.0"
+```
+
+## Pie Charts
+
+### Technology Stack Distribution
+
+```mermaid
+pie showData
+    title Codebase Distribution
+    "TypeScript" : 45
+    "Java" : 30
+    "Python" : 15
+    "Go" : 10
+```
+

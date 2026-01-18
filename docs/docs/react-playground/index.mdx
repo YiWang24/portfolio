@@ -1,0 +1,198 @@
+---
+title: React Playground
+sidebar_position: 2
+---
+
+# React Playground 🎮
+
+Explore interactive React components! Edit the code below and see changes in real-time.
+
+## Basic Components
+
+### Styled Button
+
+```jsx live
+function StyledButton() {
+  const [isHovered, setIsHovered] = React.useState(false);
+  
+  return (
+    <button
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        padding: '12px 24px',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        background: isHovered 
+          ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+          : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+        transition: 'all 0.3s ease',
+        boxShadow: isHovered 
+          ? '0 10px 20px rgba(102, 126, 234, 0.4)'
+          : '0 4px 6px rgba(0, 0, 0, 0.1)'
+      }}
+    >
+      Hover Me!
+    </button>
+  );
+}
+```
+
+### Todo List
+
+```jsx live
+function TodoList() {
+  const [todos, setTodos] = React.useState([
+    { id: 1, text: 'Learn React', done: true },
+    { id: 2, text: 'Build something', done: false }
+  ]);
+  const [input, setInput] = React.useState('');
+
+  const addTodo = () => {
+    if (input.trim()) {
+      setTodos([...todos, { 
+        id: Date.now(), 
+        text: input, 
+        done: false 
+      }]);
+      setInput('');
+    }
+  };
+
+  const toggleTodo = (id) => {
+    setTodos(todos.map(t => 
+      t.id === id ? { ...t, done: !t.done } : t
+    ));
+  };
+
+  return (
+    <div style={{ 
+      padding: '20px', 
+      background: '#1a1a2e', 
+      borderRadius: '12px',
+      color: 'white',
+      maxWidth: '400px'
+    }}>
+      <h3 style={{ margin: '0 0 15px 0' }}>📝 Todo List</h3>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && addTodo()}
+          placeholder="Add new todo..."
+          style={{
+            flex: 1,
+            padding: '10px',
+            borderRadius: '6px',
+            border: 'none',
+            background: '#16213e',
+            color: 'white'
+          }}
+        />
+        <button 
+          onClick={addTodo}
+          style={{
+            padding: '10px 15px',
+            borderRadius: '6px',
+            border: 'none',
+            background: '#00ff9d',
+            color: '#1a1a2e',
+            fontWeight: 'bold',
+            cursor: 'pointer'
+          }}
+        >
+          Add
+        </button>
+      </div>
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        {todos.map(todo => (
+          <li 
+            key={todo.id}
+            onClick={() => toggleTodo(todo.id)}
+            style={{
+              padding: '10px',
+              marginBottom: '8px',
+              background: '#16213e',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              textDecoration: todo.done ? 'line-through' : 'none',
+              opacity: todo.done ? 0.6 : 1
+            }}
+          >
+            {todo.done ? '✅' : '⬜'} {todo.text}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+### Animated Card
+
+```jsx live
+function AnimatedCard() {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
+  return (
+    <div
+      onClick={() => setIsExpanded(!isExpanded)}
+      style={{
+        width: isExpanded ? '300px' : '200px',
+        padding: '20px',
+        background: 'linear-gradient(145deg, #0f0c29, #302b63, #24243e)',
+        borderRadius: '16px',
+        cursor: 'pointer',
+        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+        boxShadow: isExpanded 
+          ? '0 20px 40px rgba(0,0,0,0.4)' 
+          : '0 10px 20px rgba(0,0,0,0.2)',
+        color: 'white'
+      }}
+    >
+      <h4 style={{ margin: '0 0 10px 0' }}>
+        {isExpanded ? '🎉 Expanded!' : '👆 Click me'}
+      </h4>
+      <p style={{ 
+        margin: 0, 
+        fontSize: '14px',
+        opacity: 0.8,
+        maxHeight: isExpanded ? '100px' : '0',
+        overflow: 'hidden',
+        transition: 'all 0.4s ease'
+      }}>
+        This card expands to show more content when clicked. 
+        Try clicking again to collapse it!
+      </p>
+    </div>
+  );
+}
+```
+
+## Tips
+
+:::tip Pro Tip
+You can edit any code block marked with `live` and see the changes instantly. 
+This is powered by `@docusaurus/theme-live-codeblock`.
+:::
+
+:::info Information
+Live code blocks only work with React components. For other languages, use regular code blocks with syntax highlighting.
+:::
+
+:::note Note
+The playground runs in an isolated environment. Some browser APIs may not be available.
+:::
+
+:::warning Performance
+Avoid infinite loops or heavy computations in live code blocks - they will freeze your browser!
+:::
+
+:::danger Security
+Never paste code from untrusted sources into the live playground.
+:::

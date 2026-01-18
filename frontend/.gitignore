@@ -58,3 +58,5 @@ _pagefind/
 !src/app/docs/
 !src/app/docs/**
 .cursor/
+# Sentry Config File
+.env.sentry-build-plugin

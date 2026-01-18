@@ -122,6 +122,24 @@ export default function Navbar({ about }: Props) {
         {/* Right Section: Actions + Status */}
         <div className="flex items-center gap-2 lg:gap-3">
 
+          {/* Separator Line */}
+          <div className="hidden sm:block h-4 w-px bg-slate-200 dark:bg-border" />
+
+          {/* Docs Button - Technical Manual Style */}
+          <motion.a
+            href={process.env.NEXT_PUBLIC_DOCS_URL || '/docs'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg font-mono text-xs uppercase tracking-wider bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 dark:bg-slate-800 dark:text-amber-400 dark:border-slate-700 dark:hover:bg-slate-700 transition-all duration-200 whitespace-nowrap"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <span className="hidden sm:inline">Docs</span>
+          </motion.a>
+
           <ModeToggle />
 
           {/* Resume Button */}

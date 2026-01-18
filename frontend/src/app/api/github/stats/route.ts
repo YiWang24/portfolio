@@ -7,7 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 const CF_ACCESS_CLIENT_ID = process.env.CF_CLIENT_ID;
 const CF_ACCESS_CLIENT_SECRET = process.env.CF_CLIENT_SECRET;
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
+// Prefer NEXT_PUBLIC_API_BASE_URL from Doppler, fallback to BACKEND_URL
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') || process.env.BACKEND_URL || "http://localhost:8080";
 
 export async function GET() {
   try {

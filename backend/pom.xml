@@ -19,6 +19,7 @@
     <properties>
         <java.version>21</java.version>
         <google-adk.version>0.5.0</google-adk.version>
+        <google-genai.version>1.34.0</google-genai.version>
     </properties>
 
     <dependencies>
@@ -33,7 +34,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
-        </dependency>
+    </dependency>
         <dependency>
             <groupId>com.google.adk</groupId>
             <artifactId>google-adk</artifactId>
@@ -64,10 +65,44 @@
             <artifactId>okhttp</artifactId>
             <version>4.12.0</version>
         </dependency>
+
+        <!-- Google GenAI SDK for Java (Gemini API) -->
+        <dependency>
+            <groupId>com.google.genai</groupId>
+            <artifactId>google-genai</artifactId>
+            <version>${google-genai.version}</version>
+        </dependency>
+
+        <!-- PostgreSQL JDBC Driver -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+
+        <!-- pgvector JDBC Support -->
+        <dependency>
+            <groupId>com.pgvector</groupId>
+            <artifactId>pgvector</artifactId>
+            <version>0.1.5</version>
+        </dependency>
+
+        <!-- Spring JDBC for JdbcTemplate -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!-- Sentry SDK for Spring Boot -->
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-spring-boot-starter</artifactId>
+            <version>8.30.0</version>
         </dependency>
     </dependencies>
 
@@ -76,6 +111,30 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- Sentry Maven Plugin -->
+            <plugin>
+                <groupId>io.sentry</groupId>
+                <artifactId>sentry-maven-plugin</artifactId>
+                <version>0.10.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <debugSentryCli>true</debugSentryCli>
+                    <org>yi-wang-2n</org>
+                    <project>java</project>
+                    <authToken>${SENTRY_AUTH_TOKEN}</authToken>
+                    <skip>${sentry.skip:false}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>upload-sentry-sources</id>
+                        <goals>
+                            <goal>uploadSourceBundle</goal>
+                        </goals>
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

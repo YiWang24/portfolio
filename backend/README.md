@@ -1,18 +1,18 @@
 # Portfolio Backend
 
-基于 Google Agent Development Kit (ADK) 的智能 Portfolio 后端，采用星型拓扑的多 Agent 架构。
+An intelligent portfolio backend service built with Google Agent Development Kit (ADK), featuring a multi-agent architecture with star topology.
 
-## 架构
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         Router Agent                                 │
-│                    (意图识别 & 请求分发)                              │
+│                    (Intent Recognition & Routing)                    │
 └──────┬──────────────┬──────────────────┬──────────────┬────────────┘
        │              │                  │              │
 ┌──────▼─────────┐ ┌──▼──────────┐ ┌─────▼─────────┐ ┌─▼────────────┐
 │  Digital Twin  │ │  Tech Lead  │ │   Knowledge   │ │   Contact    │
-│  (简历/经历)    │ │ (GitHub/代码)│ │  (搜索/联网)   │ │  (邮件发送)   │
+│  (Resume/Info) │ │ (GitHub/Code)│ │  (Search/Web) │ │  (Email)     │
 │                │ │             │ │               │ │              │
 │  Tools:        │ │  Tools:     │ │  Tools:       │ │  Tools:      │
 │  - queryInfo   │ │  - getRepo  │ │  - semantic   │ │  - sendEmail │
@@ -20,271 +20,299 @@
 └────────────────┘ └─────────────┘ └───────────────┘ └──────────────┘
 ```
 
-## 技术栈
+## Tech Stack
 
-- Java 21
-- Spring Boot 3.2
-- Google ADK 0.5.0
-- WebFlux (响应式)
-- Tavily API (联网搜索)
+- **Java 21** - Modern Java with enhanced features
+- **Spring Boot 3.2** - Application framework
+- **Google ADK 0.5.0** - Agent Development Kit for AI agents
+- **WebFlux** - Reactive programming support
+- **PostgreSQL + pgvector** - Vector database for semantic search
+- **Doppler** - Environment variable and secrets management
+- **Sentry** - Error tracking and monitoring
 
-## 快速开始
+## Prerequisites
 
-### 1. 配置环境变量
+- Java 21+
+- Maven 3.8+
+- Doppler CLI (for environment variables)
+- PostgreSQL with pgvector extension
 
-编辑 `.env` 文件：
+## Quick Start
 
-```env
+### 1. Install Doppler CLI
+
+```bash
+brew install dopplerhq/cli/doppler
+```
+
+Or visit: https://cli.doppler.com
+
+### 2. Configure Environment Variables
+
+Environment variables are managed via Doppler. Ensure your `dev_personal` config includes:
+
+```bash
 # Google AI API Key (https://aistudio.google.com/app/apikey)
 GOOGLE_API_KEY=your-google-api-key
 
-# GitHub 配置 (https://github.com/settings/tokens)
+# GitHub (https://github.com/settings/tokens)
 GITHUB_TOKEN=your-github-token
 GITHUB_USERNAME=your-github-username
 
-# Tavily API (https://tavily.com - 联网搜索)
+# Tavily API (https://tavily.com - web search)
 TAVILY_API_KEY=your-tavily-api-key
 
-# Resend API (https://resend.com - 邮件发送)
-RESEND_API_KEY=your-resend-api-key
-RESEND_FROM=contact@yourdomain.com
-CONTACT_SUBJECT=New Portfolio Contact Message
+# PostgreSQL
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=portfolio
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your-password
 
-# 联系信息
-CONTACT_EMAIL=your@email.com
-LINKEDIN_URL=https://linkedin.com/in/yourprofile
-CALENDLY_URL=https://calendly.com/yourprofile
+# Sentry (optional)
+SENTRY_DSN=your-sentry-dsn
+SENTRY_AUTH_TOKEN=your-sentry-auth-token
 ```
 
-**重要：** Google ADK 需要环境变量，不是 Java 系统属性。启动时必须将 `.env` 中的变量导出到环境。
-
-### 2. 知识库目录
-
-知识库位于项目根目录的 `content/` 文件夹（与 `backend/` 同级）：
-
-```
-portfolio/
-├── content/                 ← 知识库目录
-│   ├── personal/           # 个人信息
-│   │   ├── resume.md
-│   │   └── contact.md
-│   ├── projects/           # 项目描述
-│   │   ├── mynote.md
-│   │   └── cs61b.md
-│   └── blog/               # 技术博客
-│       ├── microservices.md
-│       ├── vector-search.md
-│       └── ai-llm.md
-└── backend/                 ← 后端代码
-```
-
-**文件监控**：Knowledge Agent 会自动监控 `content/` 目录变化，新增/修改/删除文件时自动更新索引。
-
-### 3. 运行
+### 3. Run the Application
 
 ```bash
-# 编译
-./mvnw compile
-
-# 运行（使用启动脚本加载环境变量）
+# Using the startup script (recommended)
 ./run.sh
 
-# 或者手动导出环境变量后运行
-export GOOGLE_API_KEY=your-key
-export GITHUB_TOKEN=your-token
-export TAVILY_API_KEY=your-key
-./mvnw spring-boot:run
+# Or with Doppler directly
+doppler run --project portfolio-api --config dev_personal -- mvn spring-boot:run
 
-# 运行测试
-./mvnw test
-
-# 运行 ADK Web UI
-./mvnw compile exec:java -Dexec.mainClass="com.google.adk.web.AdkWebServer" \
-  -Dexec.args="--adk.agents.source-directory=src/main/java/com/portfolio/agent"
+# Skip Sentry upload during development
+./run.sh --skip-sentry
 ```
 
-**Docker 部署：**
+### 4. Verify Health Check
 
 ```bash
-# 使用 docker-compose（推荐）
-cd ..  # 回到项目根目录
-docker compose up -d
-
-# 访问
-# 前端: http://localhost:3000
-# 后端: http://localhost:8080
+curl http://localhost:8080/api/v1/api/v1/health
 ```
 
-## API 端点
+Response:
+```json
+{
+  "status": "UP",
+  "timestamp": "2026-01-18T08:56:07.824750Z",
+  "service": "portfolio-backend"
+}
+```
+
+## Database Initialization
+
+The application automatically creates required tables on startup:
+
+- **vector_store** - Stores document chunks with embeddings for RAG
+- **contact_messages** - Stores contact form submissions
+
+Tables are created via `schema.sql` using Spring Boot's initialization feature.
+
+## API Endpoints
 
 ### POST /api/v1/chat/message
 
-同步消息处理
+Synchronous message processing
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/chat/message \
   -H "Content-Type: application/json" \
-  -d '{"message": "介绍一下你自己"}'
+  -d '{"message": "Introduce yourself"}'
 ```
 
-响应：
+Response:
 ```json
 {
   "sessionId": "session-1234567890",
-  "response": "你好，我是Yi Wang..."
+  "response": "Hi, I'm Yi Wang..."
 }
 ```
 
 ### POST /api/v1/chat/stream
 
-SSE 流式响应
+Server-Sent Events (SSE) streaming response
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/chat/stream \
   -H "Content-Type: application/json" \
-  -d '{"sessionId": "session-123", "message": "展示你的GitHub项目"}'
+  -d '{"sessionId": "session-123", "message": "Show your GitHub projects"}'
 ```
 
-**SSE 事件类型：**
+**SSE Event Types:**
 
-| 事件类型 | 说明 | 示例 |
-|---------|------|------|
-| `function` | 工具调用状态 | `{"type":"function","name":"semanticSearch","status":"calling"}` |
-| `function` | 工具调用完成 | `{"type":"function","name":"semanticSearch","status":"complete"}` |
-| `thinking_complete` | 所有工具调用完成，开始输出正文 | `{"type":"thinking_complete"}` |
-| `token` | 正文内容流式输出 | `{"type":"token","content":"你好，我是..."}` |
-| `complete` | 响应完成 | `{"type":"complete"}` |
-| `error` | 错误 | `{"type":"error","message":"错误信息"}` |
-
-**SSE 格式：**
-```
-data:{"type":"function","name":"semanticSearch","status":"calling"}
-
-data:{"type":"function","name":"semanticSearch","status":"complete"}
-
-data:{"type":"thinking_complete"}
-
-data:{"type":"token","content":"你好"}
-
-data:{"type":"complete"}
-```
+| Event Type | Description | Example |
+|------------|-------------|---------|
+| `function` | Tool call status | `{"type":"function","name":"semanticSearch","status":"calling"}` |
+| `function` | Tool call complete | `{"type":"function","name":"semanticSearch","status":"complete"}` |
+| `thinking_complete` | All tools done, starting response | `{"type":"thinking_complete"}` |
+| `token` | Content streaming | `{"type":"token","content":"Hi, I'm..."}` |
+| `complete` | Response complete | `{"type":"complete"}` |
+| `error` | Error occurred | `{"type":"error","message":"error details"}` |
 
 ### DELETE /api/v1/chat/session/{sessionId}
 
-清除会话
+Clear session context
 
-## Agent 说明
+### POST /api/rag/sync
 
-| Agent | 触发场景 | 能力 |
-|-------|---------|------|
-| Router | 所有请求入口 | 意图识别，路由到专家 Agent |
-| Digital Twin | "你是谁"、"工作经历"、"联系方式" | RAG 检索简历，返回联系卡片 |
-| Tech Lead | "GitHub"、"项目"、"代码" | GitHub API 获取统计、搜索项目、读取代码 |
-| Knowledge | "搜索"、"最新"、技术问题 | 向量语义搜索 + Tavily 联网搜索 |
-| Contact | "联系你"、"发消息"、"留言" | 通过 Resend API 发送邮件 |
+Sync documents to vector store (requires `RAG_SYNC_KEY` header)
 
-## Tools 说明
+### GET /api/rag/health
+
+Get RAG service health status
+
+## Agents
+
+| Agent | Trigger Scenarios | Capabilities |
+|-------|------------------|--------------|
+| Router | All requests | Intent recognition, routing to specialist agents |
+| Digital Twin | "Who are you", "experience", "contact" | RAG search on resume, return contact card |
+| Tech Lead | "GitHub", "projects", "code" | GitHub API: stats, search projects, read code |
+| Knowledge | "Search", "latest", tech questions | Vector semantic search + Tavily web search |
+| Contact | "Contact", "send message", "inquiry" | Send email via Resend API |
+
+## Tools
 
 ### GitHubTools
 
-| Tool | 功能 |
-|------|------|
-| `getGitHubStats` | 获取综合 GitHub 统计数据 (stars, commits, streaks, languages, top projects) |
-| `getDeveloperProfile` | 获取开发者统计 (stars, languages, repos) |
-| `listAllRepos` | 列出所有仓库 |
-| `searchProjects` | 按关键词搜索项目 |
-| `getRepoDetails` | 获取仓库详情 (stars, forks, topics) |
-| `getRepoLanguages` | 语言占比分析 |
-| `getRepoCommits` | 最近提交记录 |
-| `listRepoContents` | 浏览仓库文件结构 |
-| `readRepoFile` | 读取代码文件内容 |
-| `getContributionStats` | GitHub 活跃度统计 |
+| Tool | Description |
+|------|-------------|
+| `getGitHubStats` | Comprehensive GitHub stats (stars, commits, streaks, languages, top projects) |
+| `getDeveloperProfile` | Developer statistics (stars, languages, repos) |
+| `listAllRepos` | List all repositories |
+| `searchProjects` | Search projects by keyword |
+| `getRepoDetails` | Repository details (stars, forks, topics) |
+| `getRepoLanguages` | Language breakdown |
+| `getRepoCommits` | Recent commit history |
+| `listRepoContents` | Browse repository file structure |
+| `readRepoFile` | Read code file content |
+| `getContributionStats` | GitHub activity statistics |
 
-### KnowledgeTools
+### UnifiedRAGTools
 
-| Tool | 功能 |
-|------|------|
-| `semanticSearch` | 向量相似度搜索知识库 |
-| `searchByCategory` | 按分类搜索 (personal/projects/blog) |
-| `listKnowledgeBase` | 列出所有已索引文档 |
-| `webSearch` | Tavily API 联网搜索 |
-| `refreshIndex` | 手动刷新知识库索引 |
+| Tool | Description |
+|------|-------------|
+| `semanticSearch` | Vector similarity search on knowledge base |
+| `searchByCategory` | Search by category (personal/projects/blog) |
+| `listDocuments` | List all indexed documents |
+| `getStats` | Vector store statistics |
+| `webSearch` | Tavily API web search |
 
 ### ContactTools
 
-| Tool | 功能 |
-|------|------|
-| `sendContactMessage` | 通过 Resend API 发送联系邮件 |
+| Tool | Description |
+|------|-------------|
+| `sendContactMessage` | Send contact email via Resend API |
 
-### RAGTools
+## Security Measures
 
-| Tool | 功能 |
-|------|------|
-| `queryPersonalInfo` | 检索个人信息/简历 |
-| `queryProjects` | 检索项目描述 |
-| `queryBlogPosts` | 检索技术博客 |
-| `searchAllContent` | 全局搜索 |
+- **File whitelist**: `.md`, `.java`, `.ts`, `.tsx`, `.js`, `.json`, `.py`
+- **File blacklist**: `.env`, files containing `secret`
+- **Large file truncation**: Files over 200 lines are truncated
+- **Anti-injection**: Router Agent includes anti-jailbreak rules
 
-## 安全措施
-
-- **文件白名单**: `.md`, `.java`, `.ts`, `.tsx`, `.js`, `.json`, `.py`
-- **文件黑名单**: `.env`, 包含 `secret` 的文件
-- **大文件截断**: 超过 200 行自动截断
-- **防注入**: Router Agent 包含 anti-jailbreak 规则
-
-## 测试
+## Testing
 
 ```bash
-# 运行所有测试
+# Run all tests
 ./mvnw test
 
-# 工具测试
-./mvnw test -Dtest=ToolsTest
-./mvnw test -Dtest=KnowledgeToolsTest
+# RAG integration tests
+./mvnw test -Dtest=RagIntegrationTest
 
-# Agent 集成测试 (需要 GOOGLE_API_KEY)
+# Agent integration tests (requires GOOGLE_API_KEY)
 ./mvnw test -Dtest=AgentIntegrationTest
-
-# API 测试
-./mvnw test -Dtest=ApiTest
 ```
 
-测试覆盖：
-- ToolsTest: 15 个测试 (GitHub + RAG 工具)
-- KnowledgeToolsTest: 7 个测试 (语义搜索 + 文件监控)
-- AgentIntegrationTest: 30 个测试 (全 Agent 功能)
-- ApiTest: 5 个测试 (REST API)
-
-## 项目结构
+## Project Structure
 
 ```
 src/main/java/com/portfolio/
-├── PortfolioApplication.java
+├── PortfolioApplication.java      # Spring Boot entry point
 ├── config/
-│   └── EnvConfig.java
+│   ├── EnvConfig.java             # Environment configuration
+│   ├── RagConfig.java             # RAG initialization
+│   ├── CorsConfig.java            # CORS configuration
+│   └── CacheConfig.java           # Cache configuration
 ├── agent/
-│   └── PortfolioAgents.java    # Router, DigitalTwin, TechLead, Knowledge
+│   └── PortfolioAgents.java       # Router, DigitalTwin, TechLead agents
 ├── tools/
-│   ├── GitHubTools.java        # GitHub API
-│   ├── RAGTools.java           # 知识库检索
-│   ├── KnowledgeTools.java     # 向量搜索 + 联网
-│   └── UtilityTools.java       # 联系卡片
+│   ├── GitHubTools.java           # GitHub API integration
+│   ├── UnifiedRAGTools.java       # RAG tools
+│   ├── ContactTools.java          # Contact form
+│   └── UtilityTools.java          # Utility functions
 ├── service/
-│   └── AgentService.java
+│   ├── AgentService.java          # ADK agent runner
+│   ├── VectorQueryService.java    # Vector search queries
+│   ├── RagSyncService.java        # Document synchronization
+│   ├── RateLimitService.java      # Rate limiting
+│   └── ContactService.java        # Contact form handling
 └── controller/
-    └── ChatController.java
+    ├── ChatController.java        # Chat API endpoints
+    ├── RagSyncController.java     # RAG sync endpoints
+    ├── ContactController.java     # Contact form endpoint
+    └── HealthController.java      # Health check endpoint
 ```
 
-## 部署
+## Startup Script
 
-```dockerfile
-FROM eclipse-temurin:21-jre
-COPY target/*.jar app.jar
-ENTRYPOINT ["java", "-jar", "/app.jar"]
-```
+The `run.sh` script provides convenient options:
 
 ```bash
-./mvnw package -DskipTests
-docker build -t portfolio-backend .
-docker run -p 8080:8080 --env-file .env portfolio-backend
+# Show help
+./run.sh --help
+
+# Run with default config (dev_personal)
+./run.sh
+
+# Skip Sentry upload
+./run.sh --skip-sentry
+
+# Use different config
+./run.sh --config prd
+
+# Use different project
+./run.sh --project share-api
 ```
+
+## Deployment
+
+```bash
+# Build JAR
+./mvnw package -DskipTests
+
+# Build Docker image
+docker build -t portfolio-backend .
+
+# Run with Doppler
+doppler run --project portfolio-api --config prd -- docker run -p 8080:8080 --env-file - portfolio-backend
+```
+
+## Troubleshooting
+
+### Database connection fails
+
+1. Verify Doppler config has correct PostgreSQL variables
+2. Check database is accessible from your network
+3. Ensure pgvector extension is installed
+
+### Sentry upload fails
+
+Add `--skip-sentry` flag to skip source bundle upload:
+```bash
+./run.sh --skip-sentry
+```
+
+### Port 8080 already in use
+
+Change port via Doppler variable:
+```bash
+SERVER_PORT=8081 ./run.sh
+```
+
+## License
+
+MIT

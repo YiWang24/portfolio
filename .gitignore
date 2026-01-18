@@ -17,4 +17,18 @@ content/
 !frontend/content/
 !frontend/content/**
 .claude/
-.worktrees/
+
+# Dependencies
+node_modules
+
+# Build outputs
+frontend/.next/
+frontend/out/
+docs/build/
+docs/.docusaurus/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

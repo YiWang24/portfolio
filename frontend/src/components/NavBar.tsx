@@ -127,7 +127,7 @@ export default function Navbar({ about }: Props) {
 
           {/* Docs Button - Technical Manual Style */}
           <motion.a
-            href={process.env.NEXT_PUBLIC_DOCS_URL || '/docs'}
+            href={`${process.env.NEXT_PUBLIC_DOCS_URL + '/documentation/'}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg font-mono text-xs uppercase tracking-wider bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 dark:bg-slate-800 dark:text-amber-400 dark:border-slate-700 dark:hover:bg-slate-700 transition-all duration-200 whitespace-nowrap"

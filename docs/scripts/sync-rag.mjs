@@ -29,7 +29,7 @@ const PORTFOLIO_ROOT = path.resolve(ROOT_DIR, '..');
 
 // Configuration
 const CONFIG = {
-  backendUrl: process.env.BACKEND_URL || 'https://api.yiw.me',
+  backendUrl: process.env.BACKEND_URL || 'https://papi.yiw.me',
   syncKey: process.env.RAG_SYNC_KEY,
   cfClientId: process.env.CF_CLIENT_ID,
   cfClientSecret: process.env.CF_CLIENT_SECRET,

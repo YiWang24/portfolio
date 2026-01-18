@@ -12,7 +12,7 @@ const config = {
   url: "https://www.yiw.me",
   // Set the /<baseUrl>/ to <baseUrl>/docs for serving under /docs path
   baseUrl: "/documentation/",
-
+  trailingSlash: true,
   // GitHub pages deployment config
   organizationName: "YiWang24",
   projectName: "portfolio",

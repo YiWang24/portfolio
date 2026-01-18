@@ -10,14 +10,24 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      // 
+      {
+        source: '/documentation',
+        destination: '/documentation/',
+        permanent: true,
+      },
+    ];
+  },
   // Rewrite /docs requests to Docusaurus (dev only)
   async rewrites() {
     const docsUrl =
-      process.env.DOCUSAURUS_URL || "http://localhost:3001";
+      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
     return [
       {
-        source: "/docs/:path*",
-        destination: `${docsUrl}/:path*`,
+        source: "/documentation/:path*",
+        destination: `${docsUrl}/documentation/:path*`,
       },
     ];
   },

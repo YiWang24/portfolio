@@ -94,9 +94,27 @@ const config = {
         items: [
           {
             type: "docSidebar",
-            sidebarId: "tutorialSidebar",
+            sidebarId: "csSidebar",
             position: "left",
-            label: "Documentation",
+            label: "CS Core",
+          },
+          {
+            type: "docSidebar",
+            sidebarId: "aiSidebar",
+            position: "left",
+            label: "AI & Agents",
+          },
+          {
+            type: "docSidebar",
+            sidebarId: "engineeringSidebar",
+            position: "left",
+            label: "Engineering",
+          },
+          {
+            type: "docSidebar",
+            sidebarId: "projectsSidebar",
+            position: "left",
+            label: "Case Studies",
           },
           { to: "/blog", label: "Blog", position: "left" },
           {
@@ -110,36 +128,65 @@ const config = {
         style: "dark",
         links: [
           {
-            title: "Docs",
+            title: "CS Core",
             items: [
               {
-                label: "Introduction",
-                to: "/",
+                label: "Algorithms & DS",
+                to: "/docs/cs/algorithms",
               },
               {
-                label: "React Playground",
-                to: "/react-playground",
+                label: "System Design",
+                to: "/docs/cs/system-design",
               },
               {
-                label: "Diagrams",
-                to: "/diagrams",
+                label: "Database Internals",
+                to: "/docs/cs/database",
               },
               {
-                label: "API Reference",
-                to: "/api",
+                label: "Network & OS",
+                to: "/docs/cs/network-os",
               },
             ],
           },
           {
-            title: "Community",
+            title: "AI & Agents",
             items: [
               {
-                label: "GitHub",
-                href: "https://github.com/YiWang24/portfolio",
+                label: "LLM Fundamentals",
+                to: "/docs/ai/llm-fundamentals",
               },
               {
-                label: "LinkedIn",
-                href: "https://www.linkedin.com/in/yiwang2025/",
+                label: "RAG Systems",
+                to: "/docs/ai/rag",
+              },
+              {
+                label: "Agentic Workflows",
+                to: "/docs/ai/agents",
+              },
+              {
+                label: "Spring AI",
+                to: "/docs/ai/spring-ai",
+              },
+            ],
+          },
+          {
+            title: "Engineering",
+            items: [
+              {
+                label: "Backend (Java)",
+                to: "/docs/engineering/backend",
+              },
+              {
+                label: "Frontend",
+                to: "/docs/engineering/frontend",
+              },
+              {
+                label: "DevOps & Cloud",
+                to: "/docs/engineering/devops",
+              },
+              {
+                label: "Dev Tools",
+                to: "/docs/engineering/tools",
               },
             ],
           },
@@ -147,8 +194,16 @@ const config = {
             title: "More",
             items: [
               {
+                label: "Case Studies",
+                to: "/docs/projects",
+              },
+              {
                 label: "Blog",
                 to: "/blog",
+              },
+              {
+                label: "GitHub",
+                href: "https://github.com/YiWang24/portfolio",
               },
               {
                 label: "Main Site",

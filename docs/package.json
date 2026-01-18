@@ -5,7 +5,10 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start --port 3001 --host localhost",
+    "rag-sync": "node scripts/sync-rag.mjs",
+    "prebuild": "npm run rag-sync",
     "build": "docusaurus build",
+    "build:no-sync": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",

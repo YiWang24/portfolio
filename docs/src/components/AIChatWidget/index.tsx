@@ -25,7 +25,8 @@ interface StreamEvent {
 
 export default function AIChatWidget(): JSX.Element {
     const { siteConfig } = useDocusaurusContext();
-    const BACKEND_URL = (siteConfig.customFields?.apiBaseUrl as string) || 'https://papi.yiw.me/api/v1';
+    // Use frontend API proxy to handle Cloudflare Access authentication
+    const API_PROXY_URL = (siteConfig.customFields?.frontendUrl as string) || 'https://www.yiw.me';
 
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -80,7 +81,7 @@ export default function AIChatWidget(): JSX.Element {
                 message: userMessage.content,
             });
 
-            const response = await fetch(`${BACKEND_URL}/chat/stream?${params}`, {
+            const response = await fetch(`${API_PROXY_URL}/api/chat/stream?${params}`, {
                 method: 'GET',
                 headers: {
                     'Accept': 'text/event-stream',

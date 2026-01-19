@@ -23,7 +23,7 @@ const config = {
 
   // Custom fields accessible via useDocusaurusContext
   customFields: {
-    apiBaseUrl: process.env.API_BASE_URL || 'https://papi.yiw.me/api/v1',
+    frontendUrl: process.env.FRONTEND_URL || 'https://www.yiw.me',
   },
 
   // Even if you don't use internalization, you can use this field to set useful

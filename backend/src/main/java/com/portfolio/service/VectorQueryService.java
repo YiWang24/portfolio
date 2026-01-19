@@ -24,7 +24,7 @@ public class VectorQueryService {
 
     private static final Logger log = LoggerFactory.getLogger(VectorQueryService.class);
     private static final String EMBEDDING_MODEL = "gemini-embedding-001";
-    private static final int EMBEDDING_DIMENSIONS = 768;
+    private static final int EMBEDDING_DIMENSIONS = 3072;
 
     private final Client genaiClient;
     private final JdbcTemplate jdbcTemplate;

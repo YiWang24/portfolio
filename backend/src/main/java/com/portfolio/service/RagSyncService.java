@@ -183,14 +183,20 @@ public class RagSyncService {
                 UNIQUE(path, chunk_index)
             )
             """, EMBEDDING_DIMENSIONS));
-        jdbcTemplate.update("""
-            CREATE INDEX idx_vector_store_embedding
-                ON vector_store
-                USING ivfflat (embedding vector_cosine_ops)
-                WITH (lists = 100)
-            """);
+        // Note: ivfflat index only supports up to 2000 dimensions
+        // For high-dimensional embeddings, we skip the similarity index
+        // PostgreSQL can still do sequential scan for similarity search
+        if (EMBEDDING_DIMENSIONS <= 2000) {
+            jdbcTemplate.update("""
+                CREATE INDEX idx_vector_store_embedding
+                    ON vector_store
+                    USING ivfflat (embedding vector_cosine_ops)
+                    WITH (lists = 100)
+                """);
+        }
         jdbcTemplate.update("CREATE INDEX idx_vector_store_path ON vector_store(path)");
-        log.info("vector_store table recreated successfully");
+        log.info("vector_store table recreated successfully with {} dimensions (index: {})",
+                EMBEDDING_DIMENSIONS, EMBEDDING_DIMENSIONS <= 2000 ? "ivfflat" : "none (high-dim)");
     }
 
     /**

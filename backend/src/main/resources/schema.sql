@@ -7,6 +7,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 DROP TABLE IF EXISTS vector_store CASCADE;
 
 -- Create vector_store table for RAG knowledge base
+-- Note: Using 3072 dimensions for gemini-embedding-001 (mainstream as of 2025)
 CREATE TABLE vector_store (
     id SERIAL PRIMARY KEY,
     path VARCHAR(255) NOT NULL,
@@ -20,14 +21,16 @@ CREATE TABLE vector_store (
     UNIQUE(path, chunk_index)
 );
 
--- Create index for vector similarity search
-CREATE INDEX IF NOT EXISTS idx_vector_store_embedding
-    ON vector_store
-    USING ivfflat (embedding vector_cosine_ops)
-    WITH (lists = 100);
-
 -- Create index for path queries
-CREATE INDEX IF NOT EXISTS idx_vector_store_path ON vector_store(path);
+CREATE INDEX idx_vector_store_path ON vector_store(path);
+
+-- Note: ivfflat index only supports up to 2000 dimensions
+-- For high-dimensional embeddings (3072), we skip the similarity index
+-- PostgreSQL can still perform sequential scan for similarity search
+-- CREATE INDEX idx_vector_store_embedding
+--     ON vector_store
+--     USING ivfflat (embedding vector_cosine_ops)
+--     WITH (lists = 100);
 
 -- Create contact_messages table for storing contact form submissions
 CREATE TABLE IF NOT EXISTS contact_messages (

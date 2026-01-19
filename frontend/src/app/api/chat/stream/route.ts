@@ -13,16 +13,46 @@ const CF_ACCESS_CLIENT_SECRET = process.env.CF_CLIENT_SECRET;
 // Prefer NEXT_PUBLIC_API_BASE_URL from Doppler, fallback to BACKEND_URL
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') || process.env.BACKEND_URL || "http://localhost:8080";
 
+// Allowed origins for CORS
+const ALLOWED_ORIGINS = [
+  'https://docs.yiw.me',
+  'https://www.yiw.me',
+  'http://localhost:3000',
+  'http://localhost:3001',
+];
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Get CORS headers for a given origin
+function getCorsHeaders(origin: string | null) {
+  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Accept",
+  };
+}
+
+// Handle CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get("origin");
+  return new Response(null, {
+    status: 204,
+    headers: getCorsHeaders(origin),
+  });
+}
+
 export async function GET(request: NextRequest) {
+  const origin = request.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+  
   const { searchParams } = new URL(request.url);
   const sessionId = searchParams.get("sessionId") || "";
   const message = searchParams.get("message") || "";
 
   if (!message) {
-    return new Response("Missing message parameter", { status: 400 });
+    return new Response("Missing message parameter", { status: 400, headers: corsHeaders });
   }
 
   // Build backend URL with query params
@@ -49,6 +79,7 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       return new Response(`Backend error: ${response.status}`, {
         status: response.status,
+        headers: corsHeaders,
       });
     }
 
@@ -93,6 +124,7 @@ export async function GET(request: NextRequest) {
 
     return new Response(readableStream, {
       headers: {
+        ...corsHeaders,
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
@@ -100,6 +132,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Chat stream proxy error:", error);
-    return new Response("Internal server error", { status: 500 });
+    return new Response("Internal server error", { status: 500, headers: corsHeaders });
   }
 }

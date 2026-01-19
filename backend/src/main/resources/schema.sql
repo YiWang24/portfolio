@@ -14,7 +14,7 @@ CREATE TABLE vector_store (
     content TEXT NOT NULL,
     start_pos INTEGER,
     end_pos INTEGER,
-    embedding vector(768),
+    embedding vector(3072),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     UNIQUE(path, chunk_index)

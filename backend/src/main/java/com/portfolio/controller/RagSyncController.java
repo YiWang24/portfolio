@@ -167,7 +167,7 @@ public class RagSyncController {
                 "status", "ok",
                 "service", "rag-sync",
                 "model", "embedding-001",
-                "dimensions", 768
+                "dimensions", 3072
         ));
     }
 

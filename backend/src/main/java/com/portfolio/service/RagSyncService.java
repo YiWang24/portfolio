@@ -30,8 +30,8 @@ public class RagSyncService {
 
     private static final int CHUNK_SIZE = 1000;
     private static final int CHUNK_OVERLAP = 100;
-    private static final String EMBEDDING_MODEL = "text-embedding-004";
-    private static final int EMBEDDING_DIMENSIONS = 768;
+    private static final String EMBEDDING_MODEL = "gemini-embedding-001";
+    private static final int EMBEDDING_DIMENSIONS = 3072;
 
     private final Client genaiClient;
     private final JdbcTemplate jdbcTemplate;
@@ -167,9 +167,9 @@ public class RagSyncService {
      */
     @Transactional
     public void recreateTable() {
-        log.info("Recreating vector_store table...");
+        log.info("Recreating vector_store table with {} dimensions...", EMBEDDING_DIMENSIONS);
         jdbcTemplate.update("DROP TABLE IF EXISTS vector_store CASCADE");
-        jdbcTemplate.update("""
+        jdbcTemplate.update(String.format("""
             CREATE TABLE vector_store (
                 id SERIAL PRIMARY KEY,
                 path VARCHAR(255) NOT NULL,
@@ -177,12 +177,12 @@ public class RagSyncService {
                 content TEXT NOT NULL,
                 start_pos INTEGER,
                 end_pos INTEGER,
-                embedding vector(768),
+                embedding vector(%d),
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW(),
                 UNIQUE(path, chunk_index)
             )
-            """);
+            """, EMBEDDING_DIMENSIONS));
         jdbcTemplate.update("""
             CREATE INDEX idx_vector_store_embedding
                 ON vector_store

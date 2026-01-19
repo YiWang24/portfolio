@@ -3,8 +3,11 @@
 -- https://github.com/pgvector/pgvector#installation
 CREATE EXTENSION IF NOT EXISTS vector;
 
+-- Drop existing table to recreate with correct schema
+DROP TABLE IF EXISTS vector_store CASCADE;
+
 -- Create vector_store table for RAG knowledge base
-CREATE TABLE IF NOT EXISTS vector_store (
+CREATE TABLE vector_store (
     id SERIAL PRIMARY KEY,
     path VARCHAR(255) NOT NULL,
     chunk_index INTEGER NOT NULL,

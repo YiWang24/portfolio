@@ -9,9 +9,9 @@ const config = {
   favicon: "img/favicon.svg",
 
   // Set the production url of your site here
-  url: "https://www.yiw.me",
-  // Set the /<baseUrl>/ to <baseUrl>/docs for serving under /docs path
-  baseUrl: "/documentation/",
+  url: "https://docs.yiw.me",
+  // Since docs has its own subdomain, baseUrl is just /
+  baseUrl: "/",
   trailingSlash: true,
   // GitHub pages deployment config
   organizationName: "YiWang24",

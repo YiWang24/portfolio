@@ -10,20 +10,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async redirects() {
-    return [
-      // 
-      {
-        source: '/documentation',
-        destination: '/documentation/',
-        permanent: true,
-      },
-    ];
-  },
-  // Rewrite /docs requests to Docusaurus (dev only)
+  // Rewrite /documentation to Docusaurus in development only
   async rewrites() {
-    const docsUrl =
-      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
+    // Only apply rewrites in development
+    if (process.env.NODE_ENV === 'production') {
+      return [];
+    }
+    
+    // In dev, proxy to local Docusaurus server
+    const docsUrl = "http://localhost:3001";
     return [
       {
         source: "/documentation/:path*",

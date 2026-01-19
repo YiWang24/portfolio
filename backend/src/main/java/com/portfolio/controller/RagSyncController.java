@@ -104,6 +104,59 @@ public class RagSyncController {
     }
 
     /**
+     * POST /api/rag/debug-sync
+     *
+     * Debug endpoint to test sync without storing
+     */
+    @PostMapping("/debug-sync")
+    public ResponseEntity<Map<String, Object>> debugSync(
+            @RequestHeader(value = SYNC_KEY_HEADER, required = false) String syncKey,
+            @RequestBody List<RagSyncService.DocumentChunk> documents) {
+
+        if (!ragSyncService.validateSyncKey(syncKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Invalid or missing sync key"));
+        }
+
+        try {
+            Map<String, Object> debugInfo = ragSyncService.debugSync(documents);
+            return ResponseEntity.ok(debugInfo);
+        } catch (Exception e) {
+            log.error("Debug sync failed", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    /**
+     * POST /api/rag/recreate-table
+     *
+     * Recreate the vector_store table with correct schema.
+     * Requires X-SYNC-KEY header.
+     */
+    @PostMapping("/recreate-table")
+    public ResponseEntity<Map<String, Object>> recreateTable(
+            @RequestHeader(value = SYNC_KEY_HEADER, required = false) String syncKey) {
+
+        if (!ragSyncService.validateSyncKey(syncKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Invalid or missing sync key"));
+        }
+
+        try {
+            ragSyncService.recreateTable();
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Table recreated successfully"
+            ));
+        } catch (Exception e) {
+            log.error("Failed to recreate table", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Failed: " + e.getMessage()));
+        }
+    }
+
+    /**
      * GET /api/rag/health
      *
      * Health check endpoint (no auth required)

@@ -353,7 +353,7 @@ function parseProfileJson() {
  * Send documents to backend
  */
 async function syncToBackend(documents) {
-  const url = `${CONFIG.backendUrl}/api/rag/sync`;
+  const url = `${CONFIG.backendUrl}/api/v1/rag/sync`;
   
   console.log(`\n📤 Sending ${documents.length} documents to ${url}`);
 
@@ -366,6 +366,10 @@ async function syncToBackend(documents) {
   if (CONFIG.cfClientId && CONFIG.cfClientSecret) {
     headers['CF-Access-Client-Id'] = CONFIG.cfClientId;
     headers['CF-Access-Client-Secret'] = CONFIG.cfClientSecret;
+    console.log('   🔐 Using Cloudflare Access authentication');
+  } else {
+    console.log('   ⚠️  No Cloudflare Access credentials configured');
+    console.log('      Set CF_CLIENT_ID and CF_CLIENT_SECRET if backend is behind CF Access');
   }
 
   try {
@@ -374,6 +378,26 @@ async function syncToBackend(documents) {
       headers,
       body: JSON.stringify(documents),
     });
+
+    // Check content type before parsing
+    const contentType = response.headers.get('content-type') || '';
+    
+    if (!contentType.includes('application/json')) {
+      // Response is not JSON - likely an HTML error page
+      const text = await response.text();
+      
+      // Check if it's a Cloudflare Access block
+      if (text.includes('Cloudflare') || text.includes('Access denied') || text.includes('<!DOCTYPE')) {
+        throw new Error(
+          `Cloudflare Access blocked the request.\n` +
+          `   Status: ${response.status}\n` +
+          `   Make sure CF_CLIENT_ID and CF_CLIENT_SECRET are set in Vercel environment variables.\n` +
+          `   You can get a Service Token from: Cloudflare Zero Trust > Access > Service Auth`
+        );
+      }
+      
+      throw new Error(`Backend returned non-JSON response (${response.status}): ${text.substring(0, 200)}`);
+    }
 
     const data = await response.json();
 

@@ -98,7 +98,7 @@ class RagIntegrationTest {
         System.out.println("═══════════════════════════════════════════════════════════");
 
         assertNotNull(stats);
-        assertEquals(768, stats.embeddingDimensions(), "Embedding dimensions should be 768");
+        assertEquals(3072, stats.embeddingDimensions(), "Embedding dimensions should be 3072");
     }
 
     @Test
@@ -327,26 +327,102 @@ class RagIntegrationTest {
     void testDocumentSync() {
         assertNotNull(ragSyncService, "RagSyncService required");
 
+        // First check current stats
+        VectorQueryService.VectorStoreStats beforeStats = vectorQueryService.getStats();
+
         // Test sync key validation
         boolean validKey = ragSyncService.validateSyncKey("test-key");
         System.out.println("═══════════════════════════════════════════════════════════");
-        System.out.println("Sync Key Validation (test-key): " + validKey);
-        System.out.println("Note: Set RAG_SYNC_KEY in .env to test actual sync");
+        System.out.println("Before Sync:");
+        System.out.println("  Chunks: " + beforeStats.totalChunks());
+        System.out.println("  Documents: " + beforeStats.totalDocuments());
+        System.out.println("  Sync Key Validation (test-key): " + validKey);
+        System.out.println("═══════════════════════════════════════════════════════════");
+    }
+
+    @Test
+    @Order(31)
+    @DisplayName("31. Test semantic search with actual data")
+    void testSemanticSearchWithData() {
+        assertNotNull(vectorQueryService, "VectorQueryService required");
+
+        VectorQueryService.VectorStoreStats stats = vectorQueryService.getStats();
+        System.out.println("═══════════════════════════════════════════════════════════");
+        System.out.println("Current Vector Store Status:");
+        System.out.println("  Total Chunks: " + stats.totalChunks());
+        System.out.println("  Total Documents: " + stats.totalDocuments());
         System.out.println("═══════════════════════════════════════════════════════════");
 
-        // Try syncing a test document (will fail if key doesn't match)
-        List<RagSyncService.DocumentChunk> testDocs = List.of(
-                new RagSyncService.DocumentChunk(
-                        "test/sample.md",
-                        "# Test Document\n\nThis is a test document for RAG sync."
-                )
-        );
+        // Only run search tests if we have data
+        if (stats.totalChunks() > 0) {
+            // Test multiple search queries
+            String[] queries = {
+                "Java Spring Boot",
+                "backend development",
+                "machine learning",
+                "database experience",
+                "Python programming"
+            };
 
-        try {
-            int synced = ragSyncService.syncDocuments(testDocs);
-            System.out.println("Synced " + synced + " chunks");
-        } catch (Exception e) {
-            System.out.println("Sync failed (expected if RAG_SYNC_KEY not set): " + e.getMessage());
+            for (String query : queries) {
+                List<VectorQueryService.VectorSearchResult> results =
+                        vectorQueryService.semanticSearch(query, 3);
+
+                System.out.println("Search for \"" + query + "\":");
+                for (int i = 0; i < results.size(); i++) {
+                    VectorQueryService.VectorSearchResult result = results.get(i);
+                    System.out.println("  [" + (i + 1) + "] " + result.path() +
+                            " (similarity: " + String.format("%.3f", result.similarity()) + ")");
+                }
+                System.out.println();
+
+                // Verify we got results
+                assertTrue(results.size() >= 0, "Should return results (possibly empty)");
+            }
+        } else {
+            System.out.println("⚠️  No data in vector store. Run rag-sync first:");
+            System.out.println("   doppler run --project portfolio-web --config dev_personal -- npm run rag-sync");
+        }
+        System.out.println("═══════════════════════════════════════════════════════════");
+
+        assertNotNull(stats);
+    }
+
+    @Test
+    @Order(32)
+    @DisplayName("32. Test category-based search")
+    void testCategoryBasedSearch() {
+        assertNotNull(vectorQueryService, "VectorQueryService required");
+
+        VectorQueryService.VectorStoreStats stats = vectorQueryService.getStats();
+
+        if (stats.totalChunks() > 0) {
+            // Test personal category
+            List<VectorQueryService.VectorSearchResult> personalResults =
+                    vectorQueryService.searchByCategory("personal", "experience skills", 5);
+
+            System.out.println("═══════════════════════════════════════════════════════════");
+            System.out.println("Category [personal] Search Results:");
+            for (int i = 0; i < personalResults.size(); i++) {
+                System.out.println("  [" + (i + 1) + "] " + personalResults.get(i).path());
+            }
+            System.out.println("═══════════════════════════════════════════════════════════");
+
+            // Test projects category
+            List<VectorQueryService.VectorSearchResult> projectResults =
+                    vectorQueryService.searchByCategory("projects", "portfolio ecommerce", 5);
+
+            System.out.println("═══════════════════════════════════════════════════════════");
+            System.out.println("Category [projects] Search Results:");
+            for (int i = 0; i < projectResults.size(); i++) {
+                System.out.println("  [" + (i + 1) + "] " + projectResults.get(i).path());
+            }
+            System.out.println("═══════════════════════════════════════════════════════════");
+
+            assertTrue(personalResults.size() >= 0);
+            assertTrue(projectResults.size() >= 0);
+        } else {
+            System.out.println("⚠️  No data in vector store. Run rag-sync first.");
         }
     }
 

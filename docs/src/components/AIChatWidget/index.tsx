@@ -109,35 +109,47 @@ export default function AIChatWidget(): JSX.Element {
                 const lines = buffer.split('\n');
                 buffer = lines.pop() || '';
 
-                for (const line of lines) {
-                    if (line.startsWith('data:')) {
-                        try {
-                            const data: StreamEvent = JSON.parse(line.slice(5).trim());
+                let currentEvent = 'message';
+                let currentData = '';
 
-                            if (data.type === 'response_delta' && data.delta) {
-                                setMessages(prev => prev.map(msg =>
-                                    msg.id === assistantMessageId
-                                        ? { ...msg, content: msg.content + data.delta }
-                                        : msg
-                                ));
-                            } else if (data.type === 'thinking_delta' && data.delta) {
-                                // Optionally show thinking status
-                            } else if (data.type === 'complete') {
-                                setMessages(prev => prev.map(msg =>
-                                    msg.id === assistantMessageId
-                                        ? { ...msg, isStreaming: false }
-                                        : msg
-                                ));
-                            } else if (data.type === 'error') {
-                                setMessages(prev => prev.map(msg =>
-                                    msg.id === assistantMessageId
-                                        ? { ...msg, content: `Error: ${data.message || 'Unknown error'}`, isStreaming: false }
-                                        : msg
-                                ));
+                for (const line of lines) {
+                    if (line.trim() === '') {
+                        // Empty line = dispatch event
+                        if (currentData) {
+                            try {
+                                const data = JSON.parse(currentData);
+
+                                if (currentEvent === 'response_delta' && data.content) {
+                                    setMessages(prev => prev.map(msg =>
+                                        msg.id === assistantMessageId
+                                            ? { ...msg, content: msg.content + data.content }
+                                            : msg
+                                    ));
+                                } else if (currentEvent === 'thinking_delta' && data.content) {
+                                    // Optionally show thinking status
+                                } else if (currentEvent === 'complete') {
+                                    setMessages(prev => prev.map(msg =>
+                                        msg.id === assistantMessageId
+                                            ? { ...msg, isStreaming: false }
+                                            : msg
+                                    ));
+                                } else if (currentEvent === 'error') {
+                                    setMessages(prev => prev.map(msg =>
+                                        msg.id === assistantMessageId
+                                            ? { ...msg, content: `Error: ${data.message || 'Unknown error'}`, isStreaming: false }
+                                            : msg
+                                    ));
+                                }
+                            } catch (e) {
+                                // Ignore JSON parse errors
                             }
-                        } catch (e) {
-                            // Ignore JSON parse errors for malformed events
                         }
+                        currentEvent = 'message';
+                        currentData = '';
+                    } else if (line.startsWith('event:')) {
+                        currentEvent = line.slice(6).trim();
+                    } else if (line.startsWith('data:')) {
+                        currentData = line.slice(5).trim();
                     }
                 }
             }

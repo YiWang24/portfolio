@@ -1,0 +1,1127 @@
+---
+title: "2 Anatomy of a Prompt"
+description: "Understanding the five core components and proven frameworks for effective prompts"
+published: 2025-01-21
+tags: ["prompt-engineering", "ai", "llm", "prompt-structure"]
+category: "prompt-engineering"
+series: "Prompt Engineering Guide"
+seriesOrder: 1
+draft: false
+---
+
+## Introduction
+
+A well-structured prompt is the foundation of effective AI interactions. Research shows that **structured prompts improve output quality by 3-5x** compared to unstructured queries (Lakera, 2025).
+
+This chapter breaks down the essential components of effective prompts and introduces proven frameworks used by leading AI teams.
+
+## The Five Essential Components
+
+Every effective prompt consists of five core components. Think of them as building blocks that, when combined, create precise, reliable instructions.
+
+### Component 1: Persona
+
+**What it is**: Defines who the AI should be when responding.
+
+**Why it matters**: A clear persona establishes:
+- **Expertise level**: Junior vs. senior perspectives
+- **Domain knowledge**: Specialized background and experience
+- **Communication style**: Formal, casual, technical, or friendly
+- **Decision-making framework**: Risk tolerance, priorities, values
+
+**Best Practices:**
+```xml
+<!-- ✅ Specific and actionable -->
+<persona>
+You are a senior Java architect with 15 years of experience building
+high-throughput e-commerce platforms. You specialize in Spring Boot,
+event-driven architectures, and cloud-native patterns. You favor
+pragmatic solutions over theoretical purity.
+</persona>
+
+<!-- ❌ Too vague -->
+<persona>You are an expert programmer.</persona>
+
+<!-- ❌ Over-specified (unnecessary constraints) -->
+<persona>
+You are a 42-year-old male Java architect who graduated from MIT in 2003,
+lives in San Francisco, enjoys hiking, and has a cat named "Mittens"...
+</persona>
+```
+
+**When to include persona:**
+- Domain-specific tasks (medical, legal, technical)
+- Tone-sensitive applications (customer support, marketing)
+- Multi-step reasoning requiring consistent perspective
+- When default "helpful assistant" is insufficient
+
+**When to skip persona:**
+- Simple, factual queries ("What's the capital of France?")
+- Tasks where objectivity matters more than perspective
+- When brevity is critical and persona doesn't add value
+
+### Component 2: Instruction
+
+**What it is**: The core task definition—what you want the model to do.
+
+**Why it matters**: Clear instructions prevent:
+- Ambiguity about the expected outcome
+- Misinterpretation of scope
+- Incomplete or off-target responses
+
+**Best Practices:**
+
+**1. Use action verbs:**
+```java
+// ❌ Weak
+"Maybe you could look at this code"
+
+// ✅ Direct
+"Review this code for security vulnerabilities"
+```
+
+**2. Break complex tasks into steps:**
+```xml
+<instructions>
+Step 1: Identify the main security vulnerability in the code
+Step 2: Explain why it's exploitable
+Step 3: Propose a specific fix with code example
+Step 4: Suggest how to prevent similar issues in the future
+</instructions>
+```
+
+**3. Specify scope explicitly:**
+```xml
+<!-- ✅ Clear boundaries -->
+`<instruction>`
+Analyze the provided SQL query for performance issues.
+
+Focus on:
+- Index usage
+- Join efficiency
+- Potential N+1 problems
+
+Do NOT suggest:
+- Schema changes
+- Denormalization
+- Architectural alternatives
+`</instruction>`
+```
+
+**4. Use numbered lists for multi-part tasks:**
+```xml
+`<instruction>`
+Complete the following analysis:
+1. Summarize the user's complaint in one sentence
+2. Classify the urgency (low/medium/high)
+3. Suggest three possible resolutions
+4. Recommend the best option with justification
+`</instruction>`
+```
+
+### Component 3: Context
+
+**What it is**: Background information necessary for the model to understand the situation.
+
+**Why it matters**: Context prevents the model from making incorrect assumptions and enables domain-aware responses.
+
+**Types of Context:**
+
+| Context Type | Purpose | Example |
+|--------------|---------|---------|
+| **Environmental** | Physical/system setting | "E-commerce platform processing 10K TPS" |
+| **Domain** | Industry/field knowledge | "Healthcare, HIPAA compliance required" |
+| **Historical** | Previous attempts/data | "Previous solution failed because X" |
+| **Audience** | Who will consume output | "For non-technical executives" |
+| **Constraints** | Known limitations | "Cannot modify existing database schema" |
+
+**Best Practices:**
+
+**1. Provide just enough context:**
+```xml
+<!-- ✅ Sufficient context -->
+<context>
+We're building a payment processing microservice using Spring Boot.
+The system handles 10,000 transactions per second at peak.
+Current issue: Database connection pool exhaustion during high load.
+</context>
+
+<!-- ❌ Information overload -->
+<context>
+We're building a payment processing microservice using Spring Boot 3.2.1
+with Java 21, deployed on Kubernetes across 3 availability zones in
+us-east-1, using PostgreSQL 15 with pgBouncer connection pooling,
+Redis for caching with a 6-hour TTL, and RabbitMQ for message queuing
+with 4 partitions and a replication factor of 2, and we're using Spring
+Cloud Kubernetes for service discovery and Spring Cloud Config for
+configuration management, and the team consists of 5 developers...
+</context>
+```
+
+**2. Put context before instructions:**
+```xml
+<!-- ✅ Correct order -->
+<context>System processes 10K TPS</context>
+`<instruction>`Optimize this database query`</instruction>`
+
+<!-- ❌ Less effective -->
+`<instruction>`Optimize this database query`</instruction>`
+<context>System processes 10K TPS</context>
+```
+
+**3. Use delimiters to separate context:**
+```xml
+<context>
+###
+You are analyzing code for a high-frequency trading platform.
+Requirements: Sub-millisecond latency, zero data loss.
+###
+</context>
+```
+
+### Component 4: Constraints
+
+**What it is**: Rules about what NOT to do (negative prompting) and requirements for what MUST be done.
+
+**Why it matters**: Constraints:
+- Prevent unwanted suggestions or solutions
+- Enforce technical or business requirements
+- Ensure output fits specific formats or limitations
+- Reduce hallucinations by bounding the response space
+
+**Types of Constraints:**
+
+**1. Negative Constraints (What NOT to do):**
+```xml
+`<constraints>`
+- Do NOT suggest architectural changes
+- Do NOT recommend external libraries beyond Spring ecosystem
+- Do NOT exceed 200 lines of code
+- Do NOT include TODO comments or placeholder code
+- Do NOT modify the existing database schema
+`</constraints>`
+```
+
+**2. Positive Constraints (What MUST be done):**
+```xml
+<requirements>
+- MUST use Java 17+ features (records, pattern matching, sealed classes)
+- MUST include comprehensive error handling
+- MUST provide unit tests with >80% coverage
+- MUST follow Spring Boot conventions
+- MUST handle edge cases (null input, empty collections, etc.)
+</requirements>
+```
+
+**3. Format Constraints (How to output):**
+```xml
+<output_constraints>
+- Maximum 3 paragraphs
+- Each paragraph under 50 words
+- Use simple language (8th-grade reading level)
+- No technical jargon
+- Include one concrete example
+</output_constraints>
+```
+
+**4. Quality Constraints:**
+```xml
+<quality_requirements>
+- Accuracy: Must cite sources for factual claims
+- Completeness: Address all aspects of the question
+- Actionability: Provide specific, implementable recommendations
+- Relevance: Stay focused on the stated problem
+</quality_requirements>
+```
+
+**Best Practices:**
+
+**1. Use "MUST" for hard requirements:**
+```xml
+<requirements>
+The solution MUST:
+- Handle concurrent requests safely
+- Return within 500ms for 95th percentile
+- Use no more than 100MB memory
+</requirements>
+```
+
+**2. Use "SHOULD" for preferences:**
+```xml
+<preferences>
+The solution SHOULD:
+- Prefer readability over micro-optimizations
+- Follow Spring Boot conventions where applicable
+- Include comments for complex logic
+</preferences>
+```
+
+**3. Be specific about constraints:**
+```xml
+<!-- ✅ Specific -->
+`<constraints>`
+Response MUST be under 100 words
+MUST include exactly 3 bullet points
+MUST use only simple sentences (one clause each)
+`</constraints>`
+
+<!-- ❌ Vague -->
+`<constraints>`
+Keep it brief and simple
+`</constraints>`
+```
+
+### Component 5: Output Format
+
+**What it is**: Specification of how the response should be structured.
+
+**Why it matters**: Output format specifications:
+- Make responses parseable for downstream systems
+- Ensure consistency across multiple calls
+- Enable automated processing
+- Reduce post-processing needs
+
+**Common Formats:**
+
+**1. JSON (for API integration):**
+```xml
+<output_format>
+Return ONLY valid JSON with this exact schema:
+{
+  "summary": "string (max 200 chars)",
+  "issues": [
+    {
+      "severity": "critical|high|medium|low",
+      "description": "string",
+      "location": "string",
+      "fix": "string"
+    }
+  ],
+  "recommendations": ["string"]
+}
+
+No markdown formatting. No code blocks. Just raw JSON.
+</output_format>
+```
+
+**2. Markdown (for documentation):**
+````xml
+<output_format>
+## Summary
+[One-paragraph summary]
+
+## Key Findings
+- Bullet point 1
+- Bullet point 2
+- Bullet point 3
+
+## Recommendations
+1. First recommendation
+2. Second recommendation
+3. Third recommendation
+
+## Code Example
+```java
+[code here]
+```
+</output_format>
+````
+
+**3. Tabular (for comparison data):**
+```xml
+<output_format>
+Return results as a markdown table with these columns:
+| Approach | Pros | Cons | Use Case |
+|----------|------|------|----------|
+| ...      | ...  | ...  | ...      |
+</output_format>
+```
+
+**4. XML (for structured communication):**
+```xml
+<output_format>
+<analysis>
+  <summary>[content]</summary>
+  <findings>
+    <finding id="1">
+      <issue>[description]</issue>
+      <severity>[level]</severity>
+      <recommendation>[action]</recommendation>
+    </finding>
+  </findings>
+</analysis>
+</output_format>
+```
+
+**Best Practices:**
+
+**1. Be explicit about format requirements:**
+```xml
+<!-- ✅ Clear and enforceable -->
+<output_format>
+Return JSON ONLY. No markdown code blocks. No explanatory text.
+The response must start with { and end with }.
+</output_format>
+
+<!-- ❌ Ambiguous -->
+<output_format>
+Give me the results in JSON format
+</output_format>
+```
+
+**2. Provide schema for complex formats:**
+```xml
+<output_format>
+JSON Schema:
+{
+  "type": "object",
+  "required": ["name", "price", "category"],
+  "properties": {
+    "name": {"type": "string", "minLength": 1},
+    "price": {"type": "number", "minimum": 0},
+    "category": {
+      "type": "string",
+      "enum": ["electronics", "clothing", "food", "other"]
+    },
+    "features": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  }
+}
+</output_format>
+```
+
+**3. Use examples for clarity:**
+```xml
+<output_format>
+Return results in this format:
+
+Example:
+{
+  "status": "success",
+  "confidence": 0.95,
+  "classification": "electronics",
+  "reasoning": "Product mentions technical specifications"
+}
+
+Your response should follow this exact structure.
+</output_format>
+```
+
+## Proven Prompt Frameworks
+
+Several frameworks have emerged as best practices for structuring prompts. Each serves different use cases.
+
+### Framework 1: CO-STAR
+
+Developed by Singapore's GovTech, CO-STAR won the 2023 Singapore Prompt Engineering Competition.
+
+**Components:**
+- **C**ontext: Background information
+- **O**bjective: What to achieve
+- **S**tyle: Desired communication style
+- **T**one: Emotional tone of response
+- **A**udience: Who will receive the output
+- **R**esponse: Output format
+
+**Example:**
+```xml
+<context>
+I'm preparing a technical presentation for CTO-level executives
+about adopting Spring AI in our payment processing platform.
+</context>
+
+<objective>
+Explain the business value and technical approach in 5 minutes
+of speaking time, focusing on ROI and risk mitigation.
+</objective>
+
+<style>
+Executive summary with technical depth available on request.
+Use business metrics (cost, speed, reliability) rather than
+implementation details.
+</style>
+
+<tone>
+Confident but realistic about challenges.
+Avoid hype language; acknowledge trade-offs transparently.
+</tone>
+
+<audience>
+Technical decision-makers who understand software architecture
+but need business justification.
+Assume they know Spring Boot but not Spring AI specifically.
+</audience>
+
+<response_format>
+Return a structured outline with:
+1. Executive Summary (3 bullet points max)
+2. Business Value (with metrics)
+3. Technical Approach (high-level)
+4. Risk Mitigation (3 key risks + mitigations)
+5. Next Steps (3 actionable items)
+
+Keep under 500 words total.
+</response_format>
+```
+
+**Best For:**
+- Business communications
+- Executive summaries
+- Marketing copy
+- User-facing content
+
+### Framework 2: RTF (Role-Task-Format)
+
+A minimal framework favored for quick, straightforward prompts.
+
+**Components:**
+- **R**ole: Who the model should be
+- **T**ask: What needs to be done
+- **F**ormat: How to present the output
+
+**Example:**
+```xml
+<role>
+Senior DevOps engineer specializing in Kubernetes and AWS
+infrastructure.
+</role>
+
+<task>
+Design a deployment strategy for a Spring Boot application using
+Spring AI. Include CI/CD pipeline, monitoring setup, and disaster
+recovery procedures.
+</task>
+
+<format>
+Provide:
+1. Architecture diagram (described in text)
+2. Step-by-step implementation checklist
+3. Example deployment YAML files
+4. Monitoring configuration snippets
+</format>
+```
+
+**Best For:**
+- Technical tasks
+- Code generation
+- Problem-solving
+- Quick prototyping
+
+### Framework 3: CRISPE
+
+A detailed framework for nuanced prompts requiring multiple dimensions.
+
+**Components:**
+- **C**apacity/Role: Expertise and persona
+- **R**equest/Task: Core instruction
+- **I**nstructions: Specific steps or constraints
+- **S**tyle: Communication approach
+- **P**ersonality: Character traits
+- **E**xample: Sample input/output
+
+**Example:**
+```xml
+<capacity>
+You are a climate scientist with 15 years of research experience
+in atmospheric physics. You specialize in communicating complex
+science to general audiences.
+</capacity>
+
+<request>
+Explain the greenhouse effect and its relationship to climate change.
+</request>
+
+<instructions>
+- Use analogies to make concepts relatable
+- Avoid scientific jargon
+- Include 3 specific examples of greenhouse gases
+- Address common misconceptions
+- End with actionable steps individuals can take
+</instructions>
+
+<style>
+Educational but conversational. Use clear, simple language.
+Break complex ideas into digestible chunks.
+</style>
+
+<personality>
+Approachable and encouraging. Inspire action without inducing
+anxiety or hopelessness.
+</personality>
+
+<example>
+Input: "What is the greenhouse effect?"
+
+Output:
+"Think of the Earth like a greenhouse. Sunlight comes in through
+the glass (atmosphere), warms the plants, and the glass keeps some
+heat from escaping. Greenhouse gases like CO2 act like that glass—
+they let sunlight in but trap heat, making Earth warmer..."
+</example>
+```
+
+**Best For:**
+- Educational content
+- Creative writing
+- Brand communication
+- Customer interactions
+
+### Framework 4: RICE-FACT
+
+A comprehensive framework covering all essential elements.
+
+**Components:**
+- **R**ole: Identity and expertise
+- **I**nstruction: Core task definition
+- **C**ontext: Necessary background
+- **E**xamples: Sample inputs/outputs
+- **F**ormat: Output structure
+- **A**ction: What the user will do with result
+- **C**onstraints: Limitations and requirements
+- **T**one: Communication style
+
+**Example:**
+````xml
+<role>
+You are a code reviewer specializing in Java security best practices.
+</role>
+
+`<instruction>`
+Review the following Spring Boot controller code for security
+vulnerabilities and provide specific remediation recommendations.
+`</instruction>`
+
+<context>
+This is an e-commerce application handling payment transactions.
+PCI DSS compliance is required. The codebase uses Spring Security 6.
+</context>
+
+<examples>
+Good review:
+"Line 45: SQL injection risk. Use parameterized query:
+```java
+@Query(\"SELECT u FROM User u WHERE u.email = :email\")
+```
+
+Bad review:
+"This code has security issues. Fix them."
+</examples>
+
+<format>
+Return as markdown with:
+## Vulnerabilities Found
+[severity] Location: Description + Fix
+
+## Best Practice Violations
+[issue number] Description + Recommendation
+
+## Positive Findings
+[what's done well]
+</format>
+
+<action>
+The development team will use your review to:
+1. Prioritize fixes by severity
+2. Update the code immediately
+3. Add these patterns to the security checklist
+</action>
+
+`<constraints>`
+- Do NOT suggest architectural changes
+- Focus only on security (not performance or style)
+- Provide Java code examples for all fixes
+- Limit to critical and high-severity issues
+`</constraints>`
+
+<tone>
+Constructive and educational. Explain why issues matter,
+not just that they're wrong.
+</tone>
+````
+
+**Best For:**
+- Code review
+- Complex multi-dimensional tasks
+- Team workflows
+- Quality assurance
+
+### Framework 5: CREATE
+
+A newer framework optimized for generative tasks.
+
+**Components:**
+- **C**ontext: Situation and background
+- **R**ole: Persona and expertise
+- **E**xamples: Reference samples
+- **A**ctions/Tasks: Specific steps to take
+- **T**arget: Success criteria
+- **E**volve: Improvement feedback loop
+
+**Example:**
+```xml
+<context>
+We're building a customer support chatbot for a SaaS product.
+Users are primarily non-technical business users.
+</context>
+
+<role>
+You are a customer support specialist with expertise in
+explaining technical concepts simply.
+</role>
+
+<examples>
+Good response:
+"I understand you're having trouble connecting. Let's try this:
+First, check your internet connection by opening any website.
+If that works, try clearing your browser cache..."
+</examples>
+
+<actions>
+1. Acknowledge the user's problem empathetically
+2. Ask 1-2 clarifying questions if needed
+3. Provide step-by-step troubleshooting
+4. Offer escalation path if unresolved
+</actions>
+
+<target>
+- 80% of issues resolved without human escalation
+- Average conversation under 5 minutes
+- Customer satisfaction >4.5/5
+</target>
+
+<evolve>
+After each response, self-evaluate:
+- Was the solution clear?
+- Were the steps actionable?
+- Was the tone appropriate?
+Suggest improvements for next iteration.
+</evolve>
+```
+
+**Best For:**
+- Content generation
+- Chatbot development
+- Creative tasks
+- Iterative improvement
+
+## Putting It All Together: Complete Example
+
+Let's build a complete prompt step by step, showing how each component contributes.
+
+### Task: Review code for security issues
+
+**Step 1: Add Persona**
+```xml
+<persona>
+You are a senior security engineer with 12 years of experience
+application security, specializing in Java and Spring Boot.
+You've performed security reviews for Fortune 500 companies
+and hold CISSP and CEH certifications.
+</persona>
+```
+
+**Step 2: Add Context**
+```xml
+<context>
+This is a REST API controller for a payment processing service.
+The application processes ~10,000 transactions per hour.
+PCI DSS compliance is mandatory.
+Current Spring Boot version: 3.2.0
+Spring Security version: 6.2.0
+</context>
+```
+
+**Step 3: Add Instruction**
+```xml
+`<instruction>`
+Review the provided controller code for security vulnerabilities.
+
+For each vulnerability found:
+1. Identify the line number
+2. Classify severity (CRITICAL/HIGH/MEDIUM/LOW)
+3. Explain the exploit scenario
+4. Provide specific remediation code
+5. Suggest prevention strategies for future development
+
+Also identify:
+- Any security best practices that ARE being followed
+- Potential improvements beyond critical issues
+`</instruction>`
+```
+
+**Step 4: Add Constraints**
+```xml
+`<constraints>`
+MUST:
+- Focus on security only (not performance, style, or architecture)
+- Provide executable code examples for all fixes
+- Prioritize findings by severity
+- Consider PCI DSS requirements
+
+MUST NOT:
+- Suggest architectural changes (keep scope to this controller)
+- Recommend third-party security libraries unless critical
+- Propose schema changes to existing tables
+`</constraints>`
+```
+
+**Step 5: Add Output Format**
+````xml
+<output_format>
+## Executive Summary
+[Overall security posture: 1-2 sentences]
+
+## Critical Vulnerabilities
+### [Vulnerability Name]
+- **Location**: Line [X]
+- **Severity**: CRITICAL
+- **Description**: [What it is]
+- **Exploit Scenario**: [How it could be abused]
+- **Remediation**:
+```java
+[Fixed code]
+```
+- **Prevention**: [How to avoid in future]
+
+## High Severity Issues
+[Same format as above]
+
+## Medium & Low Issues
+[Brief list with line numbers and quick fixes]
+
+## Positive Findings
+[Security best practices being followed correctly]
+
+## Recommendations
+[General security improvements, prioritized]
+</output_format>
+````
+
+**Complete Prompt:**
+````xml
+<persona>
+You are a senior security engineer with 12 years of experience in
+application security, specializing in Java and Spring Boot.
+You've performed security reviews for Fortune 500 companies
+and hold CISSP and CEH certifications.
+</persona>
+
+<context>
+This is a REST API controller for a payment processing service.
+The application processes ~10,000 transactions per hour.
+PCI DSS compliance is mandatory.
+Current Spring Boot version: 3.2.0
+Spring Security version: 6.2.0
+</context>
+
+`<instruction>`
+Review the provided controller code for security vulnerabilities.
+
+For each vulnerability found:
+1. Identify the line number
+2. Classify severity (CRITICAL/HIGH/MEDIUM/LOW)
+3. Explain the exploit scenario
+4. Provide specific remediation code
+5. Suggest prevention strategies for future development
+
+Also identify:
+- Any security best practices that ARE being followed
+- Potential improvements beyond critical issues
+`</instruction>`
+
+`<constraints>`
+MUST:
+- Focus on security only (not performance, style, or architecture)
+- Provide executable code examples for all fixes
+- Prioritize findings by severity
+- Consider PCI DSS requirements
+
+MUST NOT:
+- Suggest architectural changes (keep scope to this controller)
+- Recommend third-party security libraries unless critical
+- Propose schema changes to existing tables
+`</constraints>`
+
+<output_format>
+## Executive Summary
+[Overall security posture: 1-2 sentences]
+
+## Critical Vulnerabilities
+### [Vulnerability Name]
+- **Location**: Line [X]
+- **Severity**: CRITICAL
+- **Description**: [What it is]
+- **Exploit Scenario**: [How it could be abused]
+- **Remediation**:
+```java
+[Fixed code]
+```
+- **Prevention**: [How to avoid in future]
+
+## High Severity Issues
+[Same format as above]
+
+## Medium & Low Issues
+[Brief list with line numbers and quick fixes]
+
+## Positive Findings
+[Security best practices being followed correctly]
+
+## Recommendations
+[General security improvements, prioritized]
+</output_format>
+
+---
+**Code to Review**:
+```java
+[Paste the controller code here]
+```
+````
+
+## Component Interactions
+
+The five components don't exist in isolation—they interact and reinforce each other.
+
+### Interaction Matrix
+
+| Interaction | Effect | Example |
+|-------------|--------|---------|
+| **Persona + Context** | Context helps persona apply relevant expertise | "Senior architect" + "high-traffic e-commerce" → Focus on scalability patterns |
+| **Context + Constraints** | Context determines which constraints matter | "PCI DSS required" → "MUST encrypt PII" |
+| **Instruction + Format** | Format shapes how instructions are followed | "Analyze security" + "JSON output" → Structured vulnerability report |
+| **Constraints + Format** | Format constraints must align with output format | "Under 100 words" + "JSON" → May conflict, need coordination |
+| **Persona + Format** | Persona affects how format is interpreted | "Technical expert" + "Executive summary" → Different depth than "Generalist" |
+
+### Order Matters
+
+**Recommended order:**
+1. **Persona** (sets mindset)
+2. **Context** (provides background)
+3. **Instruction** (defines task)
+4. **Constraints** (sets boundaries)
+5. **Format** (specifies output)
+
+**Why this order works:**
+- Persona establishes perspective before context is interpreted
+- Context is understood before task is assigned
+- Task is clear before constraints are applied
+- All parameters are known before format is specified
+
+**Alternative orders for specific scenarios:**
+
+| Scenario | Better Order | Reason |
+|----------|--------------|--------|
+| **Simple queries** | Instruction → Format | Quick answers, minimal setup |
+| **Educational content** | Context → Persona → Instruction → Format | Situation first, then expertise |
+| **Problem-solving** | Instruction → Context → Constraints | Task first, then background |
+
+## Common Mistakes
+
+### Mistake 1: Over-Prompting
+
+**Problem**: Too much detail overwhelms the model and increases token costs.
+
+```xml
+<!-- ❌ Over-detailed -->
+<persona>
+You are a 47-year-old Java architect named Sarah who graduated from
+Stanford in 1998 with a 3.8 GPA, has worked at Google, Amazon, and
+two startups, lives in Austin, Texas, has two kids, enjoys rock climbing,
+prefers IntelliJ over Eclipse, uses a mechanical keyboard with Cherry
+MX Brown switches, and has been using Spring since version 1.2...
+</persona>
+
+<!-- ✅ Focused -->
+<persona>
+You are a senior Java architect with 15 years of enterprise experience.
+You specialize in Spring Boot and cloud-native microservices.
+You prioritize pragmatism and production reliability.
+</persona>
+```
+
+**Fix**: Remove irrelevant details. Focus on what affects the task.
+
+### Mistake 2: Conflicting Instructions
+
+**Problem**: Contradictory requirements confuse the model.
+
+```xml
+<!-- ❌ Conflicting -->
+`<constraints>`
+- Keep response under 100 words
+- Provide comprehensive analysis with multiple examples
+- Include detailed code explanations
+`</constraints>`
+
+<!-- ✅ Consistent -->
+`<constraints>`
+- Keep response under 300 words
+- Provide 2-3 key examples with brief explanations
+- Focus on most critical issues only
+`</constraints>`
+```
+
+**Fix**: Ensure all constraints can be satisfied simultaneously.
+
+### Mistake 3: Missing Examples
+
+**Problem**: Abstract instructions without concrete examples lead to inconsistent results.
+
+```xml
+<!-- ❌ Abstract -->
+<instruction>
+Review the code and provide feedback.
+</instruction>
+
+<!-- ✅ Concrete -->
+<instruction>
+Review the code and provide feedback in this format:
+
+Example feedback:
+"Line 23: Null pointer risk. Add null check:
+
+    if (user != null) {
+        user.process();
+    }
+
+Priority: HIGH"
+</instruction>
+```
+
+**Fix**: Include example inputs and outputs for complex tasks.
+
+### Mistake 4: Ignoring Model Capabilities
+
+**Problem**: Asking for what the model cannot do.
+
+```xml
+<!-- ❌ Impossible -->
+`<instruction>`
+Execute this code and tell me the runtime performance.
+`</instruction>`
+
+<!-- ✅ Realistic -->
+`<instruction>`
+Analyze this code for potential performance issues and suggest
+optimizations based on the algorithms used.
+`</instruction>`
+```
+
+**Fix**: Stay within the model's capabilities (analysis, not execution).
+
+### Mistake 5: Wrong Framework for Task
+
+**Problem**: Using complex frameworks for simple tasks (wastes tokens) or simple frameworks for complex tasks (insufficient guidance).
+
+| Task Complexity | Best Framework | Why |
+|----------------|----------------|-----|
+| **Very Simple** (facts, lookup) | None needed | Direct questions work fine |
+| **Simple** (single task) | RTF | Quick and effective |
+| **Medium** (multi-dimensional) | CO-STAR | Balanced structure |
+| **Complex** (multiple requirements) | CRISPE or RICE-FACT | Comprehensive coverage |
+
+## Quick Reference
+
+### Component Checklist
+
+Before sending a prompt, verify:
+
+- [ ] **Persona**: Is the expertise level appropriate for the task?
+- [ ] **Context**: Have I provided all necessary background?
+- [ ] **Instruction**: Is the task clear and specific?
+- [ ] **Constraints**: Are all requirements explicit?
+- [ ] **Format**: Is the output structure specified?
+- [ ] **Consistency**: Do all components align?
+- [ ] **Completeness**: Is anything missing?
+- [ ] **Conciseness**: Have I removed unnecessary detail?
+
+### Framework Selection Guide
+
+```
+Start: What's your task?
+
+├─ Simple factual query?
+│  └─ No framework needed
+│
+├─ Code generation or technical task?
+│  └─ RTF (Role-Task-Format)
+│
+├─ Business communication?
+│  └─ CO-STAR
+│
+├─ Creative or educational content?
+│  └─ CRISPE
+│
+├─ Complex multi-dimensional review?
+│  └─ RICE-FACT
+│
+└─ Generative/iterative task?
+   └─ CREATE
+```
+
+### Template Library
+
+**For Code Tasks:**
+```xml
+<persona>Senior [language] developer with [specialization]</persona>
+<context>[Project type, scale, requirements]</context>
+`<instruction>`[Specific task with acceptance criteria]`</instruction>`
+`<constraints>`
+MUST: [technical requirements]
+MUST NOT: [exclusions]
+`</constraints>`
+<output_format>
+[code or documentation format]
+</output_format>
+```
+
+**For Analysis Tasks:**
+```xml
+<persona>[Domain] expert with [experience level]</persona>
+<context>[Subject, purpose, stakeholders]</context>
+`<instruction>`
+1. [Analysis step 1]
+2. [Analysis step 2]
+3. [Analysis step 3]
+`</instruction>`
+<output_format>
+## Findings
+[structured breakdown]
+
+## Recommendations
+[prioritized list]
+</output_format>
+```
+
+**For Content Generation:**
+```xml
+<persona>[Role] with [tone/style] expertise</persona>
+<context>[Topic, audience, purpose]</context>
+`<instruction>`[Content requirements]`</instruction>`
+`<constraints>`
+- Length: [word/character limit]
+- Style: [tone/voice]
+- MUST: [inclusions]
+- MUST NOT: [exclusions]
+`</constraints>`
+<output_format>[content structure]</output_format>
+```
+
+## Summary
+
+**Key Takeaways:**
+
+1. **Five Components**: Persona, Instruction, Context, Constraints, Format
+2. **Structure Wins**: Well-structured prompts outperform clever ones 3-5x
+3. **Framework Choice**: Match framework to task complexity
+4. **Consistency Matters**: Ensure all components align
+5. **Iterate**: Start simple, add components as needed
+
+**Next Chapter**: Now that you understand prompt anatomy, let's explore [Core Reasoning Patterns](./03-reasoning-patterns.mdx) to learn techniques like Chain-of-Thought, ReAct, and Self-Consistency that unlock powerful reasoning capabilities.
+
+---
+
+**Previous**: [1. Introduction](./01-introduction.mdx) ←
+**Next**: [2.2 Core Reasoning Patterns](./03-reasoning-patterns.mdx) →

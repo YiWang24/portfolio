@@ -7,6 +7,7 @@ import { SectionBadge } from "./SectionBadge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { ProfileData } from "@/types/profile";
+import { safeOpenUrl } from "@/lib/utils/validation";
 
 interface CertificationsSectionProps {
     certifications: ProfileData["certifications"];
@@ -45,7 +46,7 @@ export function CertificationsSection({ certifications, coursework }: Certificat
     const displayedCourses = isExpanded ? sortedCoursework : sortedCoursework.slice(0, 5);
 
     const handleCardClick = (link: string) => {
-        if (link) window.open(link, "_blank");
+        if (link) safeOpenUrl(link);
     };
 
     return (
@@ -63,7 +64,7 @@ export function CertificationsSection({ certifications, coursework }: Certificat
                             initial={{ opacity: 0, scale: 0.9 }}
                             whileInView={{ opacity: 1, scale: 1 }}
                             viewport={{ once: true }}
-                            className="text-3xl md:text-5xl font-bold font-mono text-center tracking-tight shrink-0"
+                            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold font-mono text-center tracking-tight shrink-0"
                         >
                             <span className="text-slate-900 dark:text-white">SYSTEM_</span>
                             <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500 dark:text-emerald-400">LICENSES</span>

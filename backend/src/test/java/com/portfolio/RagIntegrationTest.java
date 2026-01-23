@@ -32,9 +32,11 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @SpringBootTest
 @TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:postgresql://localhost:5432/portfolio",
-        "spring.datasource.username=postgres",
-        "spring.datasource.password=postgres"
+        "POSTGRES_HOST=10.0.0.178",
+        "POSTGRES_PORT=15432",
+        "POSTGRES_DB=test_db",
+        "POSTGRES_USER=postgres",
+        "POSTGRES_PASSWORD=PgPass!123"
 })
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class RagIntegrationTest {

@@ -1,0 +1,453 @@
+---
+id: tokenization
+title: Tokenization - How LLMs See Text
+sidebar_label: 2 Tokenization
+description: Deep dive into Byte Pair Encoding (BPE), vocabulary trade-offs, and why models can't count characters. Updated for 2025.
+slug: /ai/llm-fundamentals/tokenization
+---
+
+# Tokenization: The Atomic Unit of LLMs
+
+> **"If you don't understand tokenization, you don't understand why LLMs fail at simple tasks."**
+
+Tokenization is the process of converting raw text into a sequence of integers (IDs) that a model can process. It is the very first step in the pipeline and often the source of many "hallucinations" related to math, spelling, and coding.
+
+---
+
+## Why Do We Need Tokenization?
+
+Computers understand numbers, not strings. We need a way to map text to numbers.
+
+### The Spectrum of Granularity
+We could tokenize at different levels:
+
+| Method | Vocabulary Size | Sequence Length | Pros | Cons |
+|--------|-----------------|-----------------|------|------|
+| **Character** | Small (~100-256) | Very Long | No simple OOV (Out-of-Vocabulary) issues | Context window fills up fast; individual characters lack meaning. |
+| **Word** | Massive (1M+) | Short | Semantically rich | "Rare word" problem; huge embedding matrix parameters. |
+| **Subword (BPE)** | **Optimal** (~32k-100k) | **Medium** | Balances efficiency and flexibility. | Complexity in implementation. |
+
+Modern LLMs universally use **Subword Tokenization** (specifically BPE or variants).
+
+### 2025 State of Tokenization
+
+**Key Developments**:
+- **Byte-level BPE** is now standard (GPT-4o, Llama 3/4) - handles all Unicode without OOV errors
+- **tiktoken dominance**: OpenAI's tokenizer is 3-6x faster than alternatives, becoming de facto standard
+- **Multilingual optimization**: SentencePiece with Unigram outperforms BPE for morphologically rich languages
+- **Efficiency improvements**: BlockBPE and parallel tokenization for faster inference
+
+---
+
+## Byte Pair Encoding (BPE)
+
+### How It Works
+BPE is an iterative algorithm that starts with characters and keeps merging the most frequent adjacent pair of tokens.
+
+1. **Initialize**: Vocabulary = all individual characters (or bytes for byte-level BPE).
+2. **Count**: Find the most frequent pair of adjacent tokens in the corpus (e.g., "e" and "r" → "er").
+3. **Merge**: Create a new token for that pair.
+4. **Repeat**: Continue until a target vocabulary size (e.g., 32k) is reached.
+
+### Interactive Example
+
+Consider the corpus: `["hug", "pug", "pun", "bun"]`
+
+1. **Start**: `h, u, g, p, n, b`
+2. **Most frequent pair**: `u` + `g` → `ug`
+3. **New state**: `h, ug, p, n, b` (Plus `ug` token)
+4. **Next frequent**: `u` + `n` → `un`
+5. **Final tokens**: `ug`, `un`, `h`, `p`, `b`
+
+Now, `hug` is encoded as `[h, ug]`.
+
+### Byte-Level BPE (2025 Standard)
+
+**Problem**: Traditional character-level BPE has a base vocabulary of ~100K characters (all Unicode), and can still encounter OOV errors.
+
+**Solution**: Byte-level BPE operates on UTF-8 bytes directly:
+- **Base vocabulary**: 256 bytes (covers ALL Unicode without OOV)
+- **Example**: "é" could be `195, 169` (two bytes) or a single byte if learned as a merge
+
+**Why it matters**:
+```python
+import tiktoken
+enc = tiktoken.encoding_for_model("gpt-4o")
+
+# Handles any Unicode without errors
+print(enc.encode("你好世界"))  # Chinese: [32409, 30255, 9892, 162]
+print(enc.encode("こんにちは"))  # Japanese: [32864, 25669, 32465, 27414, 28821]
+print(enc.encode("مرحبا"))  # Arabic: [2174, 1945, 10982, 2686]
+```
+
+**Adoption**:
+- **GPT-2/3/4**: Byte-level BPE
+- **Llama 3/4**: Uses GPT-4 tokenizer via tiktoken
+- **Claude**: Custom byte-level BPE variant
+
+### The Python Implementation (simplified)
+
+```python
+def get_stats(vocab):
+    pairs = collections.defaultdict(int)
+    for word, freq in vocab.items():
+        symbols = word.split()
+        for i in range(len(symbols)-1):
+            pairs[symbols[i],symbols[i+1]] += freq
+    return pairs
+
+def merge_vocab(pair, v_in):
+    v_out = {}
+    bigram = re.escape(' '.join(pair))
+    p = re.compile(r'(?<!\S)' + bigram + r'(?!\\S)')
+    for word in v_in:
+        w_out = p.sub(''.join(pair), word)
+        v_out[w_out] = v_in[word]
+    return v_out
+```
+
+---
+
+## Algorithm Showdown: BPE vs WordPiece vs Unigram
+
+For interviews, know the difference between these three.
+
+| Feature | **BPE** (GPT-2/3/4, Llama) | **WordPiece** (BERT) | **Unigram** (T5, ALBERT) |
+|---------|---------------------------|----------------------|--------------------------|
+| **Merge Strategy** | Deterministic: merge **most frequent** pair. | Probabilistic: merge pair boosting **likelihood** of data (PMI). | Probabilistic: Start massive, **prune** least useful tokens. |
+| **Philosophy** | Bottom-up (Chars → Subwords). | Bottom-up. | Top-down (All substrs → Keep best). |
+| **Regularization** | No (Deterministic). | No. | **Subword Regularization**: Can sample different splits during training (adds noise/robustness). |
+| **Vocabulary Init** | Small (chars/bytes) → Grow. | Small → Grow. | Large (all substrings) → Shrink. |
+| **Token Selection** | Frequency-based. | PMI-based (Pointwise Mutual Information). | Probability-based (unigram language model). |
+| **Fertility** (avg tokens/word) | **Medium** (~2.5-3.0). | **High** (~3.0-3.5). | **Low** (~2.0) - best compression. |
+| **Morphology** | Less interpretable. | Moderate. | **Best** - produces more morphologically interpretable tokens. |
+| **Library** | tiktoken, HuggingFace. | HuggingFace. | **SentencePiece** (default). |
+
+### 2025 Research Insights
+
+**Unigram outperforms BPE** on morphology preservation:
+- Bostrom & Durrett (2020): Unigram produces more morphologically interpretable tokens
+- Example: `destabilizing` → Unigram: `de + stabilizing`, BPE: `dest + abil + iz + ing`
+- **Downstream impact**: Models trained on Unigram tokens show better fine-tuning performance
+
+**When to use each**:
+- **BPE**: Default choice, efficient, widely adopted (GPT, Llama)
+- **WordPiece**: BERT-style models, when you need PMI-based merging
+- **Unigram**: Multilingual models, morphologically rich languages (Arabic, Turkish, Finnish), when compression matters
+
+> **Note**: Most generative models (GPT family, Llama) use BPE because it's standard and efficient. T5 uses SentencePiece (Unigram) which handles multilingual text slightly better.
+
+---
+
+## The "Strawberry" Problem
+
+Why does GPT-4 fail to count the 'r's in "Strawberry"?
+
+**Answer**: Because it **never sees the word "Strawberry"**. It sees the token ID.
+
+```python
+import tiktoken
+enc = tiktoken.encoding_for_model("gpt-4o")
+print(enc.encode("Strawberry"))
+# Output: [9241, 8075] -> corresponds to ["Straw", "berry"]
+```
+
+The model receives `[ID_1, ID_2]`.
+- `ID_1` ("Straw") vector: contains semantic concept of "dried stalk", "drinking tube".
+- `ID_2` ("berry") vector: contains semantic concept of "small fruit".
+
+Unless the model has memorized the spelling of every token ID during training (which it tries to do, but imperfectly), it cannot "count" letters.
+
+**Implication for Interviews**:
+- Don't ask LLMs to perform character-level manipulation (reversing strings, cyphers) without tools.
+- This is a *fundamental architectural limitation*, not just "bad training".
+- **Workaround**: Use tools/code for character-level tasks, not raw LLM inference.
+
+### 2025 Update: Strawberry Benchmark
+
+Different tokenizers handle this differently:
+
+```python
+# GPT-4o (cl100k_base)
+# "Strawberry" -> [9241, 8075] (["Straw", "berry"])
+# Can't count r's: 3 tokens, 'r' is split across them
+
+# Llama 3 (uses GPT-4 tokenizer)
+# "strawberry" -> [49607, 8698, 11, 8205] (["str", "aw", "berry", "."])
+# Still split, but different boundaries
+
+# Claude 3.5 (custom tokenizer)
+# "strawberry" -> [9900, 12072, 9177] (["str", "aw", "berry"])
+# Similar limitation
+```
+
+**No modern tokenizer solves this** - it's inherent to subword tokenization.
+
+---
+
+## Technical Deep Dive
+
+### 1. Pre-tokenization
+Before BPE runs, text is normalized.
+
+**Unicode Normalization**:
+- **NFC** (Canonical Composition): `é` as single character (U+00E9)
+- **NFD** (Canonical Decomposition): `e` + `´` (U+0065 U+0301)
+- **Impact**: Affects tokenization boundaries and vocabulary size
+
+**Splitting Rules**:
+- GPT-4 splits on `'` (apostrophes) and spaces
+- Ensures punctuation is handled consistently
+- Example: `"don't"` → `["don", "'", "t"]` or `["do", "n't"]` depending on training
+
+### 2. Space Handling
+
+**Approaches differ by tokenizer**:
+
+| Tokenizer | Space Representation | Example |
+|-----------|---------------------|---------|
+| **SentencePiece** (Llama/T5) | Treats space as character (often `_` or `<0x20>`) | `" Hello"` → `_Hello` |
+| **Tiktoken** (GPT) | Spaces are part of the token | `" Hello"` → ` Hello` |
+| **WordPiece** (BERT) | Uses `##` for continuations | `" Hello"` → `Hello` (no leading space token) |
+
+**Implication**: `" hello"` and `"hello"` have different IDs. This is why prompts are sensitive to trailing spaces.
+
+**2025 Update**:
+- Most modern tokenizers use **byte-level BPE** where space is just byte `0x20`
+- Avoids special handling, more consistent across languages
+
+### 3. Vocabulary Size Trade-offs
+
+Why not use 1 million tokens?
+
+**Embedding Matrix Size**: $V \times d_{model}$
+- A 100k vocab with 4096 dimensions = **400M parameters** just for embeddings!
+- A 32k vocab with 4096 dimensions = **131M parameters**
+
+**Diminishing Returns**:
+- Rare tokens are seen so infrequently the model doesn't learn good embeddings
+- **Optimal range**: 32k-100k for most models
+- **Llama 2**: 32k vocab
+- **GPT-2**: 50k vocab
+- **GPT-4o**: 100k vocab (cl100k_base)
+- **Llama 3**: 128k vocab
+
+**2025 Research**:
+- Ali et al. (2024): 33k and 50k vocabularies performed better on English tasks than larger sizes
+- **Multilingual trade-off**: Larger vocabs (100k+) needed for multilingual models
+- **Domain-specific**: Code models benefit from larger vocabs (150k+ for programming tokens)
+
+### 4. Token Efficiency by Language
+
+Not all languages tokenize equally:
+
+| Language | Tokens per Word (approx) | Efficiency |
+|----------|-------------------------|------------|
+| **English** | 0.75-1.0 tokens/word | ★★★★★ (Most efficient) |
+| **Spanish/French/German** | 1.2-1.5 tokens/word | ★★★★☆ |
+| **Chinese/Japanese/Korean** | 2.0-3.0 tokens/word | ★★★☆☆ |
+| **Arabic/Hebrew** | 2.5-3.5 tokens/word | ★★☆☆☆ |
+| **Thai/Lao/Khmer** | 3.0-4.0 tokens/word | ★★☆☆☆ |
+| **Code (programming)** | 0.5-1.5 tokens/token | ★★★★☆ (depends on language) |
+
+**Implication**:
+- API usage is **more expensive** for non-English languages
+- Same prompt in Chinese can cost 3x more than in English
+- **Workaround**: Use language-specific tokenizers or compression
+
+---
+
+## Special Tokens Map
+
+Knowing these is crucial for debugging raw model inputs.
+
+| Token Type | GPT-4o | Llama 3/4 | Explanation |
+|------------|-------|---------|-------------|
+| **BOS** (Start) | - | `&lt;|begin_of_text|&gt;` | Signals start of generation. |
+| **EOS** (End) | `&lt;|endoftext|&gt;` | `&lt;|end_of_text|&gt;` | Signals model to stop. |
+| **PAD** | - | - | Used for batching (making all sequences same length). |
+| **Role Start** | - | `&lt;|start_header_id|&gt;` | "User", "Assistant", "System". |
+| **Role End** | - | `&lt;|eot_id|&gt;` | End of Turn. |
+| **Image** | `&lt;|image|&gt;` | - | Vision modalities. |
+
+**2025 Update**:
+- Modern models use **special token tuples** instead of single tokens
+- Example: Llama 3 uses `<|start_header_id|>user<|end_header_id|>` for role marking
+- **Purpose**: Enables fine-grained control over conversation structure
+
+---
+
+## Security: Tokenization Attacks
+
+**Prompt Injection via Token Splitting**:
+Adversaries can bypass safety filters by splitting forbidden words into unusual tokens that the safety filter (often a simpler classifier) doesn't recognize, but the LLM reconstructs.
+
+*Example*: If "bomb" is banned:
+- User Input: `"b" + "omb"`
+- Tokenizer: `[ID_b, ID_omb]`
+- Safety Filter: "I don't see 'bomb'".
+- LLM: Concatenates embeddings → "bomb".
+
+### 2025 Attack Vectors
+
+**Unicode Homoglyphs**:
+- Uses visually similar characters from different scripts
+- Example: `"аdmin"` (Cyrillic 'а') vs `"admin"` (Latin 'a')
+- Tokenizers handle these differently, potentially bypassing filters
+
+**Token Smuggling**:
+- Break malicious content across token boundaries
+- Example: `"D<|ROT|>ROP"` where `<|ROT|>` is a special token
+- After tokenization, reconstructs to "DROP"
+
+**Defense Strategies**:
+1. **Normalization**: Normalize Unicode before tokenization (NFC/NFD)
+2. **Token-level filtering**: Apply safety at token level, not string level
+3. **Adversarial training**: Train on token-split attacks during alignment
+
+---
+
+## 2025: Performance Optimizations
+
+### BlockBPE (Parallel BPE Tokenization)
+
+**Problem**: BPE is inherently sequential - must apply merge rules in order.
+
+**Solution**: BlockBPE processes tokenization in parallel blocks.
+- **Speedup**: 3-5x faster for long texts
+- **Trade-off**: Minor quality loss in math/code tasks
+- **Status**: Research stage (arXiv:2507.11941)
+
+### GPU Tokenization
+
+**Problem**: CPU tokenization becomes bottleneck at high throughput.
+
+**Solution**: Move tokenization to GPU.
+- **Libraries**: TensorRT-LLM, vLLM exploring GPU tokenizers
+- **Challenge**: Requires major architecture changes
+- **2025 Status**: Early research, not production-ready
+
+### Token Caching
+
+**Technique**: Cache tokenization results for common prompts.
+- **System prompts**: Cache system prompt tokenization
+- **Templates**: Cache prompt templates with variables
+- **Savings**: 10-30% latency reduction for chat applications
+
+---
+
+## Libraries and Tools
+
+### tiktoken (OpenAI)
+
+**Why use it**:
+- **3-6x faster** than HuggingFace tokenizers
+- Rust-based (via tiktoken-rs bindings)
+- **Standard** for GPT-2/3/4 models
+
+```python
+import tiktoken
+
+# Load tokenizer
+enc = tiktoken.encoding_for_model("gpt-4o")
+
+# Encode text
+tokens = enc.encode("Hello, world!")
+print(tokens)  # [9906, 11, 1917, 0]
+
+# Count tokens
+count = len(tokens)
+print(f"Token count: {count}")
+
+# Decode back to text
+text = enc.decode(tokens)
+print(text)  # "Hello, world!"
+```
+
+**2025 Update**: Now available in R, Go, JavaScript, Rust via community bindings.
+
+### HuggingFace Tokenizers
+
+**Why use it**:
+- **Most comprehensive**: Supports BPE, WordPiece, Unigram
+- **Production-ready**: Written in Rust, Python bindings
+- **Integration**: Works seamlessly with Transformers library
+
+```python
+from transformers import AutoTokenizer
+
+# Load tokenizer
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3-8B")
+
+# Encode
+tokens = tokenizer.encode("Hello, world!")
+print(tokens)  # [1, 9906, 11, 1917, 2] (with BOS/EOS)
+
+# Fast tokenization
+# Uses Rust backend, very fast
+inputs = tokenizer(["Hello", "world"], padding=True, return_tensors="pt")
+```
+
+### SentencePiece (Google)
+
+**Why use it**:
+- **Language-agnostic**: Treats text as raw byte stream
+- **Multilingual**: Excellent for non-space languages (Chinese, Japanese, Thai)
+- **Unigram + BPE**: Implements both algorithms
+
+```python
+import sentencepiece as spm
+
+# Train tokenizer
+spm.SentencePieceTrainer.train(
+    input='corpus.txt',
+    model_prefix='m',
+    vocab_size=32000,
+    model_type='unigram',  # or 'bpe', 'char', 'word'
+    user_defined_symbols=['<user>', '<assistant>']
+)
+
+# Load and use
+sp = spm.SentencePieceProcessor()
+sp.load('m.model')
+tokens = sp.encode("Hello, world!")
+print(tokens)  # [1532, 12, 2359, 37]
+```
+
+---
+
+## Summary for Interviews
+
+1. **LLMs don't read text**, they read integer IDs produced by BPE (or Unigram/WordPiece).
+2. **BPE balances** vocabulary size vs sequence length, but **Unigram** produces more morphologically interpretable tokens.
+3. **Tokenization artifacts** cause failures in math, spelling, and reversing strings (the "Strawberry" problem).
+4. **Vocab size** is a trade-off: larger vocab = shorter sequences (faster inference) but more parameters (VRAM usage). Optimal range: 32k-100k.
+5. **Multi-lingual**: English ~0.75 words/token. Other languages are less efficient (more tokens/word), making API usage more expensive.
+6. **Byte-level BPE** (2025 standard): Base vocabulary of 256 bytes, handles all Unicode without OOV errors.
+7. **tiktoken** is 3-6x faster than alternatives, becoming de facto standard.
+8. **Security**: Token splitting enables prompt injection attacks - defend with normalization and token-level filtering.
+9. **Performance**: BlockBPE and GPU tokenization are emerging optimizations for 2025+.
+
+:::tip Practice
+Use `tiktoken` in Python to inspect how different strings are broken down. It builds intuition for why prompts fail.
+
+```python
+import tiktoken
+
+enc = tiktoken.encoding_for_model("gpt-4o")
+
+# Test different languages
+texts = [
+    "Hello world",  # English
+    "Bonjour le monde",  # French
+    "你好世界",  # Chinese
+    "مرحبا بالعالم",  # Arabic
+]
+
+for text in texts:
+    tokens = enc.encode(text)
+    print(f"{text:20} → {len(tokens)} tokens: {tokens}")
+```
+
+Also explore the [interactive tiktoken app](https://tiktoken.vercel.app/) to see tokenization in real-time.
+:::

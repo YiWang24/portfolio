@@ -1,0 +1,2843 @@
+---
+title: "9 Agent Orchestration"
+description: "Comprehensive guide to multi-agent systems: hierarchical, parallel, debate, and advanced orchestration patterns with Spring AI"
+published: 2025-01-21
+tags: ["prompt-engineering", "agents", "orchestration", "spring-ai", "multi-agent", "mcp"]
+category: "prompt-engineering"
+series: "Prompt Engineering Guide"
+seriesOrder: 9
+draft: false
+---
+
+## Introduction
+
+**Agentic AI systems coordinate multiple specialized agents** to solve complex tasks beyond single-model capabilities. As AI applications evolve from simple chatbots to autonomous systems capable of executing multi-step workflows, understanding agent orchestration becomes essential for building production-grade AI solutions.
+
+:::info
+**The Agentic Shift**: 2024-2025 marked the transition from "prompt engineering" to "agent engineering" - designing systems where LLMs act as reasoning engines orchestrating tools, memory, and other agents.
+:::
+
+### Why Multi-Agent Systems?
+
+Single-agent limitations:
+- **Context window constraints**: Complex tasks exceed token limits
+- **Cognitive overload**: One agent handling diverse roles reduces quality
+- **Specialization trade-offs**: General capability vs. domain expertise
+- **Error propagation**: Single point of failure affects entire workflow
+
+Multi-agent advantages:
+- **Divide and conquer**: Decompose complex problems into manageable subtasks
+- **Specialization**: Each agent optimized for specific role
+- **Parallel execution**: Faster processing through concurrent operations
+- **Resilience**: Failures isolated to individual agents
+- **Scalability**: Add agents without redesigning system
+
+### Agent Architecture Fundamentals
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Agent Architecture                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────────┐ │
+│  │   Persona   │    │    Goal     │    │       Backstory         │ │
+│  │  (Role)     │    │  (Objective)│    │  (Context/Expertise)    │ │
+│  └─────────────┘    └─────────────┘    └─────────────────────────┘ │
+│         │                 │                       │                 │
+│         └─────────────────┼───────────────────────┘                 │
+│                           ▼                                         │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │                    Reasoning Engine (LLM)                     │  │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │  │
+│  │  │ Planning │  │ Reasoning│  │ Decision │  │ Self-Critique│  │  │
+│  │  └──────────┘  └──────────┘  └──────────┘  └──────────────┘  │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│                           │                                         │
+│         ┌─────────────────┼─────────────────┐                      │
+│         ▼                 ▼                 ▼                       │
+│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐              │
+│  │    Tools    │   │   Memory    │   │Communication│              │
+│  │  (Actions)  │   │  (State)    │   │  (Messages) │              │
+│  └─────────────┘   └─────────────┘   └─────────────┘              │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Core Concepts
+
+### Agent Definition Framework
+
+| Component | Description | Example |
+|-----------|-------------|---------|
+| **Agent** | Autonomous unit with role, goal, and backstory | "Senior Security Analyst with 10 years experience" |
+| **Tool** | External capability (API, database, function) | Web search, code execution, database query |
+| **Memory** | State persistence across interactions | Conversation history, learned facts, task progress |
+| **Crew/Team** | Collection of agents assembled for tasks | Research team, code review committee |
+| **Process** | Orchestration pattern (sequential, hierarchical, parallel) | Assembly line, management hierarchy |
+
+### Spring AI Agent Configuration
+
+```java
+@Configuration
+public class AgentConfiguration {
+
+    @Bean
+    public AgentDefinition researcherAgent(ChatClient.Builder builder) {
+        return AgentDefinition.builder()
+            .name("researcher")
+            .role("Senior Research Analyst")
+            .goal("Gather comprehensive, accurate information from multiple sources")
+            .backstory("""
+                You are a meticulous researcher with expertise in academic literature,
+                market analysis, and technical documentation. You verify facts from
+                multiple sources and clearly distinguish between established facts
+                and speculation. You have a PhD in Information Science and 15 years
+                of experience in competitive intelligence.
+                """)
+            .chatClient(builder
+                .defaultSystem(generateSystemPrompt())
+                .build())
+            .tools(List.of(
+                webSearchTool(),
+                documentRetrieverTool(),
+                citationManagerTool()
+            ))
+            .build();
+    }
+
+    @Bean
+    public AgentDefinition writerAgent(ChatClient.Builder builder) {
+        return AgentDefinition.builder()
+            .name("writer")
+            .role("Technical Content Writer")
+            .goal("Transform research into clear, engaging, actionable content")
+            .backstory("""
+                You are an award-winning technical writer who excels at making
+                complex topics accessible. You have written for major tech
+                publications and authored several O'Reilly books. You balance
+                technical accuracy with readability.
+                """)
+            .chatClient(builder.build())
+            .tools(List.of(
+                grammarCheckerTool(),
+                readabilityAnalyzerTool()
+            ))
+            .build();
+    }
+}
+
+@Data
+@Builder
+public class AgentDefinition {
+    private String name;
+    private String role;
+    private String goal;
+    private String backstory;
+    private ChatClient chatClient;
+    private List<FunctionCallback> tools;
+    private MemoryStore memory;
+}
+```
+
+---
+
+## 1. Sequential Orchestration
+
+**The Assembly Line**: Agents execute in a linear chain where each agent's output becomes the next agent's input.
+
+### Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                    Sequential Pipeline                               │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  Input ──▶ [Parser] ──▶ [Enricher] ──▶ [Analyzer] ──▶ [Formatter]   │
+│              │            │              │              │            │
+│              ▼            ▼              ▼              ▼            │
+│           Tokens       Metadata       Insights       Output          │
+│                                                                      │
+│  Flow: Strictly linear, output(N) = input(N+1)                      │
+│  Error: Pipeline halts on failure                                    │
+│  State: Passed forward through context                               │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### Spring AI Implementation
+
+```java
+@Service
+@Slf4j
+public class SequentialOrchestrator {
+
+    private final List<AgentDefinition> pipeline;
+    private final MeterRegistry registry;
+
+    public SequentialOrchestrator(
+            @Qualifier("parserAgent") AgentDefinition parser,
+            @Qualifier("enricherAgent") AgentDefinition enricher,
+            @Qualifier("analyzerAgent") AgentDefinition analyzer,
+            @Qualifier("formatterAgent") AgentDefinition formatter,
+            MeterRegistry registry) {
+        this.pipeline = List.of(parser, enricher, analyzer, formatter);
+        this.registry = registry;
+    }
+
+    public PipelineResult process(String input) {
+        return process(input, new PipelineContext());
+    }
+
+    public PipelineResult process(String input, PipelineContext context) {
+        String currentOutput = input;
+        List<StageResult> stageResults = new ArrayList<>();
+
+        Timer.Sample pipelineTimer = Timer.start(registry);
+
+        for (int i = 0; i < pipeline.size(); i++) {
+            AgentDefinition agent = pipeline.get(i);
+            String stageName = agent.getName();
+
+            log.info("Stage {}/{}: {} processing", i + 1, pipeline.size(), stageName);
+
+            Timer.Sample stageTimer = Timer.start(registry);
+
+            try {
+                StageResult result = executeStage(agent, currentOutput, context);
+
+                stageTimer.stop(registry.timer("pipeline.stage",
+                    "stage", stageName, "status", "success"));
+
+                stageResults.add(result);
+                currentOutput = result.output();
+
+                // Update context with stage metadata
+                context.addStageMetadata(stageName, result.metadata());
+
+                log.info("Stage {} completed: {} tokens in, {} tokens out",
+                    stageName, result.inputTokens(), result.outputTokens());
+
+            } catch (Exception e) {
+                stageTimer.stop(registry.timer("pipeline.stage",
+                    "stage", stageName, "status", "error"));
+
+                log.error("Stage {} failed: {}", stageName, e.getMessage());
+
+                return PipelineResult.builder()
+                    .success(false)
+                    .failedStage(stageName)
+                    .stageResults(stageResults)
+                    .error(e.getMessage())
+                    .build();
+            }
+        }
+
+        pipelineTimer.stop(registry.timer("pipeline.total", "status", "success"));
+
+        return PipelineResult.builder()
+            .success(true)
+            .output(currentOutput)
+            .stageResults(stageResults)
+            .context(context)
+            .build();
+    }
+
+    private StageResult executeStage(AgentDefinition agent, String input,
+                                     PipelineContext context) {
+        String systemPrompt = buildSystemPrompt(agent, context);
+
+        ChatResponse response = agent.getChatClient().prompt()
+            .system(systemPrompt)
+            .user(u -> u.text("""
+                Previous context: {context}
+
+                Current input to process:
+                {input}
+
+                Execute your role and provide output for the next stage.
+                """)
+                .param("context", context.getSummary())
+                .param("input", input))
+            .call()
+            .chatResponse();
+
+        return StageResult.builder()
+            .stageName(agent.getName())
+            .output(response.getResult().getOutput().getContent())
+            .inputTokens(response.getMetadata().getUsage().getPromptTokens())
+            .outputTokens(response.getMetadata().getUsage().getCompletionTokens())
+            .metadata(extractMetadata(response))
+            .build();
+    }
+
+    private String buildSystemPrompt(AgentDefinition agent, PipelineContext context) {
+        return String.format("""
+            You are a %s.
+
+            Role: %s
+            Goal: %s
+
+            Background:
+            %s
+
+            Pipeline Position: You are part of a sequential processing pipeline.
+            Your output will be passed to the next stage for further processing.
+
+            Output Requirements:
+            - Provide clear, structured output
+            - Include any metadata needed by subsequent stages
+            - Flag any issues or uncertainties
+            """,
+            agent.getName(),
+            agent.getRole(),
+            agent.getGoal(),
+            agent.getBackstory()
+        );
+    }
+}
+
+@Data
+@Builder
+public class PipelineResult {
+    private boolean success;
+    private String output;
+    private String failedStage;
+    private String error;
+    private List<StageResult> stageResults;
+    private PipelineContext context;
+}
+
+@Data
+@Builder
+public class StageResult {
+    private String stageName;
+    private String output;
+    private int inputTokens;
+    private int outputTokens;
+    private Map<String, Object> metadata;
+}
+```
+
+### Advanced: Resumable Pipeline with Checkpoints
+
+```java
+@Service
+public class ResumablePipeline {
+
+    private final SequentialOrchestrator orchestrator;
+    private final CheckpointStore checkpointStore;
+
+    public PipelineResult processWithCheckpoints(String jobId, String input) {
+        // Check for existing checkpoint
+        Optional<Checkpoint> checkpoint = checkpointStore.getCheckpoint(jobId);
+
+        if (checkpoint.isPresent()) {
+            log.info("Resuming from checkpoint: stage {} for job {}",
+                checkpoint.get().getLastCompletedStage(), jobId);
+            return resumeFromCheckpoint(jobId, checkpoint.get());
+        }
+
+        // Fresh start with checkpoint saving
+        return processWithCheckpointSaving(jobId, input);
+    }
+
+    private PipelineResult processWithCheckpointSaving(String jobId, String input) {
+        PipelineContext context = new PipelineContext();
+        context.setJobId(jobId);
+
+        // Register checkpoint callback
+        context.setOnStageComplete((stageName, output) -> {
+            checkpointStore.saveCheckpoint(Checkpoint.builder()
+                .jobId(jobId)
+                .lastCompletedStage(stageName)
+                .stageOutput(output)
+                .context(context)
+                .timestamp(Instant.now())
+                .build());
+        });
+
+        return orchestrator.process(input, context);
+    }
+
+    private PipelineResult resumeFromCheckpoint(String jobId, Checkpoint checkpoint) {
+        PipelineContext context = checkpoint.getContext();
+        return orchestrator.processFromStage(
+            checkpoint.getLastCompletedStage(),
+            checkpoint.getStageOutput(),
+            context
+        );
+    }
+}
+```
+
+### Best For
+
+| Use Case | Example |
+|----------|---------|
+| **Data Processing Pipelines** | ETL workflows, log processing |
+| **Document Workflows** | Intake → Classification → Extraction → Validation |
+| **Content Transformation** | Raw data → Analysis → Report → Summary |
+| **Compliance Processing** | Check A → Check B → Check C → Approval |
+
+---
+
+## 2. Hierarchical Orchestration
+
+**The Russian Doll**: A supervisor agent decomposes tasks and delegates to specialist sub-agents, collecting and synthesizing results.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Hierarchical Architecture                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│                    ┌─────────────────────┐                         │
+│                    │   Supervisor Agent  │                         │
+│                    │  (Task Decomposer)  │                         │
+│                    └──────────┬──────────┘                         │
+│                               │                                     │
+│               ┌───────────────┼───────────────┐                    │
+│               │               │               │                     │
+│               ▼               ▼               ▼                     │
+│    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           │
+│    │  Researcher  │  │   Analyst    │  │    Writer    │           │
+│    │   Agent      │  │    Agent     │  │    Agent     │           │
+│    └──────────────┘  └──────────────┘  └──────────────┘           │
+│           │                 │                 │                     │
+│           │    ┌────────────┘                 │                     │
+│           │    │                              │                     │
+│           ▼    ▼                              ▼                     │
+│    ┌─────────────────────────────────────────────────┐             │
+│    │              Results Aggregation                 │             │
+│    └─────────────────────────────────────────────────┘             │
+│                               │                                     │
+│                               ▼                                     │
+│                    ┌─────────────────────┐                         │
+│                    │   Supervisor Agent  │                         │
+│                    │   (Synthesizer)     │                         │
+│                    └─────────────────────┘                         │
+│                               │                                     │
+│                               ▼                                     │
+│                         Final Output                                │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Spring AI Implementation
+
+```java
+@Service
+@Slf4j
+public class HierarchicalOrchestrator {
+
+    private final AgentDefinition supervisor;
+    private final Map<String, AgentDefinition> specialists;
+    private final ExecutorService executorService;
+    private final MeterRegistry registry;
+
+    public HierarchicalOrchestrator(
+            @Qualifier("supervisorAgent") AgentDefinition supervisor,
+            Map<String, AgentDefinition> specialists,
+            MeterRegistry registry) {
+        this.supervisor = supervisor;
+        this.specialists = specialists;
+        this.executorService = Executors.newFixedThreadPool(
+            Math.min(specialists.size(), 10)
+        );
+        this.registry = registry;
+    }
+
+    public OrchestratedResult execute(String task) {
+        log.info("Starting hierarchical execution for task: {}",
+            task.substring(0, Math.min(100, task.length())));
+
+        // Phase 1: Supervisor decomposes task
+        TaskDecomposition decomposition = decomposeTask(task);
+        log.info("Task decomposed into {} subtasks", decomposition.getSubtasks().size());
+
+        // Phase 2: Delegate to specialists (parallel or sequential based on dependencies)
+        Map<String, SubtaskResult> results = executeSubtasks(decomposition);
+
+        // Phase 3: Supervisor synthesizes results
+        String synthesis = synthesizeResults(task, decomposition, results);
+
+        return OrchestratedResult.builder()
+            .task(task)
+            .decomposition(decomposition)
+            .subtaskResults(results)
+            .synthesis(synthesis)
+            .build();
+    }
+
+    private TaskDecomposition decomposeTask(String task) {
+        String availableSpecialists = specialists.keySet().stream()
+            .map(name -> "- " + name + ": " + specialists.get(name).getGoal())
+            .collect(Collectors.joining("\n"));
+
+        return supervisor.getChatClient().prompt()
+            .system(s -> s.text("""
+                You are a project manager who decomposes complex tasks into subtasks.
+
+                Available specialists:
+                {specialists}
+
+                For the given task:
+                1. Break it into specific, actionable subtasks
+                2. Assign each subtask to the most appropriate specialist
+                3. Identify dependencies between subtasks
+                4. Specify the execution order (parallel where possible)
+
+                Output as JSON matching the TaskDecomposition schema.
+                """)
+                .param("specialists", availableSpecialists))
+            .user(task)
+            .call()
+            .entity(TaskDecomposition.class);
+    }
+
+    private Map<String, SubtaskResult> executeSubtasks(TaskDecomposition decomposition) {
+        Map<String, SubtaskResult> results = new ConcurrentHashMap<>();
+
+        // Group subtasks by execution phase (respecting dependencies)
+        List<List<Subtask>> executionPhases = groupByDependencies(decomposition);
+
+        for (int phase = 0; phase < executionPhases.size(); phase++) {
+            List<Subtask> parallelTasks = executionPhases.get(phase);
+            log.info("Executing phase {}/{} with {} parallel tasks",
+                phase + 1, executionPhases.size(), parallelTasks.size());
+
+            // Execute all tasks in this phase in parallel
+            List<CompletableFuture<SubtaskResult>> futures = parallelTasks.stream()
+                .map(subtask -> CompletableFuture.supplyAsync(
+                    () -> executeSubtask(subtask, results),
+                    executorService
+                ))
+                .collect(Collectors.toList());
+
+            // Wait for all tasks in phase to complete
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+            // Collect results
+            for (int i = 0; i < parallelTasks.size(); i++) {
+                SubtaskResult result = futures.get(i).join();
+                results.put(parallelTasks.get(i).getId(), result);
+            }
+        }
+
+        return results;
+    }
+
+    private SubtaskResult executeSubtask(Subtask subtask,
+                                         Map<String, SubtaskResult> previousResults) {
+        AgentDefinition specialist = specialists.get(subtask.getAssignedAgent());
+
+        if (specialist == null) {
+            log.warn("No specialist found for: {}, using supervisor",
+                subtask.getAssignedAgent());
+            specialist = supervisor;
+        }
+
+        // Gather dependency outputs
+        String dependencyContext = subtask.getDependencies().stream()
+            .filter(previousResults::containsKey)
+            .map(dep -> String.format("From %s:\n%s", dep,
+                previousResults.get(dep).getOutput()))
+            .collect(Collectors.joining("\n\n"));
+
+        Timer.Sample timer = Timer.start(registry);
+
+        try {
+            String output = specialist.getChatClient().prompt()
+                .system(s -> s.text("""
+                    Role: {role}
+                    Goal: {goal}
+
+                    Background:
+                    {backstory}
+
+                    Execute the assigned subtask thoroughly and provide a complete response.
+                    """)
+                    .param("role", specialist.getRole())
+                    .param("goal", specialist.getGoal())
+                    .param("backstory", specialist.getBackstory()))
+                .user(u -> u.text("""
+                    Subtask: {subtask}
+
+                    Context from previous subtasks:
+                    {context}
+
+                    Execute this subtask and provide detailed output.
+                    """)
+                    .param("subtask", subtask.getDescription())
+                    .param("context", dependencyContext.isEmpty() ? "None" : dependencyContext))
+                .call()
+                .content();
+
+            timer.stop(registry.timer("hierarchical.subtask",
+                "agent", subtask.getAssignedAgent(), "status", "success"));
+
+            return SubtaskResult.builder()
+                .subtaskId(subtask.getId())
+                .agent(subtask.getAssignedAgent())
+                .output(output)
+                .success(true)
+                .build();
+
+        } catch (Exception e) {
+            timer.stop(registry.timer("hierarchical.subtask",
+                "agent", subtask.getAssignedAgent(), "status", "error"));
+
+            return SubtaskResult.builder()
+                .subtaskId(subtask.getId())
+                .agent(subtask.getAssignedAgent())
+                .success(false)
+                .error(e.getMessage())
+                .build();
+        }
+    }
+
+    private String synthesizeResults(String originalTask,
+                                     TaskDecomposition decomposition,
+                                     Map<String, SubtaskResult> results) {
+        String resultsFormatted = decomposition.getSubtasks().stream()
+            .map(subtask -> {
+                SubtaskResult result = results.get(subtask.getId());
+                return String.format("""
+                    ## Subtask: %s
+                    Assigned to: %s
+                    Status: %s
+
+                    Output:
+                    %s
+                    """,
+                    subtask.getDescription(),
+                    subtask.getAssignedAgent(),
+                    result.isSuccess() ? "Completed" : "Failed: " + result.getError(),
+                    result.isSuccess() ? result.getOutput() : "N/A"
+                );
+            })
+            .collect(Collectors.joining("\n---\n"));
+
+        return supervisor.getChatClient().prompt()
+            .system("""
+                You are synthesizing results from multiple specialist agents.
+
+                Your role:
+                1. Integrate insights from all subtask outputs
+                2. Resolve any conflicts or inconsistencies
+                3. Fill gaps where subtasks may have missed important aspects
+                4. Create a coherent, comprehensive final response
+                5. Highlight key findings and recommendations
+                """)
+            .user(u -> u.text("""
+                Original Task:
+                {task}
+
+                Subtask Results:
+                {results}
+
+                Synthesize these into a comprehensive final response that fully
+                addresses the original task.
+                """)
+                .param("task", originalTask)
+                .param("results", resultsFormatted))
+            .call()
+            .content();
+    }
+
+    private List<List<Subtask>> groupByDependencies(TaskDecomposition decomposition) {
+        // Topological sort to group tasks by execution phase
+        Map<String, Set<String>> dependencyGraph = new HashMap<>();
+        Map<String, Subtask> subtaskMap = new HashMap<>();
+
+        for (Subtask subtask : decomposition.getSubtasks()) {
+            subtaskMap.put(subtask.getId(), subtask);
+            dependencyGraph.put(subtask.getId(), new HashSet<>(subtask.getDependencies()));
+        }
+
+        List<List<Subtask>> phases = new ArrayList<>();
+        Set<String> completed = new HashSet<>();
+
+        while (completed.size() < subtaskMap.size()) {
+            List<Subtask> currentPhase = new ArrayList<>();
+
+            for (Map.Entry<String, Set<String>> entry : dependencyGraph.entrySet()) {
+                String taskId = entry.getKey();
+                Set<String> deps = entry.getValue();
+
+                if (!completed.contains(taskId) && completed.containsAll(deps)) {
+                    currentPhase.add(subtaskMap.get(taskId));
+                }
+            }
+
+            if (currentPhase.isEmpty() && completed.size() < subtaskMap.size()) {
+                // Circular dependency detected - break by taking any remaining task
+                String remaining = subtaskMap.keySet().stream()
+                    .filter(id -> !completed.contains(id))
+                    .findFirst()
+                    .orElseThrow();
+                currentPhase.add(subtaskMap.get(remaining));
+            }
+
+            phases.add(currentPhase);
+            currentPhase.forEach(t -> completed.add(t.getId()));
+        }
+
+        return phases;
+    }
+}
+
+@Data
+@Builder
+public class TaskDecomposition {
+    private List<Subtask> subtasks;
+    private String executionStrategy;
+    private Map<String, Object> metadata;
+}
+
+@Data
+@Builder
+public class Subtask {
+    private String id;
+    private String description;
+    private String assignedAgent;
+    private List<String> dependencies;
+    private int priority;
+}
+```
+
+### Best For
+
+| Use Case | Example |
+|----------|---------|
+| **Complex Project Management** | Product launches, research projects |
+| **Research and Analysis** | Market research, competitive analysis |
+| **Multi-stage Workflows** | Document processing with multiple specialists |
+| **Enterprise Applications** | Customer onboarding, loan processing |
+
+---
+
+## 3. Parallel Orchestration
+
+**The Octopus**: Multiple agents execute simultaneously on the same input, with results aggregated.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Parallel Architecture                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│                           Input                                     │
+│                             │                                       │
+│           ┌─────────────────┼─────────────────┐                    │
+│           │                 │                 │                     │
+│           ▼                 ▼                 ▼                     │
+│    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           │
+│    │   Security   │  │    Style     │  │  Performance │           │
+│    │   Analyst    │  │   Reviewer   │  │   Engineer   │           │
+│    └──────────────┘  └──────────────┘  └──────────────┘           │
+│           │                 │                 │                     │
+│           │   ┌─────────────┼─────────────┐   │                    │
+│           │   │             │             │   │                     │
+│           ▼   ▼             ▼             ▼   ▼                     │
+│    ┌──────────────────────────────────────────────────┐            │
+│    │              Result Aggregator                    │            │
+│    │    (Merge, Deduplicate, Prioritize Findings)     │            │
+│    └──────────────────────────────────────────────────┘            │
+│                             │                                       │
+│                             ▼                                       │
+│                    Synthesized Report                               │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Spring AI Implementation
+
+```java
+@Service
+@Slf4j
+public class ParallelOrchestrator {
+
+    private final Map<String, AgentDefinition> agents;
+    private final AgentDefinition synthesizer;
+    private final ExecutorService executorService;
+    private final MeterRegistry registry;
+
+    public ParallelOrchestrator(
+            @Qualifier("parallelAgents") Map<String, AgentDefinition> agents,
+            @Qualifier("synthesizerAgent") AgentDefinition synthesizer,
+            MeterRegistry registry) {
+        this.agents = agents;
+        this.synthesizer = synthesizer;
+        this.executorService = Executors.newCachedThreadPool();
+        this.registry = registry;
+    }
+
+    public ParallelResult execute(String input) {
+        return execute(input, agents.keySet());
+    }
+
+    public ParallelResult execute(String input, Set<String> selectedAgents) {
+        log.info("Starting parallel execution with {} agents", selectedAgents.size());
+
+        Timer.Sample totalTimer = Timer.start(registry);
+
+        // Launch all agents in parallel
+        Map<String, CompletableFuture<AgentResult>> futures = selectedAgents.stream()
+            .filter(agents::containsKey)
+            .collect(Collectors.toMap(
+                name -> name,
+                name -> CompletableFuture.supplyAsync(
+                    () -> executeAgent(name, input),
+                    executorService
+                )
+            ));
+
+        // Wait for all with timeout
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+            futures.values().toArray(new CompletableFuture[0])
+        );
+
+        try {
+            allFutures.get(5, TimeUnit.MINUTES);
+        } catch (TimeoutException e) {
+            log.warn("Some agents timed out after 5 minutes");
+        } catch (Exception e) {
+            log.error("Error waiting for agents", e);
+        }
+
+        // Collect results (completed or failed)
+        Map<String, AgentResult> results = new HashMap<>();
+        for (Map.Entry<String, CompletableFuture<AgentResult>> entry : futures.entrySet()) {
+            try {
+                results.put(entry.getKey(), entry.getValue().getNow(
+                    AgentResult.builder()
+                        .agentName(entry.getKey())
+                        .success(false)
+                        .error("Timed out")
+                        .build()
+                ));
+            } catch (Exception e) {
+                results.put(entry.getKey(), AgentResult.builder()
+                    .agentName(entry.getKey())
+                    .success(false)
+                    .error(e.getMessage())
+                    .build());
+            }
+        }
+
+        // Synthesize results
+        String synthesis = synthesizeResults(input, results);
+
+        totalTimer.stop(registry.timer("parallel.total"));
+
+        return ParallelResult.builder()
+            .input(input)
+            .agentResults(results)
+            .synthesis(synthesis)
+            .completedCount((int) results.values().stream().filter(AgentResult::isSuccess).count())
+            .totalCount(results.size())
+            .build();
+    }
+
+    private AgentResult executeAgent(String agentName, String input) {
+        AgentDefinition agent = agents.get(agentName);
+        Timer.Sample timer = Timer.start(registry);
+
+        log.info("Agent {} starting analysis", agentName);
+
+        try {
+            ChatResponse response = agent.getChatClient().prompt()
+                .system(s -> s.text("""
+                    Role: {role}
+                    Goal: {goal}
+
+                    Background:
+                    {backstory}
+
+                    You are part of a parallel review team. Focus exclusively on your
+                    area of expertise. Other specialists are handling other aspects.
+
+                    Provide findings in this structure:
+                    1. Executive Summary (2-3 sentences)
+                    2. Detailed Findings (prioritized list)
+                    3. Recommendations (actionable items)
+                    4. Risk Assessment (if applicable)
+                    """)
+                    .param("role", agent.getRole())
+                    .param("goal", agent.getGoal())
+                    .param("backstory", agent.getBackstory()))
+                .user(input)
+                .call()
+                .chatResponse();
+
+            timer.stop(registry.timer("parallel.agent",
+                "agent", agentName, "status", "success"));
+
+            return AgentResult.builder()
+                .agentName(agentName)
+                .output(response.getResult().getOutput().getContent())
+                .success(true)
+                .tokensUsed(response.getMetadata().getUsage().getTotalTokens())
+                .build();
+
+        } catch (Exception e) {
+            timer.stop(registry.timer("parallel.agent",
+                "agent", agentName, "status", "error"));
+
+            log.error("Agent {} failed: {}", agentName, e.getMessage());
+
+            return AgentResult.builder()
+                .agentName(agentName)
+                .success(false)
+                .error(e.getMessage())
+                .build();
+        }
+    }
+
+    private String synthesizeResults(String input, Map<String, AgentResult> results) {
+        String allResults = results.entrySet().stream()
+            .map(e -> String.format("""
+                ## %s Review
+                Status: %s
+
+                %s
+                """,
+                e.getKey(),
+                e.getValue().isSuccess() ? "Completed" : "Failed: " + e.getValue().getError(),
+                e.getValue().isSuccess() ? e.getValue().getOutput() : "N/A"
+            ))
+            .collect(Collectors.joining("\n---\n"));
+
+        return synthesizer.getChatClient().prompt()
+            .system("""
+                You are synthesizing reviews from multiple specialist agents.
+
+                Your responsibilities:
+                1. Merge overlapping findings
+                2. Resolve conflicting assessments (explain the conflict)
+                3. Prioritize combined recommendations
+                4. Create executive summary of all perspectives
+                5. Highlight consensus vs. divergent opinions
+                """)
+            .user(u -> u.text("""
+                Original Input:
+                {input}
+
+                Agent Reviews:
+                {reviews}
+
+                Create a unified report that synthesizes all perspectives.
+                """)
+                .param("input", input.substring(0, Math.min(1000, input.length())))
+                .param("reviews", allResults))
+            .call()
+            .content();
+    }
+}
+
+// Specialized Code Review Implementation
+@Service
+public class ParallelCodeReviewer extends ParallelOrchestrator {
+
+    @Bean
+    public Map<String, AgentDefinition> parallelAgents(ChatClient.Builder builder) {
+        return Map.of(
+            "security", createSecurityAgent(builder),
+            "style", createStyleAgent(builder),
+            "performance", createPerformanceAgent(builder),
+            "architecture", createArchitectureAgent(builder),
+            "testing", createTestingAgent(builder)
+        );
+    }
+
+    private AgentDefinition createSecurityAgent(ChatClient.Builder builder) {
+        return AgentDefinition.builder()
+            .name("security")
+            .role("Security Analyst")
+            .goal("Identify security vulnerabilities, injection risks, and unsafe patterns")
+            .backstory("""
+                You are a senior security engineer with OSCP, CISSP certifications.
+                You specialize in application security and have found vulnerabilities
+                in major open source projects. You focus on OWASP Top 10, CWE,
+                and secure coding practices.
+                """)
+            .chatClient(builder.build())
+            .build();
+    }
+
+    private AgentDefinition createPerformanceAgent(ChatClient.Builder builder) {
+        return AgentDefinition.builder()
+            .name("performance")
+            .role("Performance Engineer")
+            .goal("Identify performance bottlenecks, memory issues, and optimization opportunities")
+            .backstory("""
+                You are a performance optimization expert with experience scaling
+                systems to millions of users. You focus on time complexity,
+                memory allocation, caching strategies, and database query optimization.
+                """)
+            .chatClient(builder.build())
+            .build();
+    }
+
+    // ... other agent definitions
+}
+```
+
+### Best For
+
+| Use Case | Example |
+|----------|---------|
+| **Code Review** | Security + Style + Performance in parallel |
+| **Research** | Multiple sources investigated simultaneously |
+| **Content Generation** | Multiple creative variations |
+| **Risk Assessment** | Technical + Business + Legal perspectives |
+
+---
+
+## 4. Consensus/Debate Orchestration
+
+**Multiple Perspectives**: Agents debate and refine positions to reach a higher-quality consensus.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Debate Architecture                              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  Round 0: Initial Positions                                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐             │
+│  │   Agent A    │  │   Agent B    │  │   Agent C    │             │
+│  │  (Optimist)  │  │  (Skeptic)   │  │ (Pragmatist) │             │
+│  └──────────────┘  └──────────────┘  └──────────────┘             │
+│         │                │                  │                      │
+│         ▼                ▼                  ▼                      │
+│    Position A₀      Position B₀        Position C₀                 │
+│                                                                     │
+│  Round 1: Read others, refine                                       │
+│         │←───────────────┼──────────────────│                      │
+│         ▼                ▼                  ▼                      │
+│    Position A₁      Position B₁        Position C₁                 │
+│         (considers B₀, C₀)                                         │
+│                                                                     │
+│  Round N: Convergence                                               │
+│         │                │                  │                      │
+│         ▼                ▼                  ▼                      │
+│    ┌─────────────────────────────────────────────┐                 │
+│    │              Moderator Agent                 │                 │
+│    │   (Synthesize consensus, note dissent)      │                 │
+│    └─────────────────────────────────────────────┘                 │
+│                          │                                          │
+│                          ▼                                          │
+│                  Consensus Output                                   │
+│                  + Minority Opinions                                │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Spring AI Implementation
+
+```java
+@Service
+@Slf4j
+public class DebateOrchestrator {
+
+    private final List<AgentDefinition> debaters;
+    private final AgentDefinition moderator;
+    private final int maxRounds;
+    private final double convergenceThreshold;
+    private final MeterRegistry registry;
+
+    public DebateOrchestrator(
+            @Qualifier("debaterAgents") List<AgentDefinition> debaters,
+            @Qualifier("moderatorAgent") AgentDefinition moderator,
+            @Value("${debate.max-rounds:5}") int maxRounds,
+            @Value("${debate.convergence-threshold:0.85}") double convergenceThreshold,
+            MeterRegistry registry) {
+        this.debaters = debaters;
+        this.moderator = moderator;
+        this.maxRounds = maxRounds;
+        this.convergenceThreshold = convergenceThreshold;
+        this.registry = registry;
+    }
+
+    public DebateResult debate(String topic) {
+        log.info("Starting debate on topic with {} participants", debaters.size());
+
+        List<DebateRound> rounds = new ArrayList<>();
+        Map<String, String> currentPositions = new HashMap<>();
+
+        // Initial positions
+        DebateRound initialRound = collectInitialPositions(topic);
+        rounds.add(initialRound);
+        initialRound.getPositions().forEach(p ->
+            currentPositions.put(p.getAgentName(), p.getPosition()));
+
+        // Debate rounds
+        for (int round = 1; round <= maxRounds; round++) {
+            log.info("Starting debate round {}/{}", round, maxRounds);
+
+            DebateRound debateRound = executeDebateRound(topic, round, currentPositions);
+            rounds.add(debateRound);
+
+            // Update positions
+            debateRound.getPositions().forEach(p ->
+                currentPositions.put(p.getAgentName(), p.getPosition()));
+
+            // Check for convergence
+            double similarity = calculateConvergence(debateRound.getPositions());
+            log.info("Round {} convergence score: {}", round, similarity);
+
+            if (similarity >= convergenceThreshold) {
+                log.info("Convergence achieved at round {}", round);
+                break;
+            }
+        }
+
+        // Moderator synthesizes
+        ConsensusResult consensus = synthesizeConsensus(topic, rounds);
+
+        return DebateResult.builder()
+            .topic(topic)
+            .rounds(rounds)
+            .consensus(consensus)
+            .totalRounds(rounds.size())
+            .build();
+    }
+
+    private DebateRound collectInitialPositions(String topic) {
+        List<CompletableFuture<DebatePosition>> futures = debaters.stream()
+            .map(agent -> CompletableFuture.supplyAsync(() ->
+                getInitialPosition(agent, topic)))
+            .collect(Collectors.toList());
+
+        List<DebatePosition> positions = futures.stream()
+            .map(CompletableFuture::join)
+            .collect(Collectors.toList());
+
+        return DebateRound.builder()
+            .roundNumber(0)
+            .positions(positions)
+            .build();
+    }
+
+    private DebatePosition getInitialPosition(AgentDefinition agent, String topic) {
+        String position = agent.getChatClient().prompt()
+            .system(s -> s.text("""
+                You are: {role}
+                Perspective: {backstory}
+
+                You are participating in a structured debate. Present your initial
+                position on the topic. Be clear, reasoned, and willing to defend
+                your viewpoint while remaining open to persuasion.
+
+                Structure your response:
+                1. Core Position (1-2 sentences)
+                2. Key Arguments (3-5 points)
+                3. Evidence/Reasoning
+                4. Potential Weaknesses (acknowledge honestly)
+                """)
+                .param("role", agent.getRole())
+                .param("backstory", agent.getBackstory()))
+            .user("Topic for debate: " + topic)
+            .call()
+            .content();
+
+        return DebatePosition.builder()
+            .agentName(agent.getName())
+            .agentRole(agent.getRole())
+            .position(position)
+            .build();
+    }
+
+    private DebateRound executeDebateRound(String topic, int roundNumber,
+                                           Map<String, String> previousPositions) {
+        List<CompletableFuture<DebatePosition>> futures = debaters.stream()
+            .map(agent -> CompletableFuture.supplyAsync(() ->
+                refinePosition(agent, topic, roundNumber, previousPositions)))
+            .collect(Collectors.toList());
+
+        List<DebatePosition> positions = futures.stream()
+            .map(CompletableFuture::join)
+            .collect(Collectors.toList());
+
+        return DebateRound.builder()
+            .roundNumber(roundNumber)
+            .positions(positions)
+            .build();
+    }
+
+    private DebatePosition refinePosition(AgentDefinition agent, String topic,
+                                          int roundNumber,
+                                          Map<String, String> otherPositions) {
+        String othersContext = otherPositions.entrySet().stream()
+            .filter(e -> !e.getKey().equals(agent.getName()))
+            .map(e -> String.format("**%s's position:**\n%s", e.getKey(), e.getValue()))
+            .collect(Collectors.joining("\n\n---\n\n"));
+
+        String refinedPosition = agent.getChatClient().prompt()
+            .system(s -> s.text("""
+                You are: {role}
+                Perspective: {backstory}
+
+                This is round {round} of a structured debate.
+
+                Instructions:
+                1. Consider the other participants' arguments carefully
+                2. Acknowledge strong points from others
+                3. Address criticisms of your position
+                4. Refine your position based on the discussion
+                5. You may change your view if convinced - intellectual honesty is valued
+
+                Structure your response:
+                1. Response to Others (engage with specific arguments)
+                2. Refined Position (may be unchanged, modified, or reversed)
+                3. New Arguments/Evidence
+                4. Areas of Agreement (with other debaters)
+                5. Remaining Disagreements
+                """)
+                .param("role", agent.getRole())
+                .param("backstory", agent.getBackstory())
+                .param("round", roundNumber))
+            .user(u -> u.text("""
+                Topic: {topic}
+
+                Your previous position:
+                {myPosition}
+
+                Other participants' positions:
+                {others}
+
+                Provide your refined position for this round.
+                """)
+                .param("topic", topic)
+                .param("myPosition", otherPositions.get(agent.getName()))
+                .param("others", othersContext))
+            .call()
+            .content();
+
+        return DebatePosition.builder()
+            .agentName(agent.getName())
+            .agentRole(agent.getRole())
+            .position(refinedPosition)
+            .build();
+    }
+
+    private double calculateConvergence(List<DebatePosition> positions) {
+        // Use embedding similarity to measure position convergence
+        // Simplified: check for explicit agreement markers
+        long agreementCount = positions.stream()
+            .filter(p -> p.getPosition().toLowerCase().contains("i agree") ||
+                        p.getPosition().toLowerCase().contains("consensus") ||
+                        p.getPosition().toLowerCase().contains("common ground"))
+            .count();
+
+        return (double) agreementCount / positions.size();
+    }
+
+    private ConsensusResult synthesizeConsensus(String topic, List<DebateRound> rounds) {
+        DebateRound finalRound = rounds.get(rounds.size() - 1);
+        String finalPositions = finalRound.getPositions().stream()
+            .map(p -> String.format("**%s (%s):**\n%s",
+                p.getAgentName(), p.getAgentRole(), p.getPosition()))
+            .collect(Collectors.joining("\n\n---\n\n"));
+
+        return moderator.getChatClient().prompt()
+            .system("""
+                You are a skilled debate moderator and synthesizer.
+
+                After observing a multi-round debate, your task is to:
+                1. Identify points of consensus (agreed by most/all)
+                2. Highlight valuable insights from each perspective
+                3. Note remaining points of disagreement
+                4. Provide a balanced synthesis that captures the debate's wisdom
+                5. Offer your assessment of the strongest arguments
+
+                Be fair to all perspectives while being honest about argument quality.
+                """)
+            .user(u -> u.text("""
+                Topic: {topic}
+
+                Number of debate rounds: {rounds}
+
+                Final positions from all participants:
+                {positions}
+
+                Synthesize the debate into a comprehensive consensus document.
+                """)
+                .param("topic", topic)
+                .param("rounds", rounds.size())
+                .param("positions", finalPositions))
+            .call()
+            .entity(ConsensusResult.class);
+    }
+}
+
+@Data
+@Builder
+public class ConsensusResult {
+    private String executiveSummary;
+    private List<String> pointsOfAgreement;
+    private List<String> pointsOfDisagreement;
+    private List<String> keyInsights;
+    private String recommendedAction;
+    private double confidenceLevel;
+}
+```
+
+### Best For
+
+| Use Case | Example |
+|----------|---------|
+| **Decision Making** | Investment decisions, hiring |
+| **Risk Assessment** | Project go/no-go decisions |
+| **Policy Development** | Company guidelines, standards |
+| **Complex Analysis** | Multiple valid interpretations |
+
+---
+
+## 5. ReAct: Reasoning and Acting
+
+**The Thinking Actor**: Interleaves reasoning (thinking about what to do) with acting (taking actions and observing results).
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                       ReAct Loop                                    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  Task ──▶ ┌─────────────────────────────────────────────────────┐  │
+│           │                                                     │  │
+│           │  ┌─────────┐    ┌─────────┐    ┌─────────────────┐ │  │
+│           │  │ Thought │ ─▶ │ Action  │ ─▶ │   Observation   │ │  │
+│           │  │ (Plan)  │    │(Execute)│    │    (Result)     │ │  │
+│           │  └─────────┘    └─────────┘    └─────────────────┘ │  │
+│           │       ▲                              │              │  │
+│           │       │                              │              │  │
+│           │       └──────────────────────────────┘              │  │
+│           │                                                     │  │
+│           │  Repeat until task complete or max iterations      │  │
+│           └─────────────────────────────────────────────────────┘  │
+│                                      │                              │
+│                                      ▼                              │
+│                               Final Answer                          │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Spring AI Implementation
+
+```java
+@Service
+@Slf4j
+public class ReActAgent {
+
+    private final ChatClient chatClient;
+    private final Map<String, ToolExecutor> tools;
+    private final int maxIterations;
+    private final MeterRegistry registry;
+
+    public ReActAgent(
+            ChatClient.Builder builder,
+            Map<String, ToolExecutor> tools,
+            @Value("${react.max-iterations:10}") int maxIterations,
+            MeterRegistry registry) {
+        this.chatClient = builder.build();
+        this.tools = tools;
+        this.maxIterations = maxIterations;
+        this.registry = registry;
+    }
+
+    public ReActResult execute(String task) {
+        log.info("Starting ReAct agent for task: {}",
+            task.substring(0, Math.min(100, task.length())));
+
+        List<ReActStep> trajectory = new ArrayList<>();
+        StringBuilder scratchpad = new StringBuilder();
+
+        String availableTools = tools.keySet().stream()
+            .map(name -> String.format("- %s: %s", name, tools.get(name).getDescription()))
+            .collect(Collectors.joining("\n"));
+
+        for (int i = 0; i < maxIterations; i++) {
+            log.info("ReAct iteration {}/{}", i + 1, maxIterations);
+
+            // Get next thought and action
+            ReActResponse response = getNextStep(task, scratchpad.toString(), availableTools);
+
+            if (response.isFinished()) {
+                log.info("ReAct agent completed in {} iterations", i + 1);
+                return ReActResult.builder()
+                    .task(task)
+                    .answer(response.getFinalAnswer())
+                    .trajectory(trajectory)
+                    .iterations(i + 1)
+                    .success(true)
+                    .build();
+            }
+
+            // Execute action
+            String observation;
+            try {
+                observation = executeAction(response.getAction(), response.getActionInput());
+            } catch (Exception e) {
+                observation = "Error: " + e.getMessage();
+            }
+
+            // Record step
+            ReActStep step = ReActStep.builder()
+                .iteration(i + 1)
+                .thought(response.getThought())
+                .action(response.getAction())
+                .actionInput(response.getActionInput())
+                .observation(observation)
+                .build();
+            trajectory.add(step);
+
+            // Update scratchpad
+            scratchpad.append(String.format("""
+
+                Thought %d: %s
+                Action %d: %s[%s]
+                Observation %d: %s
+                """,
+                i + 1, response.getThought(),
+                i + 1, response.getAction(), response.getActionInput(),
+                i + 1, observation
+            ));
+        }
+
+        log.warn("ReAct agent reached max iterations without completing");
+
+        // Force final answer
+        String forcedAnswer = getForcedAnswer(task, scratchpad.toString());
+
+        return ReActResult.builder()
+            .task(task)
+            .answer(forcedAnswer)
+            .trajectory(trajectory)
+            .iterations(maxIterations)
+            .success(false)
+            .reason("Max iterations reached")
+            .build();
+    }
+
+    private ReActResponse getNextStep(String task, String scratchpad, String tools) {
+        String response = chatClient.prompt()
+            .system(s -> s.text("""
+                You are a reasoning agent that solves tasks by thinking step-by-step
+                and using tools to gather information.
+
+                Available Tools:
+                {tools}
+
+                Response Format:
+                Thought: [Your reasoning about what to do next]
+                Action: [Tool name to use, or "Finish" if done]
+                Action Input: [Input for the tool, or final answer if Action is Finish]
+
+                Important:
+                - Think carefully before each action
+                - Use observations to inform next steps
+                - Finish when you have enough information to answer
+                - Be concise but thorough
+                """)
+                .param("tools", tools))
+            .user(u -> u.text("""
+                Task: {task}
+
+                Previous steps:
+                {scratchpad}
+
+                What is your next thought and action?
+                """)
+                .param("task", task)
+                .param("scratchpad", scratchpad.isEmpty() ? "None yet" : scratchpad))
+            .call()
+            .content();
+
+        return parseReActResponse(response);
+    }
+
+    private ReActResponse parseReActResponse(String response) {
+        // Parse the structured response
+        String thought = extractField(response, "Thought:");
+        String action = extractField(response, "Action:");
+        String actionInput = extractField(response, "Action Input:");
+
+        boolean finished = action.equalsIgnoreCase("Finish") ||
+                          action.equalsIgnoreCase("Final Answer");
+
+        return ReActResponse.builder()
+            .thought(thought)
+            .action(action)
+            .actionInput(actionInput)
+            .finished(finished)
+            .finalAnswer(finished ? actionInput : null)
+            .build();
+    }
+
+    private String executeAction(String action, String input) {
+        ToolExecutor executor = tools.get(action.toLowerCase());
+
+        if (executor == null) {
+            return String.format("Unknown tool: %s. Available: %s",
+                action, String.join(", ", tools.keySet()));
+        }
+
+        Timer.Sample timer = Timer.start(registry);
+
+        try {
+            String result = executor.execute(input);
+            timer.stop(registry.timer("react.tool", "tool", action, "status", "success"));
+            return result;
+        } catch (Exception e) {
+            timer.stop(registry.timer("react.tool", "tool", action, "status", "error"));
+            throw e;
+        }
+    }
+
+    private String extractField(String response, String fieldName) {
+        int start = response.indexOf(fieldName);
+        if (start == -1) return "";
+
+        start += fieldName.length();
+        int end = response.indexOf("\n", start);
+        if (end == -1) end = response.length();
+
+        return response.substring(start, end).trim();
+    }
+
+    private String getForcedAnswer(String task, String scratchpad) {
+        return chatClient.prompt()
+            .system("""
+                Based on the reasoning trajectory, provide the best possible answer
+                to the original task. Acknowledge any limitations or uncertainties.
+                """)
+            .user(u -> u.text("""
+                Task: {task}
+
+                Reasoning trajectory:
+                {scratchpad}
+
+                Provide your best answer.
+                """)
+                .param("task", task)
+                .param("scratchpad", scratchpad))
+            .call()
+            .content();
+    }
+}
+
+@FunctionalInterface
+public interface ToolExecutor {
+    String execute(String input);
+
+    default String getDescription() {
+        return "A tool";
+    }
+}
+
+// Tool implementations
+@Component("search")
+public class WebSearchTool implements ToolExecutor {
+
+    private final WebSearchService searchService;
+
+    @Override
+    public String execute(String query) {
+        return searchService.search(query).stream()
+            .limit(5)
+            .map(r -> String.format("- %s: %s", r.getTitle(), r.getSnippet()))
+            .collect(Collectors.joining("\n"));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Search the web for information. Input: search query";
+    }
+}
+
+@Component("calculator")
+public class CalculatorTool implements ToolExecutor {
+
+    @Override
+    public String execute(String expression) {
+        try {
+            // Safe expression evaluation
+            ScriptEngine engine = new ScriptEngineManager().getEngineByName("JavaScript");
+            return String.valueOf(engine.eval(expression));
+        } catch (Exception e) {
+            return "Error evaluating: " + e.getMessage();
+        }
+    }
+
+    @Override
+    public String getDescription() {
+        return "Calculate mathematical expressions. Input: math expression";
+    }
+}
+```
+
+---
+
+## 6. Plan-and-Execute Pattern
+
+**The Strategic Planner**: First creates a complete plan, then executes each step, re-planning as needed.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Plan-and-Execute Architecture                    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  Task ──▶ ┌─────────────────────────────────────────────────────┐  │
+│           │              Planning Phase                         │  │
+│           │  ┌─────────────────────────────────────────────────┐│  │
+│           │  │ 1. Analyze task requirements                    ││  │
+│           │  │ 2. Identify required steps                      ││  │
+│           │  │ 3. Order steps by dependencies                  ││  │
+│           │  │ 4. Assign resources/tools per step              ││  │
+│           │  └─────────────────────────────────────────────────┘│  │
+│           └────────────────────────┬────────────────────────────┘  │
+│                                    │                                │
+│                                    ▼                                │
+│           ┌─────────────────────────────────────────────────────┐  │
+│           │              Execution Phase                        │  │
+│           │  ┌──────────────────────────────────────────────┐  │  │
+│           │  │ For each step in plan:                       │  │  │
+│           │  │   1. Execute step                            │  │  │
+│           │  │   2. Observe result                          │  │  │
+│           │  │   3. Check if re-planning needed             │  │  │
+│           │  │   4. Update remaining plan if necessary      │  │  │
+│           │  └──────────────────────────────────────────────┘  │  │
+│           └────────────────────────┬────────────────────────────┘  │
+│                                    │                                │
+│                                    ▼                                │
+│                              Final Result                           │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Spring AI Implementation
+
+```java
+@Service
+@Slf4j
+public class PlanAndExecuteAgent {
+
+    private final ChatClient planner;
+    private final ChatClient executor;
+    private final ChatClient replanner;
+    private final Map<String, ToolExecutor> tools;
+    private final MeterRegistry registry;
+
+    public PlanExecuteResult execute(String task) {
+        log.info("Starting Plan-and-Execute for task");
+
+        // Phase 1: Create initial plan
+        ExecutionPlan plan = createPlan(task);
+        log.info("Created plan with {} steps", plan.getSteps().size());
+
+        List<StepResult> results = new ArrayList<>();
+
+        // Phase 2: Execute each step
+        for (int i = 0; i < plan.getSteps().size(); i++) {
+            PlanStep step = plan.getSteps().get(i);
+            log.info("Executing step {}/{}: {}", i + 1, plan.getSteps().size(), step.getDescription());
+
+            // Execute step
+            StepResult result = executeStep(step, results);
+            results.add(result);
+
+            // Check if re-planning is needed
+            if (!result.isSuccess() || result.isRequiresReplan()) {
+                log.info("Re-planning required after step {}", i + 1);
+
+                ExecutionPlan newPlan = replan(task, plan, results, i);
+
+                if (newPlan != null && !newPlan.getSteps().isEmpty()) {
+                    plan = newPlan;
+                    // Don't increment i - will re-evaluate from current position
+                    continue;
+                } else if (!result.isSuccess()) {
+                    return PlanExecuteResult.builder()
+                        .task(task)
+                        .originalPlan(plan)
+                        .stepResults(results)
+                        .success(false)
+                        .error("Failed at step " + (i + 1) + ": " + result.getError())
+                        .build();
+                }
+            }
+        }
+
+        // Phase 3: Synthesize final result
+        String finalResult = synthesizeResult(task, results);
+
+        return PlanExecuteResult.builder()
+            .task(task)
+            .originalPlan(plan)
+            .stepResults(results)
+            .finalResult(finalResult)
+            .success(true)
+            .build();
+    }
+
+    private ExecutionPlan createPlan(String task) {
+        String toolDescriptions = tools.entrySet().stream()
+            .map(e -> String.format("- %s: %s", e.getKey(), e.getValue().getDescription()))
+            .collect(Collectors.joining("\n"));
+
+        return planner.prompt()
+            .system(s -> s.text("""
+                You are a strategic planner. Create a detailed execution plan for the task.
+
+                Available tools:
+                {tools}
+
+                Plan requirements:
+                1. Break task into atomic, executable steps
+                2. Each step should use one tool or be a synthesis step
+                3. Order steps by logical dependencies
+                4. Include validation/verification steps
+                5. Consider failure scenarios
+
+                Output a JSON plan with:
+                - steps: array of {description, tool, expectedOutput, dependsOn[]}
+                - successCriteria: how to know the task is complete
+                - riskFactors: potential issues to watch for
+                """)
+                .param("tools", toolDescriptions))
+            .user(task)
+            .call()
+            .entity(ExecutionPlan.class);
+    }
+
+    private StepResult executeStep(PlanStep step, List<StepResult> previousResults) {
+        Timer.Sample timer = Timer.start(registry);
+
+        try {
+            // Gather context from previous steps
+            String context = previousResults.stream()
+                .filter(r -> step.getDependsOn().contains(r.getStepId()))
+                .map(r -> String.format("From %s: %s", r.getStepId(), r.getOutput()))
+                .collect(Collectors.joining("\n"));
+
+            // Execute the step
+            String output;
+            if (step.getTool() != null && tools.containsKey(step.getTool())) {
+                // Tool execution
+                String toolInput = prepareToolInput(step, context);
+                output = tools.get(step.getTool()).execute(toolInput);
+            } else {
+                // LLM execution (synthesis, analysis, etc.)
+                output = executor.prompt()
+                    .system("""
+                        You are executing a step in a larger plan.
+                        Use the provided context and complete the step thoroughly.
+                        """)
+                    .user(u -> u.text("""
+                        Step: {description}
+
+                        Context from previous steps:
+                        {context}
+
+                        Expected output: {expected}
+
+                        Execute this step and provide the result.
+                        """)
+                        .param("description", step.getDescription())
+                        .param("context", context.isEmpty() ? "None" : context)
+                        .param("expected", step.getExpectedOutput()))
+                    .call()
+                    .content();
+            }
+
+            // Validate output
+            boolean meetsExpectation = validateOutput(output, step.getExpectedOutput());
+
+            timer.stop(registry.timer("planexec.step", "status", "success"));
+
+            return StepResult.builder()
+                .stepId(step.getId())
+                .description(step.getDescription())
+                .output(output)
+                .success(true)
+                .meetsExpectation(meetsExpectation)
+                .requiresReplan(!meetsExpectation)
+                .build();
+
+        } catch (Exception e) {
+            timer.stop(registry.timer("planexec.step", "status", "error"));
+
+            return StepResult.builder()
+                .stepId(step.getId())
+                .description(step.getDescription())
+                .success(false)
+                .error(e.getMessage())
+                .requiresReplan(true)
+                .build();
+        }
+    }
+
+    private ExecutionPlan replan(String task, ExecutionPlan currentPlan,
+                                  List<StepResult> results, int failedStepIndex) {
+        String completedSteps = results.stream()
+            .map(r -> String.format("- %s: %s (success: %s)",
+                r.getDescription(), r.getOutput(), r.isSuccess()))
+            .collect(Collectors.joining("\n"));
+
+        String remainingSteps = currentPlan.getSteps().subList(
+            failedStepIndex, currentPlan.getSteps().size()).stream()
+            .map(s -> "- " + s.getDescription())
+            .collect(Collectors.joining("\n"));
+
+        return replanner.prompt()
+            .system("""
+                You are re-planning after a step failed or produced unexpected results.
+
+                Consider:
+                1. What went wrong?
+                2. Can we recover or need alternative approach?
+                3. Are remaining steps still valid?
+                4. What adjustments are needed?
+                """)
+            .user(u -> u.text("""
+                Original task: {task}
+
+                Completed steps:
+                {completed}
+
+                Remaining planned steps:
+                {remaining}
+
+                Issue: Step failed or produced unexpected output
+
+                Create a revised plan for the remaining work.
+                Return null if the task cannot be completed.
+                """)
+                .param("task", task)
+                .param("completed", completedSteps)
+                .param("remaining", remainingSteps))
+            .call()
+            .entity(ExecutionPlan.class);
+    }
+
+    private String synthesizeResult(String task, List<StepResult> results) {
+        String allResults = results.stream()
+            .map(r -> String.format("**%s:**\n%s", r.getDescription(), r.getOutput()))
+            .collect(Collectors.joining("\n\n"));
+
+        return executor.prompt()
+            .system("""
+                Synthesize the results of all completed steps into a final,
+                coherent response that addresses the original task.
+                """)
+            .user(u -> u.text("""
+                Original task: {task}
+
+                Completed steps and results:
+                {results}
+
+                Provide the final answer.
+                """)
+                .param("task", task)
+                .param("results", allResults))
+            .call()
+            .content();
+    }
+
+    private String prepareToolInput(PlanStep step, String context) {
+        return executor.prompt()
+            .system("Prepare the input for the tool based on the step description and context.")
+            .user(u -> u.text("""
+                Step: {description}
+                Tool: {tool}
+                Context: {context}
+
+                What should be the input to the tool?
+                """)
+                .param("description", step.getDescription())
+                .param("tool", step.getTool())
+                .param("context", context))
+            .call()
+            .content();
+    }
+
+    private boolean validateOutput(String output, String expectedOutput) {
+        // Simple validation - could be enhanced with LLM-based validation
+        return output != null && !output.isEmpty() &&
+               !output.toLowerCase().contains("error") &&
+               !output.toLowerCase().contains("failed");
+    }
+}
+
+@Data
+@Builder
+public class ExecutionPlan {
+    private List<PlanStep> steps;
+    private String successCriteria;
+    private List<String> riskFactors;
+}
+
+@Data
+@Builder
+public class PlanStep {
+    private String id;
+    private String description;
+    private String tool;
+    private String expectedOutput;
+    private List<String> dependsOn;
+}
+```
+
+---
+
+## 7. Tool Integration with MCP
+
+**Model Context Protocol (MCP)**: Standard protocol for connecting AI agents to external tools and data sources.
+
+### MCP Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    MCP Integration Architecture                     │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │                      AI Agent (Host)                        │   │
+│  │  ┌─────────────────────────────────────────────────────────┐│   │
+│  │  │                   MCP Client                             ││   │
+│  │  │  - Discovers available servers                          ││   │
+│  │  │  - Routes tool calls                                    ││   │
+│  │  │  - Manages connections                                  ││   │
+│  │  └─────────────────────────────────────────────────────────┘│   │
+│  └────────────────────────┬────────────────────────────────────┘   │
+│                           │                                         │
+│         ┌─────────────────┼─────────────────┐                      │
+│         │                 │                 │                       │
+│         ▼                 ▼                 ▼                       │
+│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐              │
+│  │ MCP Server  │   │ MCP Server  │   │ MCP Server  │              │
+│  │  (GitHub)   │   │ (Database)  │   │  (Custom)   │              │
+│  │             │   │             │   │             │              │
+│  │ - Tools     │   │ - Tools     │   │ - Tools     │              │
+│  │ - Resources │   │ - Resources │   │ - Resources │              │
+│  │ - Prompts   │   │ - Prompts   │   │ - Prompts   │              │
+│  └─────────────┘   └─────────────┘   └─────────────┘              │
+│         │                 │                 │                       │
+│         ▼                 ▼                 ▼                       │
+│     External          Database          Custom                      │
+│      APIs                                Services                    │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Spring AI MCP Integration
+
+```java
+@Configuration
+public class McpConfiguration {
+
+    @Bean
+    public McpClient mcpClient(
+            @Value("${mcp.servers}") List<String> serverUrls) {
+        return McpClient.builder()
+            .servers(serverUrls.stream()
+                .map(url -> McpServerConfig.builder()
+                    .url(url)
+                    .transport(McpTransport.STDIO)
+                    .build())
+                .collect(Collectors.toList()))
+            .build();
+    }
+}
+
+@Service
+@Slf4j
+public class McpToolRegistry {
+
+    private final McpClient mcpClient;
+    private final Map<String, McpTool> registeredTools = new ConcurrentHashMap<>();
+
+    @PostConstruct
+    public void discoverTools() {
+        log.info("Discovering MCP tools from connected servers");
+
+        mcpClient.listTools().forEach(tool -> {
+            registeredTools.put(tool.getName(), tool);
+            log.info("Registered MCP tool: {} - {}",
+                tool.getName(), tool.getDescription());
+        });
+
+        log.info("Discovered {} MCP tools", registeredTools.size());
+    }
+
+    public List<FunctionCallback> asFunctionCallbacks() {
+        return registeredTools.values().stream()
+            .map(this::toFunctionCallback)
+            .collect(Collectors.toList());
+    }
+
+    private FunctionCallback toFunctionCallback(McpTool tool) {
+        return FunctionCallback.builder()
+            .name(tool.getName())
+            .description(tool.getDescription())
+            .inputSchema(tool.getInputSchema())
+            .executor(input -> executeMcpTool(tool.getName(), input))
+            .build();
+    }
+
+    public String executeMcpTool(String toolName, Map<String, Object> input) {
+        McpTool tool = registeredTools.get(toolName);
+        if (tool == null) {
+            throw new IllegalArgumentException("Unknown MCP tool: " + toolName);
+        }
+
+        try {
+            McpToolResult result = mcpClient.callTool(
+                tool.getServerName(),
+                toolName,
+                input
+            );
+
+            return result.getContent().stream()
+                .map(McpContent::getText)
+                .collect(Collectors.joining("\n"));
+
+        } catch (Exception e) {
+            log.error("MCP tool execution failed: {}", e.getMessage());
+            throw new RuntimeException("Tool execution failed: " + e.getMessage(), e);
+        }
+    }
+}
+
+// Agent with MCP Tools
+@Service
+public class McpEnabledAgent {
+
+    private final ChatClient chatClient;
+    private final McpToolRegistry toolRegistry;
+
+    public McpEnabledAgent(ChatClient.Builder builder, McpToolRegistry toolRegistry) {
+        this.toolRegistry = toolRegistry;
+        this.chatClient = builder
+            .defaultFunctions(toolRegistry.asFunctionCallbacks())
+            .build();
+    }
+
+    public String execute(String task) {
+        return chatClient.prompt()
+            .system("""
+                You are an AI assistant with access to various tools.
+                Use tools when they can help accomplish the task.
+                Think step-by-step and use tools as needed.
+                """)
+            .user(task)
+            .call()
+            .content();
+    }
+}
+```
+
+### Custom MCP Server Implementation
+
+```java
+@SpringBootApplication
+public class CustomMcpServer {
+
+    public static void main(String[] args) {
+        SpringApplication.run(CustomMcpServer.class, args);
+    }
+}
+
+@Configuration
+public class McpServerConfiguration {
+
+    @Bean
+    public McpServer mcpServer(List<McpToolProvider> toolProviders) {
+        return McpServer.builder()
+            .name("custom-tools")
+            .version("1.0.0")
+            .tools(toolProviders.stream()
+                .flatMap(p -> p.getTools().stream())
+                .collect(Collectors.toList()))
+            .build();
+    }
+}
+
+@Component
+public class DatabaseToolProvider implements McpToolProvider {
+
+    private final JdbcTemplate jdbcTemplate;
+
+    @Override
+    public List<McpToolDefinition> getTools() {
+        return List.of(
+            McpToolDefinition.builder()
+                .name("query_database")
+                .description("Execute a read-only SQL query against the database")
+                .inputSchema(JsonSchema.builder()
+                    .type("object")
+                    .property("query", JsonSchema.string()
+                        .description("SQL SELECT query to execute"))
+                    .required("query")
+                    .build())
+                .handler(this::executeQuery)
+                .build(),
+
+            McpToolDefinition.builder()
+                .name("list_tables")
+                .description("List all tables in the database")
+                .inputSchema(JsonSchema.builder()
+                    .type("object")
+                    .build())
+                .handler(this::listTables)
+                .build()
+        );
+    }
+
+    private McpToolResult executeQuery(Map<String, Object> input) {
+        String query = (String) input.get("query");
+
+        // Security: Only allow SELECT queries
+        if (!query.trim().toUpperCase().startsWith("SELECT")) {
+            return McpToolResult.error("Only SELECT queries are allowed");
+        }
+
+        try {
+            List<Map<String, Object>> results = jdbcTemplate.queryForList(query);
+            String jsonResult = new ObjectMapper().writeValueAsString(results);
+            return McpToolResult.success(jsonResult);
+        } catch (Exception e) {
+            return McpToolResult.error("Query failed: " + e.getMessage());
+        }
+    }
+
+    private McpToolResult listTables(Map<String, Object> input) {
+        List<String> tables = jdbcTemplate.queryForList(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'",
+            String.class
+        );
+        return McpToolResult.success(String.join(", ", tables));
+    }
+}
+```
+
+---
+
+## 8. Memory and State Management
+
+### Memory Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Agent Memory Architecture                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │                  Short-Term Memory                          │   │
+│  │  - Current conversation                                     │   │
+│  │  - Working context                                          │   │
+│  │  - Recent tool results                                      │   │
+│  │  Capacity: ~100K tokens, Duration: Session                  │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                           │                                         │
+│                           ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │                 Episodic Memory                             │   │
+│  │  - Past interactions summaries                              │   │
+│  │  - Successful task patterns                                 │   │
+│  │  - User preferences learned                                 │   │
+│  │  Storage: Vector DB, Duration: Long-term                    │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                           │                                         │
+│                           ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │                 Semantic Memory                             │   │
+│  │  - Domain knowledge                                         │   │
+│  │  - Facts and relationships                                  │   │
+│  │  - Procedural knowledge                                     │   │
+│  │  Storage: Knowledge Graph, Duration: Permanent              │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Spring AI Memory Implementation
+
+```java
+@Service
+@Slf4j
+public class AgentMemoryService {
+
+    private final VectorStore vectorStore;
+    private final ChatClient chatClient;
+    private final Map<String, ConversationMemory> shortTermMemory;
+
+    public AgentMemoryService(VectorStore vectorStore, ChatClient.Builder builder) {
+        this.vectorStore = vectorStore;
+        this.chatClient = builder.build();
+        this.shortTermMemory = new ConcurrentHashMap<>();
+    }
+
+    // Short-term memory management
+    public void addToShortTermMemory(String sessionId, Message message) {
+        shortTermMemory.computeIfAbsent(sessionId, k -> new ConversationMemory())
+            .addMessage(message);
+    }
+
+    public List<Message> getConversationHistory(String sessionId, int maxMessages) {
+        ConversationMemory memory = shortTermMemory.get(sessionId);
+        if (memory == null) return List.of();
+
+        List<Message> messages = memory.getMessages();
+        int start = Math.max(0, messages.size() - maxMessages);
+        return messages.subList(start, messages.size());
+    }
+
+    // Episodic memory - store and retrieve past experiences
+    public void storeEpisode(String sessionId, Episode episode) {
+        // Summarize the episode
+        String summary = summarizeEpisode(episode);
+
+        // Create embedding and store
+        Document doc = Document.builder()
+            .content(summary)
+            .metadata(Map.of(
+                "sessionId", sessionId,
+                "timestamp", episode.getTimestamp().toString(),
+                "type", "episode",
+                "outcome", episode.getOutcome(),
+                "task", episode.getTask()
+            ))
+            .build();
+
+        vectorStore.add(List.of(doc));
+        log.info("Stored episode for session {}: {}", sessionId,
+            episode.getTask().substring(0, Math.min(50, episode.getTask().length())));
+    }
+
+    public List<Episode> retrieveRelevantEpisodes(String query, int limit) {
+        List<Document> results = vectorStore.similaritySearch(
+            SearchRequest.query(query)
+                .withTopK(limit)
+                .withFilterExpression("type == 'episode'")
+        );
+
+        return results.stream()
+            .map(this::documentToEpisode)
+            .collect(Collectors.toList());
+    }
+
+    // Semantic memory - domain knowledge
+    public void storeKnowledge(String domain, String knowledge) {
+        Document doc = Document.builder()
+            .content(knowledge)
+            .metadata(Map.of(
+                "type", "knowledge",
+                "domain", domain,
+                "timestamp", Instant.now().toString()
+            ))
+            .build();
+
+        vectorStore.add(List.of(doc));
+    }
+
+    public List<String> retrieveKnowledge(String query, String domain, int limit) {
+        FilterExpressionBuilder builder = new FilterExpressionBuilder();
+
+        List<Document> results = vectorStore.similaritySearch(
+            SearchRequest.query(query)
+                .withTopK(limit)
+                .withFilterExpression(
+                    builder.and(
+                        builder.eq("type", "knowledge"),
+                        builder.eq("domain", domain)
+                    ).build()
+                )
+        );
+
+        return results.stream()
+            .map(Document::getContent)
+            .collect(Collectors.toList());
+    }
+
+    // Memory consolidation - summarize and compress
+    public void consolidateMemory(String sessionId) {
+        ConversationMemory memory = shortTermMemory.get(sessionId);
+        if (memory == null || memory.getMessages().size() < 10) return;
+
+        // Summarize conversation so far
+        String summary = chatClient.prompt()
+            .system("""
+                Summarize the following conversation, capturing:
+                1. Main topics discussed
+                2. Key decisions made
+                3. Important facts learned
+                4. User preferences observed
+                5. Outcomes of any tasks
+
+                Be concise but comprehensive.
+                """)
+            .user(formatMessages(memory.getMessages()))
+            .call()
+            .content();
+
+        // Store as episodic memory
+        Episode episode = Episode.builder()
+            .sessionId(sessionId)
+            .task("Conversation summary")
+            .summary(summary)
+            .outcome("completed")
+            .timestamp(Instant.now())
+            .build();
+
+        storeEpisode(sessionId, episode);
+
+        // Trim short-term memory
+        memory.trimToSize(5); // Keep only last 5 messages
+
+        log.info("Consolidated memory for session {}", sessionId);
+    }
+
+    private String summarizeEpisode(Episode episode) {
+        return chatClient.prompt()
+            .system("Create a concise summary of this agent episode for future reference.")
+            .user(u -> u.text("""
+                Task: {task}
+                Actions taken: {actions}
+                Outcome: {outcome}
+                Learnings: {learnings}
+                """)
+                .param("task", episode.getTask())
+                .param("actions", String.join(", ", episode.getActions()))
+                .param("outcome", episode.getOutcome())
+                .param("learnings", String.join(", ", episode.getLearnings())))
+            .call()
+            .content();
+    }
+
+    private String formatMessages(List<Message> messages) {
+        return messages.stream()
+            .map(m -> m.getRole() + ": " + m.getContent())
+            .collect(Collectors.joining("\n"));
+    }
+
+    private Episode documentToEpisode(Document doc) {
+        return Episode.builder()
+            .sessionId((String) doc.getMetadata().get("sessionId"))
+            .task((String) doc.getMetadata().get("task"))
+            .summary(doc.getContent())
+            .outcome((String) doc.getMetadata().get("outcome"))
+            .timestamp(Instant.parse((String) doc.getMetadata().get("timestamp")))
+            .build();
+    }
+}
+
+@Data
+@Builder
+public class Episode {
+    private String sessionId;
+    private String task;
+    private List<String> actions;
+    private String outcome;
+    private String summary;
+    private List<String> learnings;
+    private Instant timestamp;
+}
+
+public class ConversationMemory {
+    private final List<Message> messages = new ArrayList<>();
+    private int maxSize = 100;
+
+    public synchronized void addMessage(Message message) {
+        messages.add(message);
+        if (messages.size() > maxSize) {
+            messages.remove(0);
+        }
+    }
+
+    public synchronized List<Message> getMessages() {
+        return new ArrayList<>(messages);
+    }
+
+    public synchronized void trimToSize(int size) {
+        while (messages.size() > size) {
+            messages.remove(0);
+        }
+    }
+}
+```
+
+---
+
+## 9. Error Handling and Recovery
+
+### Resilience Patterns
+
+```java
+@Service
+@Slf4j
+public class ResilientAgentExecutor {
+
+    private final RetryTemplate retryTemplate;
+    private final CircuitBreaker circuitBreaker;
+    private final MeterRegistry registry;
+
+    public ResilientAgentExecutor(MeterRegistry registry) {
+        this.registry = registry;
+
+        this.retryTemplate = RetryTemplate.builder()
+            .maxAttempts(3)
+            .exponentialBackoff(1000, 2, 10000)
+            .retryOn(TransientException.class)
+            .build();
+
+        this.circuitBreaker = CircuitBreaker.of("agent-executor",
+            CircuitBreakerConfig.custom()
+                .failureRateThreshold(50)
+                .waitDurationInOpenState(Duration.ofSeconds(30))
+                .slidingWindowSize(10)
+                .build());
+    }
+
+    public <T> T executeWithResilience(String operationName,
+                                        Supplier<T> operation,
+                                        Supplier<T> fallback) {
+        Timer.Sample timer = Timer.start(registry);
+
+        try {
+            T result = circuitBreaker.executeSupplier(() ->
+                retryTemplate.execute(context -> {
+                    if (context.getRetryCount() > 0) {
+                        log.warn("Retry attempt {} for operation: {}",
+                            context.getRetryCount(), operationName);
+                        registry.counter("agent.retry",
+                            "operation", operationName).increment();
+                    }
+                    return operation.get();
+                })
+            );
+
+            timer.stop(registry.timer("agent.operation",
+                "operation", operationName, "status", "success"));
+            return result;
+
+        } catch (Exception e) {
+            timer.stop(registry.timer("agent.operation",
+                "operation", operationName, "status", "error"));
+
+            log.error("Operation {} failed after retries: {}", operationName, e.getMessage());
+
+            if (fallback != null) {
+                log.info("Executing fallback for operation: {}", operationName);
+                registry.counter("agent.fallback", "operation", operationName).increment();
+                return fallback.get();
+            }
+
+            throw new AgentExecutionException("Operation failed: " + operationName, e);
+        }
+    }
+
+    public <T> CompletableFuture<T> executeWithTimeout(
+            Supplier<T> operation,
+            Duration timeout,
+            T defaultValue) {
+        return CompletableFuture.supplyAsync(operation)
+            .completeOnTimeout(defaultValue, timeout.toMillis(), TimeUnit.MILLISECONDS)
+            .exceptionally(e -> {
+                log.error("Async operation failed: {}", e.getMessage());
+                return defaultValue;
+            });
+    }
+}
+
+// Self-healing agent with error recovery
+@Service
+@Slf4j
+public class SelfHealingAgent {
+
+    private final ChatClient chatClient;
+    private final ResilientAgentExecutor executor;
+    private final Map<String, RecoveryStrategy> recoveryStrategies;
+
+    public AgentResult executeWithRecovery(String task) {
+        List<AgentAttempt> attempts = new ArrayList<>();
+
+        for (int attempt = 0; attempt < 3; attempt++) {
+            try {
+                String result = executor.executeWithResilience(
+                    "agent-task",
+                    () -> executeTask(task, attempts),
+                    null
+                );
+
+                return AgentResult.builder()
+                    .success(true)
+                    .output(result)
+                    .attempts(attempts)
+                    .build();
+
+            } catch (AgentExecutionException e) {
+                AgentAttempt attemptRecord = AgentAttempt.builder()
+                    .attemptNumber(attempt + 1)
+                    .error(e.getMessage())
+                    .timestamp(Instant.now())
+                    .build();
+                attempts.add(attemptRecord);
+
+                // Analyze error and determine recovery strategy
+                RecoveryAction action = analyzeAndRecover(task, e, attempts);
+
+                if (action.shouldRetry()) {
+                    task = action.getModifiedTask() != null ?
+                        action.getModifiedTask() : task;
+                    log.info("Retrying with modified approach: {}", action.getStrategy());
+                } else {
+                    break;
+                }
+            }
+        }
+
+        // All attempts failed
+        return AgentResult.builder()
+            .success(false)
+            .error("Task failed after all recovery attempts")
+            .attempts(attempts)
+            .build();
+    }
+
+    private String executeTask(String task, List<AgentAttempt> previousAttempts) {
+        String context = previousAttempts.isEmpty() ? "" :
+            "Previous attempts failed. Avoid these approaches: " +
+            previousAttempts.stream()
+                .map(a -> a.getError())
+                .collect(Collectors.joining("; "));
+
+        return chatClient.prompt()
+            .system(s -> s.text("""
+                You are an AI agent executing a task.
+                {context}
+
+                If you encounter errors:
+                1. Explain what went wrong
+                2. Suggest alternative approaches
+                3. Try a different strategy if current one fails
+                """)
+                .param("context", context))
+            .user(task)
+            .call()
+            .content();
+    }
+
+    private RecoveryAction analyzeAndRecover(String task, Exception error,
+                                              List<AgentAttempt> attempts) {
+        // Analyze error pattern
+        String errorAnalysis = chatClient.prompt()
+            .system("""
+                Analyze this error and suggest a recovery strategy.
+
+                Possible strategies:
+                - SIMPLIFY: Break down the task into simpler steps
+                - ALTERNATIVE: Use a different approach entirely
+                - RESOURCE: The error is due to external resource, retry later
+                - CLARIFY: The task is ambiguous, need clarification
+                - ABORT: The task cannot be completed
+
+                Return JSON: {strategy, reason, modifiedTask}
+                """)
+            .user(u -> u.text("""
+                Task: {task}
+                Error: {error}
+                Previous attempts: {attempts}
+                """)
+                .param("task", task)
+                .param("error", error.getMessage())
+                .param("attempts", attempts.size()))
+            .call()
+            .content();
+
+        // Parse and return recovery action
+        return parseRecoveryAction(errorAnalysis);
+    }
+
+    private RecoveryAction parseRecoveryAction(String analysis) {
+        try {
+            return new ObjectMapper().readValue(analysis, RecoveryAction.class);
+        } catch (Exception e) {
+            return RecoveryAction.builder()
+                .strategy("ABORT")
+                .reason("Could not parse recovery strategy")
+                .shouldRetry(false)
+                .build();
+        }
+    }
+}
+
+@Data
+@Builder
+public class RecoveryAction {
+    private String strategy;
+    private String reason;
+    private String modifiedTask;
+    private boolean shouldRetry;
+}
+```
+
+---
+
+## 10. Production Patterns
+
+### Observability and Monitoring
+
+```java
+@Configuration
+public class AgentObservabilityConfig {
+
+    @Bean
+    public MeterRegistry meterRegistry() {
+        return new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+    }
+
+    @Bean
+    public TracingConfig tracingConfig() {
+        return TracingConfig.builder()
+            .serviceName("ai-agent-service")
+            .samplingRate(0.1) // 10% sampling in production
+            .build();
+    }
+}
+
+@Aspect
+@Component
+@Slf4j
+public class AgentTracingAspect {
+
+    private final Tracer tracer;
+    private final MeterRegistry registry;
+
+    @Around("@annotation(AgentOperation)")
+    public Object traceAgentOperation(ProceedingJoinPoint joinPoint) throws Throwable {
+        String operationName = joinPoint.getSignature().getName();
+
+        Span span = tracer.nextSpan()
+            .name(operationName)
+            .tag("agent.operation", operationName)
+            .start();
+
+        Timer.Sample timer = Timer.start(registry);
+
+        try (Tracer.SpanInScope ws = tracer.withSpan(span)) {
+            Object result = joinPoint.proceed();
+
+            span.tag("status", "success");
+            timer.stop(registry.timer("agent.operation",
+                "name", operationName, "status", "success"));
+
+            return result;
+
+        } catch (Exception e) {
+            span.tag("status", "error")
+                .tag("error.message", e.getMessage());
+            timer.stop(registry.timer("agent.operation",
+                "name", operationName, "status", "error"));
+
+            throw e;
+
+        } finally {
+            span.end();
+        }
+    }
+}
+
+// Structured logging for agents
+@Service
+@Slf4j
+public class AgentLogger {
+
+    public void logAgentAction(String agentName, String action,
+                               Map<String, Object> context) {
+        log.info("agent_action",
+            kv("agent_name", agentName),
+            kv("action", action),
+            kv("context", context),
+            kv("timestamp", Instant.now())
+        );
+    }
+
+    public void logToolExecution(String toolName, String input,
+                                  String output, long durationMs) {
+        log.info("tool_execution",
+            kv("tool_name", toolName),
+            kv("input_length", input.length()),
+            kv("output_length", output.length()),
+            kv("duration_ms", durationMs)
+        );
+    }
+
+    public void logOrchestrationEvent(String orchestrationType,
+                                       String phase,
+                                       Map<String, Object> metrics) {
+        log.info("orchestration_event",
+            kv("type", orchestrationType),
+            kv("phase", phase),
+            kv("metrics", metrics)
+        );
+    }
+
+    private StructuredArgument kv(String key, Object value) {
+        return StructuredArguments.kv(key, value);
+    }
+}
+```
+
+### Cost Management
+
+```java
+@Service
+@Slf4j
+public class AgentCostManager {
+
+    private final Map<String, ModelPricing> modelPricing;
+    private final MeterRegistry registry;
+    private final AtomicLong totalCostCents = new AtomicLong(0);
+
+    public AgentCostManager(MeterRegistry registry) {
+        this.registry = registry;
+        this.modelPricing = Map.of(
+            "gpt-4-turbo", new ModelPricing(10.0, 30.0),      // per 1M tokens
+            "gpt-4o", new ModelPricing(5.0, 15.0),
+            "gpt-4o-mini", new ModelPricing(0.15, 0.6),
+            "claude-3-5-sonnet", new ModelPricing(3.0, 15.0),
+            "claude-3-5-haiku", new ModelPricing(0.25, 1.25)
+        );
+    }
+
+    public void trackUsage(String model, int inputTokens, int outputTokens) {
+        ModelPricing pricing = modelPricing.getOrDefault(model,
+            new ModelPricing(1.0, 3.0));
+
+        double inputCost = (inputTokens / 1_000_000.0) * pricing.inputPricePerMillion();
+        double outputCost = (outputTokens / 1_000_000.0) * pricing.outputPricePerMillion();
+        double totalCost = inputCost + outputCost;
+
+        long costCents = Math.round(totalCost * 100);
+        totalCostCents.addAndGet(costCents);
+
+        registry.counter("agent.tokens", "model", model, "type", "input")
+            .increment(inputTokens);
+        registry.counter("agent.tokens", "model", model, "type", "output")
+            .increment(outputTokens);
+        registry.counter("agent.cost.cents", "model", model)
+            .increment(costCents);
+
+        log.debug("Token usage - Model: {}, Input: {}, Output: {}, Cost: ${}",
+            model, inputTokens, outputTokens, String.format("%.4f", totalCost));
+    }
+
+    public CostReport generateReport(Duration period) {
+        // Query metrics for the period
+        return CostReport.builder()
+            .period(period)
+            .totalCostCents(totalCostCents.get())
+            .breakdown(getBreakdownByModel())
+            .recommendations(generateCostRecommendations())
+            .build();
+    }
+
+    private List<String> generateCostRecommendations() {
+        List<String> recommendations = new ArrayList<>();
+
+        // Analyze usage patterns and suggest optimizations
+        // This is simplified - real implementation would analyze metrics
+
+        recommendations.add("Consider using gpt-4o-mini for simple classification tasks");
+        recommendations.add("Batch similar requests to reduce overhead");
+        recommendations.add("Implement response caching for repeated queries");
+
+        return recommendations;
+    }
+
+    private Map<String, Long> getBreakdownByModel() {
+        // Implementation would query metrics
+        return Map.of();
+    }
+}
+
+record ModelPricing(double inputPricePerMillion, double outputPricePerMillion) {}
+```
+
+---
+
+## Orchestration Pattern Decision Matrix
+
+| Pattern | Latency | Quality | Cost | Complexity | Best For |
+|---------|---------|---------|------|------------|----------|
+| **Sequential** | High | Medium | Low | Low | Simple pipelines, ETL |
+| **Hierarchical** | Medium | High | Medium | High | Complex projects, research |
+| **Parallel** | Low | High | High | Medium | Code review, multi-perspective |
+| **Consensus/Debate** | Very High | Very High | High | High | Decision making, policy |
+| **ReAct** | Medium | High | Medium | Medium | Tool-heavy tasks, QA |
+| **Plan-and-Execute** | High | Very High | Medium | High | Complex multi-step tasks |
+| **Producer-Reviewer** | High | High | Medium | Low | Content generation, code |
+| **Concierge** | Low | Medium | Low | Low | Task routing, support |
+
+## Best Practices Summary
+
+### 1. Start Simple
+```
+Simple Task → Single Agent
+Medium Task → Sequential Pipeline
+Complex Task → Hierarchical + Specialists
+```
+
+### 2. Clear Agent Boundaries
+- Each agent has ONE primary role
+- Clear input/output contracts
+- Limited context (need-to-know basis)
+- Explicit handoff protocols
+
+### 3. Observability First
+- Trace every agent interaction
+- Log structured events
+- Monitor costs in real-time
+- Alert on anomalies
+
+### 4. Graceful Degradation
+- Every operation has a timeout
+- Fallback strategies for failures
+- Circuit breakers for external dependencies
+- Human escalation paths
+
+### 5. Cost Awareness
+- Choose right model for each task
+- Cache repeated operations
+- Batch where possible
+- Monitor and optimize continuously
+
+---
+
+## References
+
+- Anthropic: "Building Effective Agents" (2024)
+- Google DeepMind: "ReAct: Synergizing Reasoning and Acting" (2023)
+- LangChain: "Multi-Agent Architectures" Documentation (2025)
+- CrewAI: "Hierarchical Agent Systems" (2024)
+- AutoGen: "Multi-Agent Conversation Patterns" (2024)
+- Spring AI: "Agent and Tool Integration" Documentation (2025)
+- Model Context Protocol (MCP): Official Specification (2024)
+- OpenAI: "Best Practices for Agent Design" (2024)
+
+---
+
+**Previous**: [3.2 Multi-modal Prompting](./08-multimodal.mdx) ←
+**End of Series**

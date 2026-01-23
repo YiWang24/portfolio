@@ -1,0 +1,2243 @@
+---
+title: "7 Advanced Techniques"
+description: "Self-critique, iterative refinement, meta-prompting, multi-turn reasoning, and cutting-edge prompt engineering methods"
+published: 2025-01-21
+tags: ["prompt-engineering", "advanced", "ai", "llm", "reflexion", "meta-prompting"]
+category: "prompt-engineering"
+series: "Prompt Engineering Guide"
+seriesOrder: 6
+draft: false
+---
+
+## Introduction
+
+Advanced prompt engineering transforms AI from a simple tool into a sophisticated reasoning partner. These techniques leverage the model's metacognitive capabilities—its ability to reflect on, evaluate, and improve its own outputs. Research shows that advanced prompting techniques can improve performance by 20-40% on complex reasoning tasks compared to basic prompting (Zhou et al., 2024).
+
+This chapter covers battle-tested advanced techniques from recent research, with practical Spring AI implementations for production systems.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    ADVANCED TECHNIQUES TAXONOMY                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐         │
+│  │ Self-Improvement│  │ Multi-Step      │  │ Reasoning       │         │
+│  │ Techniques      │  │ Orchestration   │  │ Enhancement     │         │
+│  ├─────────────────┤  ├─────────────────┤  ├─────────────────┤         │
+│  │ • Self-Critique │  │ • Prompt Chain  │  │ • Step-Back     │         │
+│  │ • Reflexion     │  │ • Multi-Turn    │  │ • Self-Consist. │         │
+│  │ • Actor-Critic  │  │ • Decomposition │  │ • ToT/GoT/AoT   │         │
+│  │ • PACE          │  │ • Aggregation   │  │ • PAL           │         │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘         │
+│                                                                         │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐         │
+│  │ Meta-Level      │  │ Output Control  │  │ Emerging        │         │
+│  │ Prompting       │  │ Techniques      │  │ Techniques      │         │
+│  ├─────────────────┤  ├─────────────────┤  ├─────────────────┤         │
+│  │ • DSPy          │  │ • Directional   │  │ • Emotion Prompt│         │
+│  │ • OPRO          │  │ • Contrastive   │  │ • RaR           │         │
+│  │ • Auto-Prompt   │  │ • Skeleton      │  │ • Thread-of-T   │         │
+│  │ • PE2           │  │ • Steering      │  │ • Re-Reading    │         │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘         │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+:::info
+**Performance Benchmarks**: Self-Critique improves accuracy by 20-30%, Self-Consistency by 15-25%, and Step-Back Prompting by 10-20% on complex reasoning tasks (Li et al., 2024).
+:::
+
+---
+
+## 1. Self-Critique and Reflexion
+
+Self-Critique enables models to evaluate and improve their own outputs through structured introspection. The **Reflexion** framework (Shinn et al., 2023) formalizes this into an iterative improvement loop.
+
+### 1.1 The Reflexion Framework
+
+Reflexion extends simple self-critique with memory and persistent learning across attempts:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        REFLEXION ARCHITECTURE                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│    ┌─────────────┐        ┌─────────────┐        ┌─────────────┐       │
+│    │   Actor     │───────▶│  Evaluator  │───────▶│  Self-      │       │
+│    │  (LLM)      │        │  (LLM/Code) │        │  Reflection │       │
+│    └─────────────┘        └─────────────┘        └─────────────┘       │
+│          │                                              │               │
+│          │                                              │               │
+│          ▼                                              │               │
+│    ┌─────────────┐                                      │               │
+│    │  Response   │                                      │               │
+│    └─────────────┘                                      │               │
+│          │                                              │               │
+│          │    ┌─────────────────────────────────────────┘               │
+│          │    │                                                         │
+│          ▼    ▼                                                         │
+│    ┌─────────────────────────────────────────────────────┐             │
+│    │              MEMORY (Reflection History)            │             │
+│    │  "In attempt 1, I made error X. For attempt 2,     │             │
+│    │   I should focus on Y instead of Z."               │             │
+│    └─────────────────────────────────────────────────────┘             │
+│                          │                                              │
+│                          │ Feed into next attempt                       │
+│                          ▼                                              │
+│    ┌─────────────────────────────────────────────────────┐             │
+│    │              IMPROVED ACTOR ATTEMPT                 │             │
+│    └─────────────────────────────────────────────────────┘             │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 1.2 Basic Self-Critique Pattern
+
+The simplest form of self-critique within a single prompt:
+
+```java
+public class SelfCritiqueService {
+
+    private final ChatClient chatClient;
+
+    private static final String SELF_CRITIQUE_TEMPLATE = """
+        <task>
+        Solve the following problem with self-critique.
+        </task>
+
+        <problem>
+        {problem}
+        </problem>
+
+        <process>
+        ## Phase 1: Initial Solution
+        Generate your first solution attempt.
+
+        ## Phase 2: Critical Analysis
+        Evaluate your solution against these criteria:
+        1. **Correctness**: Are there any logical or factual errors?
+        2. **Completeness**: Is anything missing that should be included?
+        3. **Clarity**: Could any part be explained more clearly?
+        4. **Efficiency**: Is there a better approach?
+        5. **Edge Cases**: Have you considered boundary conditions?
+
+        ## Phase 3: Improved Solution
+        Based on your critique, generate an improved solution.
+        Explicitly address each issue identified.
+
+        ## Phase 4: Verification
+        Verify that your improved solution actually fixes the issues.
+        </process>
+
+        <output_format>
+        ### Initial Solution
+        [Your first attempt]
+
+        ### Critique
+        | Criterion | Issue Found | Severity |
+        |-----------|-------------|----------|
+        | ... | ... | High/Medium/Low |
+
+        ### Improved Solution
+        [Your refined solution addressing all issues]
+
+        ### Verification
+        [Confirmation that issues were addressed]
+        </output_format>
+        """;
+
+    public String solveWithSelfCritique(String problem) {
+        return chatClient.prompt()
+            .user(u -> u.text(SELF_CRITIQUE_TEMPLATE)
+                .param("problem", problem))
+            .call()
+            .content();
+    }
+}
+```
+
+### 1.3 Multi-Round Reflexion with Memory
+
+For complex tasks, implement iterative reflexion with persistent memory:
+
+```java
+@Service
+public class ReflexionService {
+
+    private final ChatClient chatClient;
+    private static final int MAX_ITERATIONS = 5;
+    private static final double SATISFACTION_THRESHOLD = 0.85;
+
+    public record ReflexionResult(
+        String finalAnswer,
+        List<ReflectionEntry> reflectionHistory,
+        int iterations,
+        double confidenceScore
+    ) {}
+
+    public record ReflectionEntry(
+        int attempt,
+        String response,
+        String evaluation,
+        String reflection,
+        double score
+    ) {}
+
+    public ReflexionResult solveWithReflexion(String problem) {
+        List<ReflectionEntry> history = new ArrayList<>();
+        String currentResponse = null;
+
+        for (int i = 0; i < MAX_ITERATIONS; i++) {
+            // Step 1: Generate response (Actor)
+            currentResponse = generateResponse(problem, history);
+
+            // Step 2: Evaluate response
+            EvaluationResult evaluation = evaluateResponse(problem, currentResponse);
+
+            // Step 3: Check if satisfactory
+            if (evaluation.score() >= SATISFACTION_THRESHOLD) {
+                history.add(new ReflectionEntry(
+                    i + 1, currentResponse, evaluation.feedback(),
+                    "Solution accepted", evaluation.score()
+                ));
+                return new ReflexionResult(currentResponse, history, i + 1, evaluation.score());
+            }
+
+            // Step 4: Generate reflection for next attempt
+            String reflection = generateReflection(problem, currentResponse, evaluation);
+
+            history.add(new ReflectionEntry(
+                i + 1, currentResponse, evaluation.feedback(),
+                reflection, evaluation.score()
+            ));
+        }
+
+        return new ReflexionResult(currentResponse, history, MAX_ITERATIONS,
+            evaluateResponse(problem, currentResponse).score());
+    }
+
+    private String generateResponse(String problem, List<ReflectionEntry> history) {
+        String historyContext = formatReflectionHistory(history);
+
+        String prompt = """
+            <problem>
+            {problem}
+            </problem>
+
+            <previous_attempts>
+            {history}
+            </previous_attempts>
+
+            <instruction>
+            Based on the reflections from previous attempts, generate an improved solution.
+            Avoid repeating the same mistakes identified in the reflection history.
+            </instruction>
+            """;
+
+        return chatClient.prompt()
+            .user(u -> u.text(prompt)
+                .param("problem", problem)
+                .param("history", historyContext.isEmpty() ? "No previous attempts." : historyContext))
+            .call()
+            .content();
+    }
+
+    private String generateReflection(String problem, String response, EvaluationResult eval) {
+        String prompt = """
+            <task>Generate a reflection to improve the next attempt</task>
+
+            <problem>{problem}</problem>
+            <response>{response}</response>
+            <evaluation>{evaluation}</evaluation>
+
+            <instruction>
+            Analyze what went wrong and provide specific, actionable guidance for the next attempt.
+            Focus on:
+            1. What specific errors were made
+            2. Why these errors occurred
+            3. What should be done differently next time
+            4. What should be maintained from this attempt
+            </instruction>
+
+            <format>
+            Provide a concise reflection (2-3 sentences) that will directly improve the next attempt.
+            </format>
+            """;
+
+        return chatClient.prompt()
+            .user(u -> u.text(prompt)
+                .param("problem", problem)
+                .param("response", response)
+                .param("evaluation", eval.feedback()))
+            .call()
+            .content();
+    }
+
+    private String formatReflectionHistory(List<ReflectionEntry> history) {
+        return history.stream()
+            .map(e -> String.format("""
+                --- Attempt %d (Score: %.2f) ---
+                Response Summary: %s
+                Issues: %s
+                Reflection: %s
+                """, e.attempt(), e.score(),
+                truncate(e.response(), 200),
+                e.evaluation(),
+                e.reflection()))
+            .collect(Collectors.joining("\n"));
+    }
+}
+```
+
+### 1.4 Constitutional AI Self-Critique
+
+Inspired by Anthropic's Constitutional AI, evaluate responses against explicit principles:
+
+```java
+public class ConstitutionalCritique {
+
+    private static final List<String> CONSTITUTION = List.of(
+        "Responses must be accurate and factually correct",
+        "Responses must be helpful and address the user's actual need",
+        "Responses must be safe and not promote harmful actions",
+        "Responses must be honest about uncertainty",
+        "Responses must be concise and well-structured"
+    );
+
+    private static final String CONSTITUTIONAL_TEMPLATE = """
+        <task>
+        Evaluate and revise the response according to constitutional principles.
+        </task>
+
+        <original_response>
+        {response}
+        </original_response>
+
+        <constitution>
+        {principles}
+        </constitution>
+
+        <process>
+        For each principle:
+        1. Assess whether the response adheres to it (Yes/No/Partial)
+        2. If No or Partial, identify specific violations
+        3. Suggest concrete improvements
+
+        Then provide a revised response that fully adheres to all principles.
+        </process>
+
+        <output_format>
+        ## Constitutional Review
+        | Principle | Adherence | Issues | Improvement |
+        |-----------|-----------|--------|-------------|
+        | ... | ... | ... | ... |
+
+        ## Revised Response
+        [Improved response adhering to all principles]
+        </output_format>
+        """;
+
+    public String critiqueConstitutionally(String response) {
+        String principles = IntStream.range(0, CONSTITUTION.size())
+            .mapToObj(i -> (i + 1) + ". " + CONSTITUTION.get(i))
+            .collect(Collectors.joining("\n"));
+
+        return chatClient.prompt()
+            .user(u -> u.text(CONSTITUTIONAL_TEMPLATE)
+                .param("response", response)
+                .param("principles", principles))
+            .call()
+            .content();
+    }
+}
+```
+
+---
+
+## 2. Iterative Refinement Patterns
+
+Iterative refinement improves outputs through multiple structured passes, each targeting specific aspects.
+
+### 2.1 PACE Framework (Actor-Critic)
+
+The **PACE** framework (Dong et al., 2024) implements a formal actor-critic loop for prompt optimization:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         PACE FRAMEWORK                                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                        CRITIC (Evaluator)                       │   │
+│  │  • Scores output quality (0-1)                                  │   │
+│  │  • Identifies specific weaknesses                               │   │
+│  │  • Provides improvement suggestions                             │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                              │                                          │
+│                              ▼                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                    REFINEMENT SIGNAL                            │   │
+│  │  Score: 0.65 → Need improvement                                 │   │
+│  │  Issues: [clarity, completeness]                                │   │
+│  │  Suggestions: ["Add examples", "Explain step 3"]                │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                              │                                          │
+│                              ▼                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                        ACTOR (Generator)                        │   │
+│  │  • Receives original task + critique                            │   │
+│  │  • Generates improved output                                    │   │
+│  │  • Addresses specific feedback                                  │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                              │                                          │
+│                              │ Loop until score ≥ threshold            │
+│                              ▼                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                       FINAL OUTPUT                              │   │
+│  │  Score: 0.92 ✓                                                  │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+```java
+@Service
+public class PaceRefinementService {
+
+    private final ChatClient chatClient;
+
+    public record CritiqueResult(
+        double score,
+        List<String> issues,
+        List<String> suggestions,
+        String detailedFeedback
+    ) {}
+
+    public record RefinementResult(
+        String output,
+        double score,
+        int iterations,
+        List<CritiqueResult> critiqueHistory
+    ) {}
+
+    public RefinementResult refineWithPace(
+            String task,
+            double threshold,
+            int maxIterations) {
+
+        List<CritiqueResult> history = new ArrayList<>();
+        String currentOutput = generateInitial(task);
+
+        for (int i = 0; i < maxIterations; i++) {
+            // Critic phase
+            CritiqueResult critique = evaluate(task, currentOutput);
+            history.add(critique);
+
+            if (critique.score() >= threshold) {
+                return new RefinementResult(currentOutput, critique.score(), i + 1, history);
+            }
+
+            // Actor phase - refine based on critique
+            currentOutput = refine(task, currentOutput, critique);
+        }
+
+        CritiqueResult finalCritique = evaluate(task, currentOutput);
+        return new RefinementResult(currentOutput, finalCritique.score(), maxIterations, history);
+    }
+
+    private CritiqueResult evaluate(String task, String output) {
+        String prompt = """
+            <role>You are a critical evaluator</role>
+
+            <task>{task}</task>
+            <output>{output}</output>
+
+            <instruction>
+            Evaluate the output quality. Be critical and thorough.
+            </instruction>
+
+            <response_format>
+            Return JSON:
+            {
+              "score": 0.0-1.0,
+              "issues": ["issue1", "issue2"],
+              "suggestions": ["suggestion1", "suggestion2"],
+              "detailed_feedback": "paragraph explaining the evaluation"
+            }
+            </response_format>
+            """;
+
+        return chatClient.prompt()
+            .user(u -> u.text(prompt)
+                .param("task", task)
+                .param("output", output))
+            .call()
+            .entity(CritiqueResult.class);
+    }
+
+    private String refine(String task, String currentOutput, CritiqueResult critique) {
+        String prompt = """
+            <role>You are an expert at improving content</role>
+
+            <original_task>{task}</original_task>
+            <current_output>{output}</current_output>
+
+            <critique>
+            Score: {score}
+            Issues: {issues}
+            Suggestions: {suggestions}
+            Detailed feedback: {feedback}
+            </critique>
+
+            <instruction>
+            Generate an improved version that:
+            1. Maintains the strengths of the current output
+            2. Addresses ALL identified issues
+            3. Incorporates ALL suggestions
+            4. Aims for a score above 0.9
+            </instruction>
+            """;
+
+        return chatClient.prompt()
+            .user(u -> u.text(prompt)
+                .param("task", task)
+                .param("output", currentOutput)
+                .param("score", String.valueOf(critique.score()))
+                .param("issues", String.join(", ", critique.issues()))
+                .param("suggestions", String.join(", ", critique.suggestions()))
+                .param("feedback", critique.detailedFeedback()))
+            .call()
+            .content();
+    }
+}
+```
+
+### 2.2 Expansion-Compression-Refinement
+
+A three-phase pattern for generating well-structured content:
+
+```java
+@Service
+public class ECRService {
+
+    private final ChatClient chatClient;
+
+    /**
+     * Expansion-Compression-Refinement pattern
+     * Phase 1: Generate comprehensive content
+     * Phase 2: Compress to essential insights
+     * Phase 3: Refine for clarity and actionability
+     */
+    public String generateWithECR(String topic) {
+        // Phase 1: Expansion - generate comprehensive content
+        String expanded = chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Comprehensive Analysis</task>
+                <topic>{topic}</topic>
+
+                Generate a thorough analysis including:
+                - All relevant aspects and dimensions
+                - Multiple perspectives and viewpoints
+                - Supporting evidence and examples
+                - Edge cases and exceptions
+                - Historical context if relevant
+                - Future implications
+
+                Be exhaustive. Include everything potentially relevant.
+                """).param("topic", topic))
+            .call()
+            .content();
+
+        // Phase 2: Compression - extract key insights
+        String compressed = chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Extract Key Insights</task>
+                <content>{expanded}</content>
+
+                From the comprehensive analysis above, extract:
+                1. The 3-5 most important insights
+                2. Key supporting evidence for each
+                3. Critical relationships between insights
+
+                Focus on what matters most. Remove redundancy.
+                """).param("expanded", expanded))
+            .call()
+            .content();
+
+        // Phase 3: Refinement - polish for actionability
+        String refined = chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Refine for Actionability</task>
+                <insights>{compressed}</insights>
+
+                Transform these insights into:
+                1. Clear, actionable recommendations
+                2. Prioritized by impact
+                3. With specific implementation steps
+                4. Including success metrics
+
+                Make it immediately useful for the reader.
+                """).param("compressed", compressed))
+            .call()
+            .content();
+
+        return refined;
+    }
+}
+```
+
+### 2.3 Hierarchical Refinement
+
+For long-form content, refine at multiple levels:
+
+```java
+@Service
+public class HierarchicalRefinementService {
+
+    private final ChatClient chatClient;
+
+    public String refineHierarchically(String draft) {
+        // Level 1: Structure refinement
+        String structureRefined = refineStructure(draft);
+
+        // Level 2: Section-level refinement (parallel)
+        List<String> sections = splitIntoSections(structureRefined);
+        List<String> refinedSections = sections.parallelStream()
+            .map(this::refineSection)
+            .collect(Collectors.toList());
+
+        // Level 3: Sentence-level polish
+        String combined = String.join("\n\n", refinedSections);
+        String polished = polishSentences(combined);
+
+        // Level 4: Coherence check
+        return ensureCoherence(polished);
+    }
+
+    private String refineStructure(String draft) {
+        return chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Refine Document Structure</task>
+                <draft>{draft}</draft>
+
+                Evaluate and improve the structure:
+                1. Is the organization logical?
+                2. Are transitions smooth?
+                3. Is information grouped effectively?
+                4. Does the flow support comprehension?
+
+                Reorganize if needed, but preserve all content.
+                """).param("draft", draft))
+            .call()
+            .content();
+    }
+
+    private String refineSection(String section) {
+        return chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Refine Section</task>
+                <section>{section}</section>
+
+                Improve this section:
+                1. Strengthen the main argument
+                2. Add concrete examples where abstract
+                3. Remove redundancy
+                4. Ensure technical accuracy
+                5. Improve readability
+                """).param("section", section))
+            .call()
+            .content();
+    }
+
+    private String polishSentences(String content) {
+        return chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Sentence-Level Polish</task>
+                <content>{content}</content>
+
+                Polish each sentence for:
+                1. Clarity and conciseness
+                2. Active voice preference
+                3. Precise word choice
+                4. Varied sentence structure
+                5. Grammar and punctuation
+
+                Maintain the author's voice and meaning.
+                """).param("content", content))
+            .call()
+            .content();
+    }
+
+    private String ensureCoherence(String content) {
+        return chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Coherence Check</task>
+                <content>{content}</content>
+
+                Review for coherence:
+                1. Does each section connect to the next?
+                2. Are references consistent throughout?
+                3. Is terminology used consistently?
+                4. Does the conclusion follow from the body?
+
+                Make minimal edits to ensure coherence.
+                """).param("content", content))
+            .call()
+            .content();
+    }
+}
+```
+
+---
+
+## 3. Meta-Prompting
+
+Meta-prompting uses AI to create, evaluate, and optimize prompts themselves. This enables systematic prompt engineering at scale.
+
+### 3.1 DSPy-Style Declarative Prompting
+
+**DSPy** (Stanford, 2024) introduces a declarative paradigm for prompt engineering:
+
+```java
+/**
+ * DSPy-inspired declarative prompt system for Spring AI
+ */
+@Service
+public class DeclarativePromptService {
+
+    private final ChatClient chatClient;
+
+    /**
+     * Signature: defines input/output contract
+     */
+    public record Signature(
+        String description,
+        List<String> inputs,
+        List<String> outputs,
+        Map<String, String> fieldDescriptions
+    ) {}
+
+    /**
+     * Module: encapsulates a prompt with optimization
+     */
+    public class PromptModule {
+        private final Signature signature;
+        private String optimizedPrompt;
+
+        public PromptModule(Signature signature) {
+            this.signature = signature;
+            this.optimizedPrompt = generateInitialPrompt(signature);
+        }
+
+        public Map<String, String> forward(Map<String, String> inputs) {
+            String prompt = buildPrompt(inputs);
+            String response = chatClient.prompt()
+                .user(prompt)
+                .call()
+                .content();
+            return parseOutputs(response);
+        }
+
+        public void optimize(List<Example> examples, int iterations) {
+            for (int i = 0; i < iterations; i++) {
+                List<Example> failed = findFailedExamples(examples);
+                if (failed.isEmpty()) break;
+
+                this.optimizedPrompt = improvePrompt(this.optimizedPrompt, failed);
+            }
+        }
+    }
+
+    private String generateInitialPrompt(Signature sig) {
+        return chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Generate a prompt based on this signature</task>
+
+                <signature>
+                Description: {description}
+                Inputs: {inputs}
+                Outputs: {outputs}
+                Field Descriptions: {fieldDescs}
+                </signature>
+
+                Generate a clear, effective prompt that:
+                1. Accepts the specified inputs
+                2. Produces the specified outputs
+                3. Follows best practices
+
+                Return ONLY the prompt text.
+                """)
+                .param("description", sig.description())
+                .param("inputs", String.join(", ", sig.inputs()))
+                .param("outputs", String.join(", ", sig.outputs()))
+                .param("fieldDescs", sig.fieldDescriptions().toString()))
+            .call()
+            .content();
+    }
+
+    private String improvePrompt(String currentPrompt, List<Example> failedExamples) {
+        String failureAnalysis = failedExamples.stream()
+            .map(e -> String.format("Input: %s\nExpected: %s\nGot: %s",
+                e.input(), e.expectedOutput(), e.actualOutput()))
+            .collect(Collectors.joining("\n---\n"));
+
+        return chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Improve prompt based on failures</task>
+
+                <current_prompt>
+                {prompt}
+                </current_prompt>
+
+                <failures>
+                {failures}
+                </failures>
+
+                Analyze why the prompt failed and generate an improved version.
+                Focus on:
+                1. Patterns in the failures
+                2. Missing instructions
+                3. Ambiguous wording
+                4. Lack of examples
+
+                Return ONLY the improved prompt.
+                """)
+                .param("prompt", currentPrompt)
+                .param("failures", failureAnalysis))
+            .call()
+            .content();
+    }
+}
+```
+
+### 3.2 Automatic Prompt Optimization (OPRO)
+
+**OPRO** (Google, 2024) uses LLMs to optimize prompts through iterative search:
+
+```java
+@Service
+public class OproService {
+
+    private final ChatClient chatClient;
+    private final ChatClient optimizerClient; // Separate model for optimization
+
+    public record OptimizationResult(
+        String bestPrompt,
+        double bestScore,
+        List<PromptCandidate> history
+    ) {}
+
+    public record PromptCandidate(
+        String prompt,
+        double score,
+        int generation
+    ) {}
+
+    public OptimizationResult optimizePrompt(
+            String taskDescription,
+            List<Example> examples,
+            int generations,
+            int candidatesPerGeneration) {
+
+        List<PromptCandidate> allCandidates = new ArrayList<>();
+        String bestPrompt = "";
+        double bestScore = 0;
+
+        // Generate initial candidates
+        List<String> currentPrompts = generateInitialCandidates(taskDescription, candidatesPerGeneration);
+
+        for (int gen = 0; gen < generations; gen++) {
+            // Evaluate all candidates
+            for (String prompt : currentPrompts) {
+                double score = evaluatePrompt(prompt, examples);
+                allCandidates.add(new PromptCandidate(prompt, score, gen));
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestPrompt = prompt;
+                }
+            }
+
+            // Generate next generation based on top performers
+            List<PromptCandidate> topCandidates = allCandidates.stream()
+                .sorted(Comparator.comparingDouble(PromptCandidate::score).reversed())
+                .limit(5)
+                .collect(Collectors.toList());
+
+            currentPrompts = generateNextGeneration(taskDescription, topCandidates, candidatesPerGeneration);
+        }
+
+        return new OptimizationResult(bestPrompt, bestScore, allCandidates);
+    }
+
+    private List<String> generateNextGeneration(
+            String task,
+            List<PromptCandidate> topCandidates,
+            int count) {
+
+        String candidateInfo = topCandidates.stream()
+            .map(c -> String.format("Score: %.3f\nPrompt: %s", c.score(), c.prompt()))
+            .collect(Collectors.joining("\n---\n"));
+
+        String metaPrompt = """
+            <role>You are a prompt optimization expert</role>
+
+            <task>{task}</task>
+
+            <top_prompts>
+            {candidates}
+            </top_prompts>
+
+            <instruction>
+            Generate {count} new prompt variants that might score higher.
+
+            Strategies to try:
+            1. Combine elements from high-scoring prompts
+            2. Add more specific instructions
+            3. Include examples
+            4. Restructure for clarity
+            5. Add constraints or formatting requirements
+
+            Return each prompt separated by ===PROMPT===
+            </instruction>
+            """;
+
+        String response = optimizerClient.prompt()
+            .user(u -> u.text(metaPrompt)
+                .param("task", task)
+                .param("candidates", candidateInfo)
+                .param("count", String.valueOf(count)))
+            .call()
+            .content();
+
+        return Arrays.asList(response.split("===PROMPT==="));
+    }
+
+    private double evaluatePrompt(String prompt, List<Example> examples) {
+        int correct = 0;
+        for (Example example : examples) {
+            String response = chatClient.prompt()
+                .user(u -> u.text(prompt + "\n\nInput: {input}")
+                    .param("input", example.input()))
+                .call()
+                .content();
+
+            if (isCorrect(response, example.expectedOutput())) {
+                correct++;
+            }
+        }
+        return (double) correct / examples.size();
+    }
+}
+```
+
+### 3.3 Prompt Enhancement Pipeline
+
+A production-ready prompt improvement system:
+
+```java
+@Service
+public class PromptEnhancementPipeline {
+
+    private final ChatClient chatClient;
+
+    public record EnhancedPrompt(
+        String original,
+        String enhanced,
+        List<Enhancement> enhancements,
+        QualityAssessment assessment
+    ) {}
+
+    public record Enhancement(
+        String type,
+        String description,
+        String before,
+        String after
+    ) {}
+
+    public record QualityAssessment(
+        double clarity,
+        double specificity,
+        double completeness,
+        double safety,
+        double overall
+    ) {}
+
+    public EnhancedPrompt enhance(String originalPrompt) {
+        // Step 1: Analyze current prompt
+        PromptAnalysis analysis = analyzePrompt(originalPrompt);
+
+        // Step 2: Apply enhancements
+        List<Enhancement> enhancements = new ArrayList<>();
+        String currentPrompt = originalPrompt;
+
+        if (analysis.needsSpecificity()) {
+            Enhancement e = addSpecificity(currentPrompt);
+            enhancements.add(e);
+            currentPrompt = e.after();
+        }
+
+        if (analysis.needsExamples()) {
+            Enhancement e = addExamples(currentPrompt);
+            enhancements.add(e);
+            currentPrompt = e.after();
+        }
+
+        if (analysis.needsStructure()) {
+            Enhancement e = addStructure(currentPrompt);
+            enhancements.add(e);
+            currentPrompt = e.after();
+        }
+
+        if (analysis.needsSafetyConstraints()) {
+            Enhancement e = addSafetyConstraints(currentPrompt);
+            enhancements.add(e);
+            currentPrompt = e.after();
+        }
+
+        // Step 3: Assess quality
+        QualityAssessment assessment = assessQuality(currentPrompt);
+
+        return new EnhancedPrompt(originalPrompt, currentPrompt, enhancements, assessment);
+    }
+
+    private Enhancement addSpecificity(String prompt) {
+        String enhanced = chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Add specificity to this prompt</task>
+                <prompt>{prompt}</prompt>
+
+                Identify vague parts and make them specific:
+                - Replace general terms with precise ones
+                - Add concrete constraints
+                - Specify expected scope
+                - Define ambiguous terms
+
+                Return ONLY the improved prompt.
+                """).param("prompt", prompt))
+            .call()
+            .content();
+
+        return new Enhancement("specificity", "Added precise terms and constraints", prompt, enhanced);
+    }
+
+    private Enhancement addExamples(String prompt) {
+        String enhanced = chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Add examples to this prompt</task>
+                <prompt>{prompt}</prompt>
+
+                Add 2-3 relevant examples that:
+                - Demonstrate expected input/output format
+                - Cover different cases (typical, edge)
+                - Are concise but illustrative
+
+                Integrate examples naturally into the prompt.
+                Return ONLY the improved prompt.
+                """).param("prompt", prompt))
+            .call()
+            .content();
+
+        return new Enhancement("examples", "Added illustrative examples", prompt, enhanced);
+    }
+
+    private Enhancement addStructure(String prompt) {
+        String enhanced = chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Improve structure of this prompt</task>
+                <prompt>{prompt}</prompt>
+
+                Restructure for clarity:
+                - Use clear section headers
+                - Separate context, task, and format
+                - Use XML tags or markdown for organization
+                - Order information logically
+
+                Return ONLY the restructured prompt.
+                """).param("prompt", prompt))
+            .call()
+            .content();
+
+        return new Enhancement("structure", "Improved organization and formatting", prompt, enhanced);
+    }
+
+    private Enhancement addSafetyConstraints(String prompt) {
+        String enhanced = chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Add safety constraints to this prompt</task>
+                <prompt>{prompt}</prompt>
+
+                Add appropriate constraints for:
+                - Output boundaries (length, format)
+                - Content safety (no harmful content)
+                - Handling edge cases gracefully
+                - Refusing inappropriate requests
+
+                Return ONLY the improved prompt.
+                """).param("prompt", prompt))
+            .call()
+            .content();
+
+        return new Enhancement("safety", "Added safety constraints", prompt, enhanced);
+    }
+}
+```
+
+---
+
+## 4. Multi-Turn Reasoning
+
+Multi-turn reasoning chains multiple LLM calls to solve complex problems that exceed single-turn capabilities.
+
+### 4.1 Decompose-Solve-Integrate Pattern
+
+Break complex problems into manageable sub-problems:
+
+```java
+@Service
+public class MultiTurnReasoningService {
+
+    private final ChatClient chatClient;
+
+    public record ReasoningTrace(
+        String problem,
+        List<SubProblem> decomposition,
+        List<SubSolution> solutions,
+        String integration,
+        String finalAnswer
+    ) {}
+
+    public record SubProblem(String id, String description, List<String> dependencies) {}
+    public record SubSolution(String id, String solution, double confidence) {}
+
+    public ReasoningTrace solveComplex(String problem) {
+        // Turn 1: Decompose
+        List<SubProblem> subProblems = decompose(problem);
+
+        // Turn 2: Solve sub-problems (respecting dependencies)
+        List<SubSolution> solutions = solveSubProblems(subProblems);
+
+        // Turn 3: Integrate
+        String integration = integrate(problem, solutions);
+
+        // Turn 4: Final synthesis
+        String finalAnswer = synthesize(problem, integration);
+
+        return new ReasoningTrace(problem, subProblems, solutions, integration, finalAnswer);
+    }
+
+    private List<SubProblem> decompose(String problem) {
+        String prompt = """
+            <task>Decompose this problem into sub-problems</task>
+
+            <problem>{problem}</problem>
+
+            <instruction>
+            Break this into 3-7 sub-problems that:
+            1. Are independently solvable
+            2. Together cover the full problem
+            3. Have clear dependencies (if any)
+            4. Are ordered by dependency (solve-first first)
+            </instruction>
+
+            <output_format>
+            Return JSON array:
+            [
+              {"id": "SP1", "description": "...", "dependencies": []},
+              {"id": "SP2", "description": "...", "dependencies": ["SP1"]},
+              ...
+            ]
+            </output_format>
+            """;
+
+        return chatClient.prompt()
+            .user(u -> u.text(prompt).param("problem", problem))
+            .call()
+            .entity(new ParameterizedTypeReference<List<SubProblem>>() {});
+    }
+
+    private List<SubSolution> solveSubProblems(List<SubProblem> subProblems) {
+        Map<String, SubSolution> solved = new HashMap<>();
+
+        for (SubProblem sp : subProblems) {
+            // Get solutions for dependencies
+            String dependencyContext = sp.dependencies().stream()
+                .map(dep -> solved.get(dep))
+                .filter(Objects::nonNull)
+                .map(s -> String.format("Solution to %s: %s", s.id(), s.solution()))
+                .collect(Collectors.joining("\n"));
+
+            SubSolution solution = solveSubProblem(sp, dependencyContext);
+            solved.put(sp.id(), solution);
+        }
+
+        return new ArrayList<>(solved.values());
+    }
+
+    private SubSolution solveSubProblem(SubProblem sp, String context) {
+        String prompt = """
+            <task>Solve this sub-problem</task>
+
+            <sub_problem>
+            ID: {id}
+            Description: {description}
+            </sub_problem>
+
+            <context_from_dependencies>
+            {context}
+            </context_from_dependencies>
+
+            <instruction>
+            Provide a thorough solution. Consider edge cases.
+            Rate your confidence (0-1) in the solution.
+            </instruction>
+
+            <output_format>
+            Return JSON:
+            {"id": "{id}", "solution": "...", "confidence": 0.95}
+            </output_format>
+            """;
+
+        return chatClient.prompt()
+            .user(u -> u.text(prompt)
+                .param("id", sp.id())
+                .param("description", sp.description())
+                .param("context", context.isEmpty() ? "No dependencies" : context))
+            .call()
+            .entity(SubSolution.class);
+    }
+
+    private String integrate(String problem, List<SubSolution> solutions) {
+        String solutionSummary = solutions.stream()
+            .map(s -> String.format("%s (confidence: %.2f): %s", s.id(), s.confidence(), s.solution()))
+            .collect(Collectors.joining("\n\n"));
+
+        return chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Integrate sub-solutions</task>
+
+                <original_problem>{problem}</original_problem>
+
+                <sub_solutions>
+                {solutions}
+                </sub_solutions>
+
+                <instruction>
+                Combine these sub-solutions into a coherent whole:
+                1. Resolve any conflicts between solutions
+                2. Fill gaps where solutions don't connect
+                3. Ensure consistency throughout
+                4. Address the original problem completely
+                </instruction>
+                """)
+                .param("problem", problem)
+                .param("solutions", solutionSummary))
+            .call()
+            .content();
+    }
+
+    private String synthesize(String problem, String integration) {
+        return chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Synthesize final answer</task>
+
+                <original_problem>{problem}</original_problem>
+
+                <integrated_solution>{integration}</integrated_solution>
+
+                <instruction>
+                Provide a clear, complete final answer that:
+                1. Directly addresses the original question
+                2. Is well-structured and easy to follow
+                3. Includes key insights from the analysis
+                4. Notes any limitations or assumptions
+                </instruction>
+                """)
+                .param("problem", problem)
+                .param("integration", integration))
+            .call()
+            .content();
+    }
+}
+```
+
+### 4.2 Research-Analyze-Synthesize Pipeline
+
+For knowledge-intensive tasks:
+
+```java
+@Service
+public class ResearchPipeline {
+
+    private final ChatClient researchClient;
+    private final ChatClient analysisClient;
+    private final ChatClient synthesisClient;
+
+    public record ResearchResult(
+        String topic,
+        List<Finding> findings,
+        Analysis analysis,
+        String synthesis,
+        List<String> sources
+    ) {}
+
+    public ResearchResult research(String topic, int depth) {
+        // Phase 1: Research - gather information
+        List<Finding> findings = conductResearch(topic, depth);
+
+        // Phase 2: Analyze - identify patterns and insights
+        Analysis analysis = analyzeFindings(topic, findings);
+
+        // Phase 3: Synthesize - create coherent narrative
+        String synthesis = synthesizeReport(topic, findings, analysis);
+
+        return new ResearchResult(
+            topic,
+            findings,
+            analysis,
+            synthesis,
+            extractSources(findings)
+        );
+    }
+
+    private List<Finding> conductResearch(String topic, int depth) {
+        List<Finding> findings = new ArrayList<>();
+
+        // Initial research
+        String initialPrompt = """
+            <task>Research this topic</task>
+            <topic>{topic}</topic>
+
+            Provide key facts, concepts, and information about this topic.
+            Structure as a list of findings, each with:
+            - Main point
+            - Supporting evidence
+            - Source type (fact/inference/common knowledge)
+            """;
+
+        String initial = researchClient.prompt()
+            .user(u -> u.text(initialPrompt).param("topic", topic))
+            .call()
+            .content();
+
+        findings.addAll(parseFindings(initial));
+
+        // Deep-dive research based on initial findings
+        if (depth > 1) {
+            List<String> deeperTopics = identifyGaps(topic, findings);
+            for (String subtopic : deeperTopics) {
+                String deeper = researchClient.prompt()
+                    .user(u -> u.text("""
+                        <task>Deep-dive research</task>
+                        <main_topic>{topic}</main_topic>
+                        <subtopic>{subtopic}</subtopic>
+                        <existing_findings>{existing}</existing_findings>
+
+                        Research this subtopic in more depth.
+                        Focus on new information not covered in existing findings.
+                        """)
+                        .param("topic", topic)
+                        .param("subtopic", subtopic)
+                        .param("existing", summarizeFindings(findings)))
+                    .call()
+                    .content();
+
+                findings.addAll(parseFindings(deeper));
+            }
+        }
+
+        return findings;
+    }
+
+    private Analysis analyzeFindings(String topic, List<Finding> findings) {
+        String prompt = """
+            <task>Analyze research findings</task>
+
+            <topic>{topic}</topic>
+
+            <findings>
+            {findings}
+            </findings>
+
+            <instruction>
+            Perform deep analysis:
+            1. Identify key themes and patterns
+            2. Note contradictions or debates
+            3. Assess evidence quality
+            4. Draw inferences
+            5. Identify gaps in the research
+            </instruction>
+
+            <output_format>
+            Return structured analysis with:
+            - themes: list of major themes
+            - patterns: recurring patterns observed
+            - contradictions: conflicting information
+            - evidenceQuality: assessment of source quality
+            - gaps: what's missing
+            - keyInsights: most important takeaways
+            </output_format>
+            """;
+
+        return analysisClient.prompt()
+            .user(u -> u.text(prompt)
+                .param("topic", topic)
+                .param("findings", formatFindings(findings)))
+            .call()
+            .entity(Analysis.class);
+    }
+
+    private String synthesizeReport(String topic, List<Finding> findings, Analysis analysis) {
+        return synthesisClient.prompt()
+            .user(u -> u.text("""
+                <task>Synthesize research report</task>
+
+                <topic>{topic}</topic>
+                <findings>{findings}</findings>
+                <analysis>{analysis}</analysis>
+
+                <instruction>
+                Create a comprehensive report that:
+                1. Opens with an executive summary
+                2. Presents findings organized by theme
+                3. Discusses implications and significance
+                4. Addresses contradictions and limitations
+                5. Concludes with key takeaways
+
+                Write in clear, professional prose.
+                </instruction>
+                """)
+                .param("topic", topic)
+                .param("findings", formatFindings(findings))
+                .param("analysis", analysis.toString()))
+            .call()
+            .content();
+    }
+}
+```
+
+---
+
+## 5. Self-Consistency
+
+Self-Consistency (Wang et al., 2022) generates multiple reasoning paths and takes a majority vote on the final answer.
+
+### 5.1 Basic Self-Consistency
+
+```java
+@Service
+public class SelfConsistencyService {
+
+    private final ChatClient chatClient;
+
+    public record ConsistencyResult(
+        String finalAnswer,
+        double confidence,
+        Map<String, Integer> answerDistribution,
+        List<String> reasoningPaths
+    ) {}
+
+    public ConsistencyResult solveWithConsistency(String problem, int numPaths) {
+        List<String> reasoningPaths = new ArrayList<>();
+        Map<String, Integer> answerCounts = new HashMap<>();
+
+        // Generate multiple reasoning paths with temperature > 0
+        for (int i = 0; i < numPaths; i++) {
+            String response = chatClient.prompt()
+                .user(u -> u.text("""
+                    Solve this step-by-step:
+
+                    {problem}
+
+                    Show your reasoning, then provide your final answer after "ANSWER:"
+                    """).param("problem", problem))
+                .options(ChatOptions.builder()
+                    .temperature(0.7) // Higher temp for diverse paths
+                    .build())
+                .call()
+                .content();
+
+            reasoningPaths.add(response);
+
+            String answer = extractAnswer(response);
+            answerCounts.merge(answer, 1, Integer::sum);
+        }
+
+        // Find majority answer
+        String majorityAnswer = answerCounts.entrySet().stream()
+            .max(Map.Entry.comparingByValue())
+            .map(Map.Entry::getKey)
+            .orElse("");
+
+        double confidence = (double) answerCounts.get(majorityAnswer) / numPaths;
+
+        return new ConsistencyResult(majorityAnswer, confidence, answerCounts, reasoningPaths);
+    }
+
+    private String extractAnswer(String response) {
+        int idx = response.lastIndexOf("ANSWER:");
+        if (idx >= 0) {
+            return response.substring(idx + 7).trim().split("\\n")[0].trim();
+        }
+        return response.substring(Math.max(0, response.length() - 100));
+    }
+}
+```
+
+### 5.2 Universal Self-Consistency (USC)
+
+USC extends self-consistency to free-form answers by using LLM to find consensus:
+
+```java
+@Service
+public class UniversalSelfConsistencyService {
+
+    private final ChatClient chatClient;
+
+    public record USCResult(
+        String consensusAnswer,
+        double confidence,
+        List<String> answers,
+        String consensusReasoning
+    ) {}
+
+    public USCResult solveWithUSC(String problem, int numPaths) {
+        // Generate multiple answers
+        List<String> answers = new ArrayList<>();
+        for (int i = 0; i < numPaths; i++) {
+            String answer = chatClient.prompt()
+                .user(u -> u.text("""
+                    {problem}
+
+                    Think through this carefully and provide your answer.
+                    """).param("problem", problem))
+                .options(ChatOptions.builder().temperature(0.7).build())
+                .call()
+                .content();
+            answers.add(answer);
+        }
+
+        // Use LLM to find consensus among free-form answers
+        String answerList = IntStream.range(0, answers.size())
+            .mapToObj(i -> String.format("Answer %d:\n%s", i + 1, answers.get(i)))
+            .collect(Collectors.joining("\n\n---\n\n"));
+
+        String consensusPrompt = """
+            <task>Find consensus among these answers</task>
+
+            <original_question>
+            {problem}
+            </original_question>
+
+            <multiple_answers>
+            {answers}
+            </multiple_answers>
+
+            <instruction>
+            Analyze these answers and determine the consensus:
+            1. Identify common themes and conclusions
+            2. Note where answers agree vs disagree
+            3. Synthesize the most supported answer
+            4. Rate confidence based on agreement level (0-1)
+            </instruction>
+
+            <output_format>
+            Return JSON:
+            {
+              "consensus": "the synthesized consensus answer",
+              "confidence": 0.85,
+              "reasoning": "explanation of how consensus was determined"
+            }
+            </output_format>
+            """;
+
+        record ConsensusOutput(String consensus, double confidence, String reasoning) {}
+
+        ConsensusOutput result = chatClient.prompt()
+            .user(u -> u.text(consensusPrompt)
+                .param("problem", problem)
+                .param("answers", answerList))
+            .call()
+            .entity(ConsensusOutput.class);
+
+        return new USCResult(result.consensus(), result.confidence(), answers, result.reasoning());
+    }
+}
+```
+
+---
+
+## 6. Step-Back Prompting
+
+Step-Back Prompting (Google, 2024) asks the model to first consider higher-level concepts before solving specifics.
+
+```java
+@Service
+public class StepBackPromptingService {
+
+    private final ChatClient chatClient;
+
+    public record StepBackResult(
+        String originalQuestion,
+        String stepBackQuestion,
+        String highLevelReasoning,
+        String specificAnswer
+    ) {}
+
+    public StepBackResult solveWithStepBack(String question) {
+        // Step 1: Generate step-back question
+        String stepBackQuestion = chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Generate a step-back question</task>
+
+                <original_question>
+                {question}
+                </original_question>
+
+                <instruction>
+                Before answering this specific question, what general principle,
+                concept, or background knowledge would help solve it?
+
+                Generate a broader question that captures the underlying concept.
+                </instruction>
+
+                <example>
+                Original: "What happens to the pressure if I double the volume of an ideal gas at constant temperature?"
+                Step-back: "What is the relationship between pressure and volume in ideal gases (Boyle's Law)?"
+                </example>
+
+                Return ONLY the step-back question.
+                """).param("question", question))
+            .call()
+            .content();
+
+        // Step 2: Answer the step-back question
+        String highLevelReasoning = chatClient.prompt()
+            .user(u -> u.text("""
+                <question>
+                {stepBack}
+                </question>
+
+                Provide a thorough explanation of this concept/principle.
+                Include relevant formulas, relationships, or frameworks.
+                """).param("stepBack", stepBackQuestion))
+            .call()
+            .content();
+
+        // Step 3: Apply to original question
+        String specificAnswer = chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Answer specific question using background knowledge</task>
+
+                <original_question>
+                {question}
+                </original_question>
+
+                <relevant_background>
+                {background}
+                </relevant_background>
+
+                <instruction>
+                Using the background knowledge above, answer the original question.
+                Show how you apply the general principle to this specific case.
+                </instruction>
+                """)
+                .param("question", question)
+                .param("background", highLevelReasoning))
+            .call()
+            .content();
+
+        return new StepBackResult(question, stepBackQuestion, highLevelReasoning, specificAnswer);
+    }
+}
+```
+
+---
+
+## 7. Program-Aided Language (PAL)
+
+PAL combines natural language reasoning with code execution for accurate computations.
+
+### 7.1 PAL with Code Execution
+
+````java
+@Service
+public class ProgramAidedLanguageService {
+
+    private final ChatClient chatClient;
+    private final CodeExecutionService codeExecutor;
+
+    public record PALResult(
+        String problem,
+        String reasoning,
+        String generatedCode,
+        String executionResult,
+        String finalAnswer
+    ) {}
+
+    public PALResult solveWithPAL(String problem) {
+        // Step 1: Generate reasoning and code
+        String codeGenerationPrompt = """
+            <task>Solve this problem by writing Python code</task>
+
+            <problem>
+            {problem}
+            </problem>
+
+            <instruction>
+            1. First, explain your reasoning in comments
+            2. Write Python code that computes the answer
+            3. Store the final answer in a variable called 'answer'
+            4. Print the answer at the end
+            </instruction>
+
+            <output_format>
+            ```python
+            # Reasoning: [your explanation]
+            # Step 1: ...
+            # Step 2: ...
+
+            [your code]
+
+            print(f"Answer: {answer}")
+            ```
+            </output_format>
+            """;
+
+        String response = chatClient.prompt()
+            .user(u -> u.text(codeGenerationPrompt).param("problem", problem))
+            .call()
+            .content();
+
+        // Extract code
+        String code = extractCode(response);
+        String reasoning = extractReasoning(code);
+
+        // Step 2: Execute code
+        ExecutionResult execution = codeExecutor.execute(code);
+
+        // Step 3: Format final answer
+        String finalAnswer = formatAnswer(problem, reasoning, execution);
+
+        return new PALResult(problem, reasoning, code, execution.output(), finalAnswer);
+    }
+
+    private String extractCode(String response) {
+        Pattern pattern = Pattern.compile("```python\\\\s*([\\\\s\\\\S]*?)```");
+        Matcher matcher = pattern.matcher(response);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        return response;
+    }
+
+    private String formatAnswer(String problem, String reasoning, ExecutionResult execution) {
+        if (execution.success()) {
+            return chatClient.prompt()
+                .user(u -> u.text("""
+                    <task>Format the answer</task>
+
+                    <problem>{problem}</problem>
+                    <reasoning>{reasoning}</reasoning>
+                    <computation_result>{result}</computation_result>
+
+                    Provide a clear, human-readable answer that:
+                    1. States the final numerical result
+                    2. Includes appropriate units
+                    3. Briefly explains the solution approach
+                    """)
+                    .param("problem", problem)
+                    .param("reasoning", reasoning)
+                    .param("result", execution.output()))
+                .call()
+                .content();
+        } else {
+            return "Error in computation: " + execution.error();
+        }
+    }
+}
+```
+
+### 7.2 PAL with Tool Calling in Spring AI
+
+Leverage Spring AI's tool calling for computation:
+
+```java
+@Configuration
+public class PALToolConfiguration {
+
+    @Bean
+    public FunctionCallback calculatorTool() {
+        return FunctionCallback.builder()
+            .function("calculate", (CalculationRequest req) -> {
+                try {
+                    ScriptEngine engine = new ScriptEngineManager()
+                        .getEngineByName("python");
+                    Object result = engine.eval(req.expression());
+                    return new CalculationResult(true, result.toString(), null);
+                } catch (Exception e) {
+                    return new CalculationResult(false, null, e.getMessage());
+                }
+            })
+            .description("Evaluate a mathematical expression")
+            .inputType(CalculationRequest.class)
+            .build();
+    }
+
+    public record CalculationRequest(String expression) {}
+    public record CalculationResult(boolean success, String result, String error) {}
+}
+
+@Service
+public class PALWithToolsService {
+
+    private final ChatClient chatClient;
+
+    public String solveWithTools(String problem) {
+        return chatClient.prompt()
+            .user(u -> u.text("""
+                <problem>{problem}</problem>
+
+                Solve this step by step. For any calculations, use the calculate tool.
+                Show your reasoning, then provide the final answer.
+                """).param("problem", problem))
+            .tools("calculate")
+            .call()
+            .content();
+    }
+}
+```
+
+---
+
+## 8. Emerging Techniques
+
+### 8.1 Emotion Prompting
+
+Research shows that adding emotional context can improve performance:
+
+```java
+public class EmotionPromptingService {
+
+    private static final String EMOTION_ENHANCED_PROMPT = """
+        This task is crucial for our project's success. Your thorough analysis will make
+        a real difference. Take your time and do your best work.
+
+        {task}
+
+        Remember: Your expertise is valued here. Take pride in providing a comprehensive,
+        accurate response.
+        """;
+
+    public String promptWithEmotion(String task) {
+        return chatClient.prompt()
+            .user(u -> u.text(EMOTION_ENHANCED_PROMPT)
+                .param("task", task))
+            .call()
+            .content();
+    }
+}
+```
+
+### 8.2 Rephrase and Respond (RaR)
+
+Have the model rephrase the question before answering:
+
+```java
+@Service
+public class RephraseAndRespondService {
+
+    public String solveWithRaR(String question) {
+        return chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Rephrase and Respond</task>
+
+                <original_question>
+                {question}
+                </original_question>
+
+                <instruction>
+                Step 1: Rephrase this question in your own words to ensure understanding.
+                Step 2: Identify any implicit assumptions or requirements.
+                Step 3: Answer the rephrased question thoroughly.
+                </instruction>
+
+                <format>
+                ## My Understanding
+                [Your rephrasing of the question]
+
+                ## Key Assumptions
+                [Implicit requirements identified]
+
+                ## Answer
+                [Your thorough response]
+                </format>
+                """).param("question", question))
+            .call()
+            .content();
+    }
+}
+```
+
+### 8.3 Thread of Thought (ThoT)
+
+For context-heavy questions, explicitly walk through relevant context:
+
+```java
+@Service
+public class ThreadOfThoughtService {
+
+    public String solveWithThoT(String question, String context) {
+        return chatClient.prompt()
+            .user(u -> u.text("""
+                <context>
+                {context}
+                </context>
+
+                <question>
+                {question}
+                </question>
+
+                <instruction>
+                Walk through the context methodically:
+                1. Identify all relevant information for this question
+                2. Note the relationships between pieces of information
+                3. Trace the thread of logic from context to answer
+                4. Provide your answer with explicit references to context
+                </instruction>
+
+                <format>
+                ## Relevant Information
+                [Key facts from context]
+
+                ## Logical Thread
+                [How these facts connect]
+
+                ## Answer
+                [Your response with context citations]
+                </format>
+                """)
+                .param("context", context)
+                .param("question", question))
+            .call()
+            .content();
+    }
+}
+```
+
+### 8.4 Re-Reading (RE2)
+
+Simply instructing the model to re-read improves comprehension:
+
+```java
+public String solveWithRereading(String passage, String question) {
+    return chatClient.prompt()
+        .user(u -> u.text("""
+            <passage>
+            {passage}
+            </passage>
+
+            <question>
+            {question}
+            </question>
+
+            <instruction>
+            Read the passage again carefully before answering.
+            Pay attention to details you might have missed.
+            </instruction>
+
+            After re-reading, provide your answer:
+            """)
+            .param("passage", passage)
+            .param("question", question))
+        .call()
+        .content();
+}
+```
+
+### 8.5 Contrastive Chain-of-Thought
+
+Show both correct and incorrect reasoning:
+
+```java
+public String solveWithContrastiveCoT(String problem) {
+    return chatClient.prompt()
+        .user(u -> u.text("""
+            <problem>
+            {problem}
+            </problem>
+
+            <instruction>
+            Show both incorrect and correct reasoning paths.
+            </instruction>
+
+            <format>
+            ## Incorrect Approach (Common Mistake)
+            [Show a plausible but wrong reasoning path]
+            [Explain why this is wrong]
+
+            ## Correct Approach
+            [Show the correct step-by-step reasoning]
+            [Explain why each step is valid]
+
+            ## Final Answer
+            [The correct answer]
+            </format>
+            """).param("problem", problem))
+        .call()
+        .content();
+}
+```
+
+### 8.6 Skeleton of Thought
+
+Generate outline first, then fill in details (faster for long-form content):
+
+```java
+@Service
+public class SkeletonOfThoughtService {
+
+    public String generateWithSkeleton(String topic) {
+        // Phase 1: Generate skeleton
+        String skeleton = chatClient.prompt()
+            .user(u -> u.text("""
+                <task>Generate content skeleton</task>
+                <topic>{topic}</topic>
+
+                Create a detailed outline with:
+                - Main sections (3-5)
+                - Key points for each section (2-4)
+                - Do NOT write full content, just structure
+
+                Format as a numbered outline.
+                """).param("topic", topic))
+            .call()
+            .content();
+
+        // Phase 2: Fill in skeleton (can be parallelized)
+        List<String> sections = parseSkeleton(skeleton);
+
+        List<String> filledSections = sections.parallelStream()
+            .map(section -> chatClient.prompt()
+                .user(u -> u.text("""
+                    <task>Expand this section</task>
+                    <overall_topic>{topic}</overall_topic>
+                    <section_outline>{section}</section_outline>
+
+                    Write detailed content for this section.
+                    Be thorough but concise.
+                    """)
+                    .param("topic", topic)
+                    .param("section", section))
+                .call()
+                .content())
+            .collect(Collectors.toList());
+
+        return String.join("\n\n", filledSections);
+    }
+}
+```
+
+---
+
+## 9. Technique Selection Guide
+
+### Decision Matrix
+
+| Technique | Best For | Complexity | Latency | Cost |
+|-----------|----------|------------|---------|------|
+| **Self-Critique** | Complex tasks, high stakes | Medium | 2x | 2x |
+| **Reflexion** | Tasks with feedback signals | High | 3-5x | 3-5x |
+| **PACE** | Content generation, refinement | Medium | 2-3x | 2-3x |
+| **Self-Consistency** | Math, factual questions | Low | Nx | Nx |
+| **Step-Back** | Physics, concept application | Low | 2x | 2x |
+| **PAL** | Math, calculations, data | Medium | 2x | 1.5x |
+| **Multi-Turn** | Complex multi-step problems | High | 3-5x | 3-5x |
+| **Meta-Prompting** | Prompt optimization | High | Variable | Variable |
+| **Emotion** | Any task | None | 1x | 1x |
+| **RaR** | Ambiguous questions | Low | 1.5x | 1.5x |
+| **Skeleton** | Long-form content | Medium | 1.5x | 1.5x |
+
+### Selection Flowchart
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    TECHNIQUE SELECTION FLOWCHART                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│                    ┌─────────────────┐                                  │
+│                    │  What type of   │                                  │
+│                    │     task?       │                                  │
+│                    └────────┬────────┘                                  │
+│          ┌─────────────────┼─────────────────┐                          │
+│          ▼                 ▼                 ▼                          │
+│    ┌──────────┐     ┌──────────┐     ┌──────────┐                      │
+│    │ Reasoning│     │ Content  │     │ Q&A      │                      │
+│    │  /Math   │     │Generation│     │/Factual  │                      │
+│    └────┬─────┘     └────┬─────┘     └────┬─────┘                      │
+│         │                │                │                             │
+│    ┌────▼────┐      ┌────▼────┐      ┌────▼────┐                       │
+│    │Numerical│      │ Long    │      │ Context │                       │
+│    │  heavy? │      │ form?   │      │ heavy?  │                       │
+│    └────┬────┘      └────┬────┘      └────┬────┘                       │
+│     Y/N │           Y/N  │           Y/N  │                             │
+│    ┌────┴────┐     ┌────┴────┐     ┌────┴────┐                         │
+│    Y: PAL    │     Y:Skeleton│     Y: ThoT   │                         │
+│    N: CoT    │     N: ECR    │     N: RaR    │                         │
+│      +Self-  │       +PACE   │       +Step   │                         │
+│      Consist │              │       Back    │                         │
+│    └─────────┘     └─────────┘     └─────────┘                         │
+│                                                                         │
+│    ┌─────────────────────────────────────────┐                         │
+│    │ For HIGH STAKES: Add Self-Critique      │                         │
+│    │ For OPTIMIZATION: Add Meta-Prompting    │                         │
+│    │ For ANY TASK: Consider Emotion Prompting│                         │
+│    └─────────────────────────────────────────┘                         │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 10. Production Patterns
+
+### 10.1 Technique Composition
+
+Combine techniques for maximum effect:
+
+```java
+@Service
+public class AdvancedReasoningService {
+
+    private final StepBackPromptingService stepBack;
+    private final SelfConsistencyService selfConsistency;
+    private final SelfCritiqueService selfCritique;
+
+    /**
+     * Combined technique: Step-Back + Self-Consistency + Self-Critique
+     */
+    public String solveWithCombinedTechniques(String problem) {
+        // 1. Step-back for conceptual grounding
+        StepBackResult stepBackResult = stepBack.solveWithStepBack(problem);
+
+        // 2. Self-consistency on the grounded problem
+        String groundedProblem = String.format("""
+            Background knowledge: %s
+
+            Question: %s
+            """, stepBackResult.highLevelReasoning(), problem);
+
+        ConsistencyResult consistencyResult =
+            selfConsistency.solveWithConsistency(groundedProblem, 5);
+
+        // 3. Self-critique for final refinement
+        String critiqued = selfCritique.solveWithSelfCritique(
+            String.format("""
+                Problem: %s
+                Initial answer: %s (confidence: %.2f)
+
+                Verify and improve this answer.
+                """, problem, consistencyResult.finalAnswer(), consistencyResult.confidence())
+        );
+
+        return critiqued;
+    }
+}
+```
+
+### 10.2 Adaptive Technique Selection
+
+```java
+@Service
+public class AdaptiveTechniqueService {
+
+    private final Map<String, Object> techniques;
+
+    public String solveAdaptively(String problem, String taskType) {
+        // Classify task
+        TaskClassification classification = classifyTask(problem, taskType);
+
+        // Select techniques based on classification
+        List<String> selectedTechniques = selectTechniques(classification);
+
+        // Apply techniques in sequence
+        String result = problem;
+        for (String technique : selectedTechniques) {
+            result = applyTechnique(technique, result);
+        }
+
+        return result;
+    }
+
+    private TaskClassification classifyTask(String problem, String taskType) {
+        return chatClient.prompt()
+            .user(u -> u.text("""
+                Classify this task:
+
+                Task type: {type}
+                Problem: {problem}
+
+                Return JSON:
+                {
+                  "requiresCalculation": true/false,
+                  "isFactual": true/false,
+                  "isComplex": true/false,
+                  "hasAmbiguity": true/false,
+                  "isLongForm": true/false,
+                  "confidenceNeeded": "low/medium/high"
+                }
+                """)
+                .param("type", taskType)
+                .param("problem", problem))
+            .call()
+            .entity(TaskClassification.class);
+    }
+
+    private List<String> selectTechniques(TaskClassification c) {
+        List<String> techniques = new ArrayList<>();
+
+        if (c.hasAmbiguity()) techniques.add("RaR");
+        if (c.requiresCalculation()) techniques.add("PAL");
+        if (c.isComplex()) techniques.add("StepBack");
+        if (c.confidenceNeeded().equals("high")) techniques.add("SelfConsistency");
+        if (c.isLongForm()) techniques.add("Skeleton");
+
+        // Always consider self-critique for high-stakes
+        if (c.confidenceNeeded().equals("high")) {
+            techniques.add("SelfCritique");
+        }
+
+        return techniques;
+    }
+}
+```
+
+---
+
+## References
+
+### Academic Papers
+
+1. **Reflexion** - Shinn et al. (2023): "Reflexion: Language Agents with Verbal Reinforcement Learning"
+2. **Self-Consistency** - Wang et al. (2022): "Self-Consistency Improves Chain of Thought Reasoning in Language Models"
+3. **PACE** - Dong et al. (2024): "PACE: Improving Prompts with Actor-Critic Editing"
+4. **Step-Back** - Zheng et al. (2024): "Take a Step Back: Evoking Reasoning via Abstraction in Large Language Models"
+5. **PAL** - Gao et al. (2023): "PAL: Program-aided Language Models"
+6. **DSPy** - Khattab et al. (2024): "DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines"
+7. **OPRO** - Yang et al. (2024): "Large Language Models as Optimizers"
+8. **Emotion Prompting** - Li et al. (2024): "Large Language Models Understand and Can Be Enhanced by Emotional Stimuli"
+9. **Skeleton of Thought** - Ning et al. (2024): "Skeleton-of-Thought: Large Language Models Can Do Parallel Decoding"
+10. **Thread of Thought** - Zhou et al. (2024): "Thread of Thought Unraveling Chaotic Contexts"
+11. **Re-Reading** - Xu et al. (2024): "RE2: Reading Twice for Better Understanding"
+12. **Universal Self-Consistency** - Chen et al. (2024): "Universal Self-Consistency for Large Language Model Generation"
+
+### Implementation Resources
+
+- [Spring AI Documentation](https://docs.spring.io/spring-ai/reference/)
+- [Anthropic Prompt Engineering Guide](https://docs.anthropic.com/claude/docs/prompt-engineering)
+- [OpenAI Cookbook](https://cookbook.openai.com/)
+
+---
+
+**Previous**: [2.5 Evaluation & Version Control](./06-evaluation-versioning.mdx) ←
+**Next**: [3.2 Multi-modal Prompting](./08-multimodal.mdx) →

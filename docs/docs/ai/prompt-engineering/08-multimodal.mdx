@@ -1,0 +1,2244 @@
+---
+title: "8 Multi-modal Prompting"
+description: "Vision-text prompting, document understanding, video analysis, and cross-modal reasoning with GPT-4V, Claude, and Gemini"
+published: 2025-01-21
+tags: ["prompt-engineering", "multimodal", "vision", "ai", "document-understanding"]
+category: "prompt-engineering"
+series: "Prompt Engineering Guide"
+seriesOrder: 7
+draft: false
+---
+
+## Introduction
+
+**Multimodal AI** represents the convergence of different input modalities—text, images, audio, video, and documents—into unified reasoning systems. Modern Vision-Language Models (VLMs) like GPT-4V, Claude 4, and Gemini 2.0 can understand complex visual scenes, extract information from documents, analyze charts, and reason across multiple images simultaneously.
+
+This chapter covers practical prompting techniques for multimodal systems, with production-ready Spring AI implementations.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    MULTIMODAL AI LANDSCAPE (2025)                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │                         INPUT MODALITIES                         │  │
+│  ├──────────┬──────────┬──────────┬──────────┬──────────────────────┤  │
+│  │  Text    │  Image   │  Audio   │  Video   │  Documents           │  │
+│  │  ▼       │  ▼       │  ▼       │  ▼       │  ▼                   │  │
+│  │  NLP     │  Vision  │  Speech  │  Temporal│  OCR + Layout        │  │
+│  └──────────┴──────────┴──────────┴──────────┴──────────────────────┘  │
+│                              │                                          │
+│                              ▼                                          │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │                    UNIFIED REASONING ENGINE                      │  │
+│  │                                                                  │  │
+│  │   Cross-modal attention • Semantic alignment • Grounding         │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+│                              │                                          │
+│                              ▼                                          │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │                      OUTPUT CAPABILITIES                         │  │
+│  ├──────────┬──────────┬──────────┬──────────┬──────────────────────┤  │
+│  │ Analysis │Extraction│ Q&A      │Generation│ Actions              │  │
+│  │ reports  │ JSON/CSV │ responses│ content  │ tool calls           │  │
+│  └──────────┴──────────┴──────────┴──────────┴──────────────────────┘  │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+:::info
+**Performance Note**: Multimodal models achieve 90%+ accuracy on document extraction tasks when prompts include explicit schema definitions and validation constraints (Google Research, 2024).
+:::
+
+---
+
+## 1. Model Capabilities Comparison (2025)
+
+Understanding model strengths helps select the right tool for each task:
+
+### Capability Matrix
+
+| Feature | **GPT-4o** | **Claude 4** | **Gemini 2.0** |
+|---------|------------|--------------|----------------|
+| **Image Input** | ✅ Native | ✅ Native | ✅ Native |
+| **Multiple Images** | ✅ Up to 20 | ✅ Up to 20 | ✅ Up to 3600 |
+| **PDF Processing** | ⚠️ Via image | ✅ Native | ✅ Native |
+| **Video Input** | ⚠️ Frame extraction | ❌ | ✅ Native (1hr) |
+| **Audio Input** | ✅ Via Whisper | ⚠️ Separate | ✅ Native |
+| **Image Generation** | ✅ DALL-E 3 | ❌ | ✅ Imagen 3 |
+| **Spatial Understanding** | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
+| **OCR Accuracy** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| **Chart Analysis** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| **Medical Imaging** | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+
+### Model Selection Guide
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    MULTIMODAL MODEL SELECTION                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   ┌─────────────────────┐                                              │
+│   │ What's your primary │                                              │
+│   │    input type?      │                                              │
+│   └──────────┬──────────┘                                              │
+│              │                                                          │
+│   ┌──────────┼──────────┬──────────────┬───────────────┐               │
+│   ▼          ▼          ▼              ▼               ▼               │
+│ Images    Documents   Video        Audio         Mixed Media           │
+│   │          │          │              │               │               │
+│   │          │          │              │               │               │
+│   ▼          ▼          ▼              ▼               ▼               │
+│ Any       Claude 4   Gemini 2.0   GPT-4o/      Gemini 2.0             │
+│ Model     (PDF native) (native)   Gemini       (best cross-           │
+│           GPT-4o                              modal)                   │
+│           Gemini                                                       │
+│                                                                         │
+│   For OCR/extraction: Claude 4 > Gemini > GPT-4o                       │
+│   For creative tasks: GPT-4o (with DALL-E) > Gemini > Claude           │
+│   For long context: Gemini (2M tokens) > Claude (200K) > GPT (128K)    │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 2. Vision-Text Prompting Fundamentals
+
+### 2.1 Basic Vision Prompt Structure
+
+The key to effective vision prompting is providing clear context about what the image contains and what analysis is expected:
+
+```java
+public class VisionPromptBuilder {
+
+    /**
+     * Standard vision prompt template
+     */
+    private static final String VISION_TEMPLATE = """
+        <context>
+        This image is: {imageContext}
+        </context>
+
+        <task>
+        {taskDescription}
+        </task>
+
+        <focus_areas>
+        Pay attention to:
+        {focusAreas}
+        </focus_areas>
+
+        <constraints>
+        {constraints}
+        </constraints>
+
+        <output_format>
+        {outputFormat}
+        </output_format>
+        """;
+
+    public String buildPrompt(VisionPromptConfig config) {
+        return VISION_TEMPLATE
+            .replace("{imageContext}", config.imageContext())
+            .replace("{taskDescription}", config.task())
+            .replace("{focusAreas}", formatList(config.focusAreas()))
+            .replace("{constraints}", formatList(config.constraints()))
+            .replace("{outputFormat}", config.outputFormat());
+    }
+
+    public record VisionPromptConfig(
+        String imageContext,
+        String task,
+        List<String> focusAreas,
+        List<String> constraints,
+        String outputFormat
+    ) {}
+}
+```
+
+### 2.2 Image Analysis Patterns
+
+#### Pattern 1: Descriptive Analysis
+
+```java
+String descriptivePrompt = """
+    <task>
+    Describe this image comprehensively.
+    </task>
+
+    <structure>
+    1. **Overview**: What is the main subject/scene?
+    2. **Details**: Describe specific elements, colors, textures
+    3. **Context**: What setting or environment is depicted?
+    4. **Mood/Atmosphere**: What feeling does the image convey?
+    5. **Technical Aspects**: Composition, lighting, style
+    </structure>
+
+    <output_format>
+    Provide a structured description following the sections above.
+    Use specific, concrete language rather than vague terms.
+    </output_format>
+    """;
+```
+
+#### Pattern 2: Analytical Assessment
+
+```java
+String analyticalPrompt = """
+    <role>
+    You are an expert analyst reviewing visual content.
+    </role>
+
+    <task>
+    Analyze this image for {analysisType}.
+    </task>
+
+    <criteria>
+    Evaluate against these criteria:
+    1. {criterion1}: [definition]
+    2. {criterion2}: [definition]
+    3. {criterion3}: [definition]
+    </criteria>
+
+    <output_format>
+    ## Analysis Summary
+    [Brief overview]
+
+    ## Detailed Evaluation
+    | Criterion | Score (1-10) | Evidence | Recommendations |
+    |-----------|--------------|----------|-----------------|
+    | ... | ... | ... | ... |
+
+    ## Priority Actions
+    1. [Most important recommendation]
+    2. [Second priority]
+    3. [Third priority]
+    </output_format>
+    """;
+```
+
+#### Pattern 3: Comparative Analysis
+
+```java
+String comparativePrompt = """
+    <task>
+    Compare these {count} images and identify:
+    1. Similarities across all images
+    2. Key differences between them
+    3. Ranking by {criteria}
+    </task>
+
+    <analysis_dimensions>
+    - Visual elements
+    - Quality metrics
+    - Content accuracy
+    - Style consistency
+    </analysis_dimensions>
+
+    <output_format>
+    ## Similarities
+    [Common elements]
+
+    ## Differences
+    | Aspect | Image 1 | Image 2 | Image 3 |
+    |--------|---------|---------|---------|
+    | ... | ... | ... | ... |
+
+    ## Ranking
+    1. [Best] - Reason: ...
+    2. [Second] - Reason: ...
+    3. [Third] - Reason: ...
+
+    ## Recommendation
+    [Which to choose and why]
+    </output_format>
+    """;
+```
+
+### 2.3 Spatial Understanding
+
+Modern VLMs can understand spatial relationships. Use explicit spatial language:
+
+```java
+String spatialPrompt = """
+    <task>
+    Analyze the spatial layout of this image.
+    </task>
+
+    <focus>
+    Identify and describe:
+    1. **Position**: Where is each element? (top-left, center, bottom-right, etc.)
+    2. **Relationships**: How do elements relate spatially?
+       - Above/below
+       - Left/right of
+       - In front of/behind
+       - Inside/outside
+       - Adjacent to/far from
+    3. **Size**: Relative sizes of elements
+    4. **Alignment**: Are elements aligned? Along what axis?
+    </focus>
+
+    <output_format>
+    ## Element Inventory
+    | Element | Position | Size (relative) |
+    |---------|----------|-----------------|
+    | ... | ... | ... |
+
+    ## Spatial Relationships
+    - [Element A] is positioned [relationship] [Element B]
+    - ...
+
+    ## Layout Assessment
+    [Overall spatial organization]
+    </output_format>
+    """;
+```
+
+---
+
+## 3. Document Understanding
+
+Document understanding is one of the most valuable multimodal applications. It combines OCR, layout analysis, and semantic extraction.
+
+### 3.1 Document Type Classification
+
+```java
+@Service
+public class DocumentClassificationService {
+
+    private final ChatClient chatClient;
+
+    public record DocumentClassification(
+        String documentType,
+        double confidence,
+        List<String> extractableFields,
+        String processingRecommendation
+    ) {}
+
+    private static final String CLASSIFICATION_PROMPT = """
+        <task>
+        Classify this document image into one of these categories:
+        </task>
+
+        <categories>
+        - invoice: Bills, invoices, payment requests
+        - receipt: Purchase receipts, transaction records
+        - form: Application forms, surveys, questionnaires
+        - contract: Legal agreements, terms of service
+        - id_document: IDs, passports, licenses
+        - letter: Correspondence, official letters
+        - report: Business reports, financial statements
+        - other: Any other document type
+        </categories>
+
+        <output_format>
+        Return JSON only:
+        {
+          "documentType": "invoice",
+          "confidence": 0.95,
+          "extractableFields": ["invoice_number", "date", "total", ...],
+          "processingRecommendation": "Use invoice extraction template"
+        }
+        </output_format>
+        """;
+
+    public DocumentClassification classify(byte[] documentImage, String mimeType) {
+        UserMessage message = new UserMessage(
+            CLASSIFICATION_PROMPT,
+            new Media(mimeType, documentImage)
+        );
+
+        return chatClient.prompt()
+            .user(message)
+            .call()
+            .entity(DocumentClassification.class);
+    }
+}
+```
+
+### 3.2 Invoice/Receipt Extraction
+
+```java
+@Service
+public class InvoiceExtractionService {
+
+    private final ChatClient chatClient;
+
+    public record Invoice(
+        String invoiceNumber,
+        LocalDate invoiceDate,
+        LocalDate dueDate,
+        Vendor vendor,
+        Customer customer,
+        List<LineItem> lineItems,
+        TaxInfo taxInfo,
+        MonetaryAmount total,
+        String currency,
+        String paymentTerms
+    ) {}
+
+    public record Vendor(
+        String name,
+        String address,
+        String taxId,
+        String email,
+        String phone
+    ) {}
+
+    public record LineItem(
+        int lineNumber,
+        String description,
+        String sku,
+        BigDecimal quantity,
+        String unit,
+        BigDecimal unitPrice,
+        BigDecimal lineTotal
+    ) {}
+
+    public record TaxInfo(
+        BigDecimal subtotal,
+        BigDecimal taxRate,
+        BigDecimal taxAmount,
+        String taxType
+    ) {}
+
+    private static final String INVOICE_EXTRACTION_PROMPT = """
+        <role>
+        You are a specialized invoice data extraction system.
+        Extract structured data with high precision.
+        </role>
+
+        <task>
+        Extract all invoice information from this document image.
+        </task>
+
+        <extraction_rules>
+        1. Extract exact text as it appears (don't interpret or convert)
+        2. For dates, use ISO format: YYYY-MM-DD
+        3. For amounts, use numeric values without currency symbols
+        4. If a field is not visible or unclear, use null
+        5. For line items, extract ALL items visible
+        6. Preserve original formatting for addresses
+        </extraction_rules>
+
+        <validation>
+        - Line item totals should match: quantity × unit_price
+        - Subtotal should match sum of line items
+        - Total should match: subtotal + tax
+        - Flag any discrepancies in validation_notes
+        </validation>
+
+        <output_format>
+        Return valid JSON matching this schema:
+        {
+          "invoiceNumber": "string",
+          "invoiceDate": "YYYY-MM-DD",
+          "dueDate": "YYYY-MM-DD or null",
+          "vendor": {
+            "name": "string",
+            "address": "string",
+            "taxId": "string or null",
+            "email": "string or null",
+            "phone": "string or null"
+          },
+          "customer": {
+            "name": "string",
+            "address": "string"
+          },
+          "lineItems": [
+            {
+              "lineNumber": 1,
+              "description": "string",
+              "sku": "string or null",
+              "quantity": number,
+              "unit": "string or null",
+              "unitPrice": number,
+              "lineTotal": number
+            }
+          ],
+          "taxInfo": {
+            "subtotal": number,
+            "taxRate": number (as decimal, e.g., 0.10 for 10%),
+            "taxAmount": number,
+            "taxType": "VAT/GST/Sales Tax/etc"
+          },
+          "total": number,
+          "currency": "USD/EUR/etc",
+          "paymentTerms": "string or null",
+          "validationNotes": ["any discrepancies found"]
+        }
+        </output_format>
+        """;
+
+    public Invoice extractInvoice(byte[] documentImage, String mimeType) {
+        UserMessage message = new UserMessage(
+            INVOICE_EXTRACTION_PROMPT,
+            new Media(mimeType, documentImage)
+        );
+
+        return chatClient.prompt()
+            .user(message)
+            .call()
+            .entity(Invoice.class);
+    }
+}
+```
+
+### 3.3 Form Extraction with Field Mapping
+
+```java
+@Service
+public class FormExtractionService {
+
+    private final ChatClient chatClient;
+
+    /**
+     * Dynamic form extraction with configurable fields
+     */
+    public Map<String, Object> extractForm(
+            byte[] formImage,
+            String mimeType,
+            FormSchema schema) {
+
+        String prompt = buildFormExtractionPrompt(schema);
+
+        UserMessage message = new UserMessage(prompt, new Media(mimeType, formImage));
+
+        String response = chatClient.prompt()
+            .user(message)
+            .call()
+            .content();
+
+        return parseAndValidate(response, schema);
+    }
+
+    private String buildFormExtractionPrompt(FormSchema schema) {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("""
+            <role>
+            You are a form data extraction specialist.
+            </role>
+
+            <task>
+            Extract the following fields from this form image:
+            </task>
+
+            <fields>
+            """);
+
+        for (FieldDefinition field : schema.fields()) {
+            sb.append(String.format("""
+                - **%s** (%s):
+                  - Description: %s
+                  - Expected format: %s
+                  - Required: %s
+                  - Validation: %s
+
+                """,
+                field.name(),
+                field.type(),
+                field.description(),
+                field.format(),
+                field.required(),
+                field.validation()
+            ));
+        }
+
+        sb.append("""
+            </fields>
+
+            <instructions>
+            1. Look for labels matching or similar to field names
+            2. Extract the value associated with each label
+            3. Handle checkboxes as boolean (true if checked)
+            4. Handle multi-select as arrays
+            5. For handwritten text, transcribe as accurately as possible
+            6. If uncertain about a value, include confidence score
+            </instructions>
+
+            <output_format>
+            Return JSON with extracted values:
+            {
+              "fieldName": {
+                "value": "extracted value",
+                "confidence": 0.95,
+                "rawText": "original text if different"
+              },
+              ...
+            }
+            </output_format>
+            """);
+
+        return sb.toString();
+    }
+
+    public record FormSchema(
+        String formName,
+        List<FieldDefinition> fields
+    ) {}
+
+    public record FieldDefinition(
+        String name,
+        String type,
+        String description,
+        String format,
+        boolean required,
+        String validation
+    ) {}
+}
+```
+
+### 3.4 Table Extraction
+
+```java
+@Service
+public class TableExtractionService {
+
+    private final ChatClient chatClient;
+
+    private static final String TABLE_EXTRACTION_PROMPT = """
+        <task>
+        Extract the table(s) from this image into structured format.
+        </task>
+
+        <instructions>
+        1. Identify all tables in the image
+        2. For each table:
+           - Extract headers (first row typically)
+           - Extract all data rows
+           - Preserve cell alignment (left/center/right)
+           - Handle merged cells by repeating values
+           - Handle empty cells as null
+        3. Maintain original data types:
+           - Numbers as numbers
+           - Dates in ISO format
+           - Text as strings
+        </instructions>
+
+        <output_format>
+        Return JSON:
+        {
+          "tables": [
+            {
+              "tableIndex": 1,
+              "title": "Table title if visible",
+              "headers": ["Column1", "Column2", ...],
+              "rows": [
+                ["value1", "value2", ...],
+                ["value1", "value2", ...]
+              ],
+              "metadata": {
+                "rowCount": number,
+                "columnCount": number,
+                "hasHeaderRow": boolean
+              }
+            }
+          ]
+        }
+        </output_format>
+        """;
+
+    public record TableExtractionResult(
+        List<ExtractedTable> tables
+    ) {}
+
+    public record ExtractedTable(
+        int tableIndex,
+        String title,
+        List<String> headers,
+        List<List<Object>> rows,
+        TableMetadata metadata
+    ) {}
+
+    public TableExtractionResult extractTables(byte[] image, String mimeType) {
+        UserMessage message = new UserMessage(
+            TABLE_EXTRACTION_PROMPT,
+            new Media(mimeType, image)
+        );
+
+        return chatClient.prompt()
+            .user(message)
+            .call()
+            .entity(TableExtractionResult.class);
+    }
+
+    /**
+     * Convert to CSV format
+     */
+    public String tableToCsv(ExtractedTable table) {
+        StringBuilder csv = new StringBuilder();
+
+        // Headers
+        csv.append(String.join(",", table.headers())).append("\n");
+
+        // Rows
+        for (List<Object> row : table.rows()) {
+            String rowStr = row.stream()
+                .map(v -> v == null ? "" : escapeCSV(v.toString()))
+                .collect(Collectors.joining(","));
+            csv.append(rowStr).append("\n");
+        }
+
+        return csv.toString();
+    }
+}
+```
+
+---
+
+## 4. Chart and Data Visualization Analysis
+
+### 4.1 Chart Understanding
+
+```java
+@Service
+public class ChartAnalysisService {
+
+    private final ChatClient chatClient;
+
+    public record ChartAnalysis(
+        String chartType,
+        String title,
+        ChartData data,
+        List<Insight> insights,
+        List<String> limitations
+    ) {}
+
+    public record ChartData(
+        String xAxisLabel,
+        String yAxisLabel,
+        List<DataSeries> series,
+        Map<String, Object> extractedValues
+    ) {}
+
+    public record DataSeries(
+        String name,
+        List<DataPoint> points
+    ) {}
+
+    public record DataPoint(
+        String label,
+        Double value,
+        Double confidence
+    ) {}
+
+    public record Insight(
+        String type,  // trend, anomaly, comparison, pattern
+        String description,
+        String evidence,
+        String significance
+    ) {}
+
+    private static final String CHART_ANALYSIS_PROMPT = """
+        <role>
+        You are a data visualization analyst expert at extracting insights from charts.
+        </role>
+
+        <task>
+        Analyze this chart/graph image comprehensively.
+        </task>
+
+        <analysis_steps>
+        1. **Chart Identification**
+           - What type of chart is this? (bar, line, pie, scatter, etc.)
+           - What does it visualize?
+
+        2. **Data Extraction**
+           - Read axis labels and scales
+           - Extract data points as accurately as possible
+           - Note any legends or categories
+
+        3. **Trend Analysis**
+           - Identify overall trends (increasing, decreasing, stable)
+           - Note any inflection points or changes in direction
+
+        4. **Pattern Recognition**
+           - Identify seasonal patterns
+           - Note cyclical behavior
+           - Identify correlations between series
+
+        5. **Anomaly Detection**
+           - Identify outliers or unusual values
+           - Note any data gaps
+
+        6. **Key Insights**
+           - What are the main takeaways?
+           - What story does the data tell?
+        </analysis_steps>
+
+        <output_format>
+        Return structured JSON:
+        {
+          "chartType": "line/bar/pie/scatter/etc",
+          "title": "chart title if visible",
+          "data": {
+            "xAxisLabel": "string",
+            "yAxisLabel": "string",
+            "series": [
+              {
+                "name": "series name",
+                "points": [
+                  {"label": "Jan", "value": 100, "confidence": 0.9}
+                ]
+              }
+            ],
+            "extractedValues": {
+              "max": number,
+              "min": number,
+              "average": number
+            }
+          },
+          "insights": [
+            {
+              "type": "trend",
+              "description": "Sales increased by 25% YoY",
+              "evidence": "Line shows consistent upward trajectory",
+              "significance": "Indicates market expansion"
+            }
+          ],
+          "limitations": ["Y-axis scale makes small changes look dramatic"]
+        }
+        </output_format>
+        """;
+
+    public ChartAnalysis analyzeChart(byte[] chartImage, String mimeType) {
+        UserMessage message = new UserMessage(
+            CHART_ANALYSIS_PROMPT,
+            new Media(mimeType, chartImage)
+        );
+
+        return chatClient.prompt()
+            .user(message)
+            .call()
+            .entity(ChartAnalysis.class);
+    }
+
+    /**
+     * Generate narrative summary from chart
+     */
+    public String generateChartNarrative(ChartAnalysis analysis) {
+        String prompt = """
+            <task>
+            Generate a professional narrative summary of this chart analysis.
+            </task>
+
+            <analysis>
+            {analysis}
+            </analysis>
+
+            <style>
+            - Write in clear, professional business language
+            - Lead with the most important insight
+            - Use specific numbers where available
+            - Acknowledge any limitations or uncertainties
+            - Keep to 2-3 paragraphs
+            </style>
+            """;
+
+        return chatClient.prompt()
+            .user(u -> u.text(prompt)
+                .param("analysis", toJson(analysis)))
+            .call()
+            .content();
+    }
+}
+```
+
+### 4.2 Dashboard Analysis
+
+```java
+String dashboardPrompt = """
+    <role>
+    You are a business intelligence analyst reviewing a dashboard.
+    </role>
+
+    <task>
+    Analyze this dashboard screenshot and provide executive insights.
+    </task>
+
+    <analysis_framework>
+    1. **KPI Overview**
+       - Identify all key performance indicators visible
+       - Note current values and trends (up/down arrows)
+
+    2. **Health Assessment**
+       - Which metrics are performing well (green)?
+       - Which need attention (yellow/red)?
+       - Are there any critical alerts?
+
+    3. **Relationships**
+       - How do different metrics relate?
+       - Are there correlations visible?
+
+    4. **Recommended Actions**
+       - What should leadership focus on?
+       - What follow-up analysis is needed?
+    </analysis_framework>
+
+    <output_format>
+    ## Executive Summary
+    [One paragraph overview]
+
+    ## Key Metrics Status
+    | Metric | Value | Trend | Status |
+    |--------|-------|-------|--------|
+    | ... | ... | ↑/↓/→ | 🟢/🟡/🔴 |
+
+    ## Areas of Concern
+    1. [Issue + recommended action]
+
+    ## Positive Indicators
+    1. [Success + what's working]
+
+    ## Recommended Actions
+    1. [Priority action item]
+    </output_format>
+    """;
+```
+
+---
+
+## 5. Spring AI Vision Integration
+
+### 5.1 Complete Vision Service
+
+```java
+@Service
+public class VisionService {
+
+    private final ChatClient chatClient;
+    private final ImageProcessingService imageProcessor;
+
+    public VisionService(ChatClient.Builder builder, ImageProcessingService imageProcessor) {
+        this.chatClient = builder.build();
+        this.imageProcessor = imageProcessor;
+    }
+
+    /**
+     * Analyze single image with custom prompt
+     */
+    public String analyzeImage(byte[] imageData, String mimeType, String prompt) {
+        // Pre-process image if needed
+        byte[] processedImage = imageProcessor.optimize(imageData, mimeType);
+
+        UserMessage message = new UserMessage(
+            prompt,
+            new Media(mimeType, processedImage)
+        );
+
+        return chatClient.prompt()
+            .user(message)
+            .call()
+            .content();
+    }
+
+    /**
+     * Analyze multiple images
+     */
+    public String analyzeMultipleImages(
+            List<ImageInput> images,
+            String prompt) {
+
+        // Build message with multiple media
+        UserMessage.Builder messageBuilder = UserMessage.builder()
+            .text(prompt);
+
+        for (ImageInput img : images) {
+            messageBuilder.media(img.mimeType(), img.data());
+        }
+
+        return chatClient.prompt()
+            .user(messageBuilder.build())
+            .call()
+            .content();
+    }
+
+    /**
+     * Extract structured data from image
+     */
+    public <T> T extractStructured(
+            byte[] imageData,
+            String mimeType,
+            String extractionPrompt,
+            Class<T> targetClass) {
+
+        UserMessage message = new UserMessage(
+            extractionPrompt,
+            new Media(mimeType, imageData)
+        );
+
+        return chatClient.prompt()
+            .user(message)
+            .call()
+            .entity(targetClass);
+    }
+
+    /**
+     * Vision with conversation context
+     */
+    public String analyzeWithContext(
+            byte[] imageData,
+            String mimeType,
+            String question,
+            List<Message> conversationHistory) {
+
+        List<Message> messages = new ArrayList<>(conversationHistory);
+        messages.add(new UserMessage(question, new Media(mimeType, imageData)));
+
+        return chatClient.prompt()
+            .messages(messages)
+            .call()
+            .content();
+    }
+
+    public record ImageInput(String mimeType, byte[] data, String description) {}
+}
+```
+
+### 5.2 Image Preprocessing Service
+
+```java
+@Service
+public class ImageProcessingService {
+
+    private static final int MAX_DIMENSION = 2048;
+    private static final int TARGET_QUALITY = 85;
+    private static final Set<String> SUPPORTED_TYPES = Set.of(
+        "image/jpeg", "image/png", "image/gif", "image/webp"
+    );
+
+    /**
+     * Optimize image for API transmission
+     */
+    public byte[] optimize(byte[] imageData, String mimeType) {
+        try {
+            BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageData));
+
+            // Resize if too large
+            if (image.getWidth() > MAX_DIMENSION || image.getHeight() > MAX_DIMENSION) {
+                image = resize(image);
+            }
+
+            // Convert to JPEG for smaller size
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(image, "jpg", baos);
+
+            return baos.toByteArray();
+        } catch (IOException e) {
+            throw new ImageProcessingException("Failed to optimize image", e);
+        }
+    }
+
+    /**
+     * Validate image before processing
+     */
+    public ValidationResult validate(byte[] imageData, String mimeType) {
+        List<String> errors = new ArrayList<>();
+
+        // Check MIME type
+        if (!SUPPORTED_TYPES.contains(mimeType)) {
+            errors.add("Unsupported image type: " + mimeType);
+        }
+
+        // Check size
+        if (imageData.length > 20 * 1024 * 1024) { // 20MB
+            errors.add("Image exceeds maximum size of 20MB");
+        }
+
+        // Try to read image
+        try {
+            BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageData));
+            if (image == null) {
+                errors.add("Unable to read image data");
+            } else if (image.getWidth() < 10 || image.getHeight() < 10) {
+                errors.add("Image too small to analyze");
+            }
+        } catch (IOException e) {
+            errors.add("Invalid image data: " + e.getMessage());
+        }
+
+        return new ValidationResult(errors.isEmpty(), errors);
+    }
+
+    /**
+     * Extract image metadata
+     */
+    public ImageMetadata extractMetadata(byte[] imageData) {
+        try {
+            BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageData));
+            return new ImageMetadata(
+                image.getWidth(),
+                image.getHeight(),
+                imageData.length,
+                detectColorSpace(image),
+                hasTransparency(image)
+            );
+        } catch (IOException e) {
+            throw new ImageProcessingException("Failed to extract metadata", e);
+        }
+    }
+
+    private BufferedImage resize(BufferedImage original) {
+        double scale = Math.min(
+            (double) MAX_DIMENSION / original.getWidth(),
+            (double) MAX_DIMENSION / original.getHeight()
+        );
+
+        int newWidth = (int) (original.getWidth() * scale);
+        int newHeight = (int) (original.getHeight() * scale);
+
+        BufferedImage resized = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = resized.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.drawImage(original, 0, 0, newWidth, newHeight, null);
+        g.dispose();
+
+        return resized;
+    }
+
+    public record ValidationResult(boolean valid, List<String> errors) {}
+    public record ImageMetadata(int width, int height, long sizeBytes, String colorSpace, boolean hasTransparency) {}
+}
+```
+
+### 5.3 REST Controller for Vision API
+
+```java
+@RestController
+@RequestMapping("/api/v1/vision")
+public class VisionController {
+
+    private final VisionService visionService;
+    private final ImageProcessingService imageProcessor;
+    private final DocumentClassificationService docClassifier;
+    private final InvoiceExtractionService invoiceExtractor;
+
+    /**
+     * General image analysis
+     */
+    @PostMapping("/analyze")
+    public ResponseEntity<AnalysisResponse> analyzeImage(
+            @RequestParam("image") MultipartFile image,
+            @RequestParam("prompt") String prompt) throws IOException {
+
+        // Validate
+        var validation = imageProcessor.validate(image.getBytes(), image.getContentType());
+        if (!validation.valid()) {
+            return ResponseEntity.badRequest()
+                .body(new AnalysisResponse(null, validation.errors()));
+        }
+
+        String result = visionService.analyzeImage(
+            image.getBytes(),
+            image.getContentType(),
+            prompt
+        );
+
+        return ResponseEntity.ok(new AnalysisResponse(result, List.of()));
+    }
+
+    /**
+     * Document extraction endpoint
+     */
+    @PostMapping("/extract-document")
+    public ResponseEntity<?> extractDocument(
+            @RequestParam("document") MultipartFile document,
+            @RequestParam(value = "type", required = false) String documentType) throws IOException {
+
+        byte[] docBytes = document.getBytes();
+        String mimeType = document.getContentType();
+
+        // Auto-classify if type not provided
+        if (documentType == null) {
+            var classification = docClassifier.classify(docBytes, mimeType);
+            documentType = classification.documentType();
+        }
+
+        // Route to appropriate extractor
+        return switch (documentType) {
+            case "invoice" -> ResponseEntity.ok(
+                invoiceExtractor.extractInvoice(docBytes, mimeType)
+            );
+            // Add other document types...
+            default -> ResponseEntity.badRequest()
+                .body("Unsupported document type: " + documentType);
+        };
+    }
+
+    /**
+     * Compare multiple images
+     */
+    @PostMapping("/compare")
+    public ResponseEntity<String> compareImages(
+            @RequestParam("images") List<MultipartFile> images,
+            @RequestParam("criteria") String criteria) throws IOException {
+
+        List<VisionService.ImageInput> inputs = new ArrayList<>();
+        for (MultipartFile img : images) {
+            inputs.add(new VisionService.ImageInput(
+                img.getContentType(),
+                img.getBytes(),
+                img.getOriginalFilename()
+            ));
+        }
+
+        String prompt = String.format("""
+            Compare these %d images based on: %s
+
+            Provide detailed comparison and ranking.
+            """, images.size(), criteria);
+
+        String result = visionService.analyzeMultipleImages(inputs, prompt);
+        return ResponseEntity.ok(result);
+    }
+
+    public record AnalysisResponse(String analysis, List<String> errors) {}
+}
+```
+
+---
+
+## 6. Model-Specific Optimization
+
+### 6.1 GPT-4V/GPT-4o Optimization
+
+```java
+public class GPT4VPromptOptimizer {
+
+    /**
+     * GPT-4V works best with:
+     * - Markdown structure
+     * - Clear section headers
+     * - Numbered steps
+     * - Explicit output format specification
+     */
+    public String optimizeForGPT4V(String basePrompt) {
+        return """
+            ### Context
+            You are analyzing an image with the following task.
+
+            ### Task
+            %s
+
+            ### Instructions
+            1. First, describe what you observe in the image
+            2. Then, provide your analysis based on the task
+            3. Finally, give actionable recommendations
+
+            ### Output Format
+            Structure your response with clear headers:
+            - **Observations**: What you see
+            - **Analysis**: Your assessment
+            - **Recommendations**: Suggested actions
+            """.formatted(basePrompt);
+    }
+
+    /**
+     * For best image understanding, GPT-4V benefits from:
+     */
+    public static final String GPT4V_BEST_PRACTICES = """
+        1. Use "high" detail mode for complex images
+        2. Specify exact regions to focus on
+        3. Request step-by-step visual analysis
+        4. Ask for confidence levels on uncertain observations
+        """;
+}
+```
+
+### 6.2 Claude Vision Optimization
+
+```java
+public class ClaudeVisionOptimizer {
+
+    /**
+     * Claude excels with:
+     * - XML tag structure
+     * - Detailed role definitions
+     * - Explicit output schemas
+     * - Thinking process articulation
+     */
+    public String optimizeForClaude(String basePrompt) {
+        return """
+            <role>
+            You are an expert visual analyst with deep attention to detail.
+            </role>
+
+            <task>
+            %s
+            </task>
+
+            <thinking_process>
+            Before providing your analysis:
+            1. Carefully observe all elements in the image
+            2. Consider multiple interpretations
+            3. Validate your observations
+            4. Formulate your response
+            </thinking_process>
+
+            <output_format>
+            <observations>
+            [What you see in the image]
+            </observations>
+
+            <analysis>
+            [Your detailed analysis]
+            </analysis>
+
+            <recommendations>
+            [Actionable suggestions]
+            </recommendations>
+            </output_format>
+            """.formatted(basePrompt);
+    }
+
+    /**
+     * Claude-specific best practices for vision
+     */
+    public static final String CLAUDE_BEST_PRACTICES = """
+        1. Claude excels at document OCR - use for text-heavy images
+        2. Provide explicit coordinates when asking about regions
+        3. Claude can process PDFs natively - prefer PDF over images
+        4. Use XML tags for structured extraction
+        5. Claude is conservative - explicitly ask for uncertain answers
+        """;
+}
+```
+
+### 6.3 Gemini 2.0 Optimization
+
+```java
+public class GeminiVisionOptimizer {
+
+    /**
+     * Gemini excels at:
+     * - Cross-modal reasoning
+     * - Long-form video analysis
+     * - Scientific/technical images
+     * - Multi-step visual reasoning
+     */
+    public String optimizeForGemini(String basePrompt) {
+        return """
+            You are analyzing visual content. Follow this process:
+
+            ## Step 1: Visual Inventory
+            List all distinct elements you can identify in the image.
+
+            ## Step 2: Context Analysis
+            Based on the elements, determine:
+            - What is the setting/context?
+            - What is the purpose of this visual?
+
+            ## Step 3: Task Execution
+            %s
+
+            ## Step 4: Validation
+            Review your analysis for:
+            - Accuracy of observations
+            - Logical consistency
+            - Completeness
+
+            Provide your final response after completing all steps.
+            """.formatted(basePrompt);
+    }
+
+    /**
+     * Gemini-specific capabilities
+     */
+    public static final String GEMINI_CAPABILITIES = """
+        1. Native video understanding (up to 1 hour)
+        2. Native audio processing
+        3. Best for technical/scientific diagrams
+        4. Superior chart data extraction
+        5. Cross-reference between multiple images
+        6. 2M token context for extensive multimodal input
+        """;
+}
+```
+
+---
+
+## 7. Video Understanding
+
+### 7.1 Frame-Based Video Analysis (GPT-4V/Claude)
+
+```java
+@Service
+public class VideoAnalysisService {
+
+    private final ChatClient chatClient;
+    private final VideoFrameExtractor frameExtractor;
+
+    /**
+     * Analyze video by extracting key frames
+     */
+    public VideoAnalysis analyzeVideo(
+            byte[] videoData,
+            String mimeType,
+            VideoAnalysisConfig config) {
+
+        // Extract frames at specified intervals
+        List<Frame> frames = frameExtractor.extractFrames(
+            videoData,
+            config.frameInterval(),
+            config.maxFrames()
+        );
+
+        // Analyze frames in batches
+        List<FrameAnalysis> frameAnalyses = new ArrayList<>();
+        for (int i = 0; i < frames.size(); i += config.batchSize()) {
+            List<Frame> batch = frames.subList(i, Math.min(i + config.batchSize(), frames.size()));
+            frameAnalyses.addAll(analyzeBatch(batch));
+        }
+
+        // Synthesize overall analysis
+        String synthesis = synthesizeVideoAnalysis(frameAnalyses, config.analysisGoal());
+
+        return new VideoAnalysis(frameAnalyses, synthesis);
+    }
+
+    private List<FrameAnalysis> analyzeBatch(List<Frame> frames) {
+        // Build multi-image prompt
+        StringBuilder prompt = new StringBuilder("""
+            <task>
+            Analyze these video frames in sequence.
+            For each frame, describe:
+            1. What is happening
+            2. Key objects/people
+            3. Any changes from previous frame
+            </task>
+
+            <frames>
+            """);
+
+        List<Media> mediaList = new ArrayList<>();
+        for (int i = 0; i < frames.size(); i++) {
+            Frame frame = frames.get(i);
+            prompt.append(String.format("Frame %d (timestamp: %s):\n", i + 1, frame.timestamp()));
+            mediaList.add(new Media("image/jpeg", frame.data()));
+        }
+
+        prompt.append("</frames>");
+
+        UserMessage.Builder messageBuilder = UserMessage.builder().text(prompt.toString());
+        mediaList.forEach(messageBuilder::media);
+
+        String response = chatClient.prompt()
+            .user(messageBuilder.build())
+            .call()
+            .content();
+
+        return parseFrameAnalyses(response, frames);
+    }
+
+    private String synthesizeVideoAnalysis(List<FrameAnalysis> analyses, String goal) {
+        String analysisJson = toJson(analyses);
+
+        return chatClient.prompt()
+            .user(u -> u.text("""
+                <task>
+                Synthesize these frame-by-frame analyses into a coherent video summary.
+                </task>
+
+                <analysis_goal>
+                {goal}
+                </analysis_goal>
+
+                <frame_analyses>
+                {analyses}
+                </frame_analyses>
+
+                <output_format>
+                ## Video Summary
+                [Overall description of what happens]
+
+                ## Timeline
+                - 0:00-0:30: [Description]
+                - 0:30-1:00: [Description]
+                ...
+
+                ## Key Moments
+                1. [Significant event + timestamp]
+
+                ## Analysis
+                [Answer the analysis goal]
+
+                ## Recommendations
+                [If applicable]
+                </output_format>
+                """)
+                .param("goal", goal)
+                .param("analyses", analysisJson))
+            .call()
+            .content();
+    }
+
+    public record VideoAnalysisConfig(
+        Duration frameInterval,
+        int maxFrames,
+        int batchSize,
+        String analysisGoal
+    ) {}
+
+    public record Frame(byte[] data, Duration timestamp) {}
+    public record FrameAnalysis(Duration timestamp, String description, List<String> objects, String changes) {}
+    public record VideoAnalysis(List<FrameAnalysis> frames, String synthesis) {}
+}
+```
+
+### 7.2 Native Video Analysis (Gemini)
+
+```java
+@Service
+public class GeminiVideoService {
+
+    private final VertexAiGeminiChatModel geminiModel;
+
+    /**
+     * Gemini can process video natively (up to 1 hour)
+     */
+    public String analyzeVideoNative(byte[] videoData, String prompt) {
+        UserMessage message = new UserMessage(
+            prompt,
+            new Media("video/mp4", videoData)
+        );
+
+        return ChatClient.create(geminiModel)
+            .prompt()
+            .user(message)
+            .call()
+            .content();
+    }
+
+    /**
+     * Video analysis prompts for Gemini
+     */
+    public String getVideoAnalysisPrompt(VideoAnalysisType type) {
+        return switch (type) {
+            case CONTENT_MODERATION -> """
+                <task>
+                Review this video for content policy violations.
+                </task>
+
+                <check_for>
+                - Violence or harmful content
+                - Inappropriate language
+                - Copyright violations (music, logos)
+                - Personal information exposure
+                </check_for>
+
+                <output_format>
+                {
+                  "overallSafe": boolean,
+                  "violations": [
+                    {
+                      "type": "string",
+                      "timestamp": "mm:ss",
+                      "severity": "low/medium/high",
+                      "description": "string"
+                    }
+                  ],
+                  "recommendations": ["string"]
+                }
+                </output_format>
+                """;
+
+            case SUMMARIZATION -> """
+                <task>
+                Provide a comprehensive summary of this video.
+                </task>
+
+                <include>
+                - Main topics covered
+                - Key points made
+                - Important visuals/demonstrations
+                - Speaker information (if applicable)
+                - Action items or takeaways
+                </include>
+
+                <output_format>
+                ## Video Summary
+                **Duration**: [length]
+                **Type**: [tutorial/presentation/interview/etc]
+
+                ## Main Topics
+                1. [Topic] - [Brief description]
+
+                ## Key Takeaways
+                - [Point 1]
+                - [Point 2]
+
+                ## Timeline
+                [mm:ss] - [What happens]
+
+                ## Recommended For
+                [Who would benefit from this video]
+                </output_format>
+                """;
+
+            case TUTORIAL_EXTRACTION -> """
+                <task>
+                Extract step-by-step instructions from this tutorial video.
+                </task>
+
+                <output_format>
+                ## Tutorial: [Title]
+
+                ### Prerequisites
+                - [Requirement 1]
+
+                ### Steps
+                1. **[Step Title]** (timestamp: mm:ss)
+                   - Description: [what to do]
+                   - Tools/Materials: [if any]
+                   - Tips: [helpful hints]
+
+                2. **[Step Title]** (timestamp: mm:ss)
+                   ...
+
+                ### Common Mistakes
+                - [Mistake + how to avoid]
+
+                ### Final Result
+                [Description of expected outcome]
+                </output_format>
+                """;
+        };
+    }
+
+    public enum VideoAnalysisType {
+        CONTENT_MODERATION,
+        SUMMARIZATION,
+        TUTORIAL_EXTRACTION
+    }
+}
+```
+
+---
+
+## 8. Multimodal RAG
+
+### 8.1 Image-Text RAG Architecture
+
+```java
+@Service
+public class MultimodalRAGService {
+
+    private final ChatClient chatClient;
+    private final VectorStore vectorStore;
+    private final EmbeddingModel embeddingModel;
+    private final VisionService visionService;
+
+    /**
+     * Index images with generated descriptions
+     */
+    public void indexImage(String imageId, byte[] imageData, String mimeType, Map<String, String> metadata) {
+        // Generate detailed description
+        String description = visionService.analyzeImage(
+            imageData,
+            mimeType,
+            """
+            Provide a detailed, searchable description of this image including:
+            - Main subjects and objects
+            - Colors, textures, and visual style
+            - Setting and context
+            - Any text visible
+            - Mood and atmosphere
+            Use specific, concrete terms that someone might search for.
+            """
+        );
+
+        // Create embedding from description
+        float[] embedding = embeddingModel.embed(description);
+
+        // Store with metadata
+        Document doc = Document.builder()
+            .id(imageId)
+            .content(description)
+            .embedding(embedding)
+            .metadata(Map.of(
+                "type", "image",
+                "mimeType", mimeType,
+                "originalMetadata", metadata.toString()
+            ))
+            .build();
+
+        vectorStore.add(List.of(doc));
+    }
+
+    /**
+     * Query with text, retrieve relevant images
+     */
+    public List<ImageSearchResult> searchImages(String query, int topK) {
+        // Search by text
+        List<Document> results = vectorStore.similaritySearch(
+            SearchRequest.query(query).withTopK(topK)
+        );
+
+        return results.stream()
+            .filter(doc -> "image".equals(doc.getMetadata().get("type")))
+            .map(doc -> new ImageSearchResult(
+                doc.getId(),
+                doc.getContent(),
+                doc.getMetadata(),
+                calculateRelevance(query, doc)
+            ))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Query with image, retrieve similar images
+     */
+    public List<ImageSearchResult> searchSimilarImages(byte[] queryImage, String mimeType, int topK) {
+        // Generate description of query image
+        String queryDescription = visionService.analyzeImage(
+            queryImage,
+            mimeType,
+            "Describe this image in detail for similarity search."
+        );
+
+        return searchImages(queryDescription, topK);
+    }
+
+    /**
+     * Multimodal QA: answer questions using retrieved images
+     */
+    public String answerWithImages(String question, int retrievalCount) {
+        // Retrieve relevant images
+        List<ImageSearchResult> images = searchImages(question, retrievalCount);
+
+        // Build context from retrieved images
+        String context = images.stream()
+            .map(img -> String.format("Image %s: %s", img.id(), img.description()))
+            .collect(Collectors.joining("\n\n"));
+
+        // Answer using context
+        return chatClient.prompt()
+            .user(u -> u.text("""
+                <task>
+                Answer the question using information from the retrieved images.
+                </task>
+
+                <question>
+                {question}
+                </question>
+
+                <retrieved_image_descriptions>
+                {context}
+                </retrieved_image_descriptions>
+
+                <instructions>
+                - Base your answer on the image descriptions
+                - Cite which image(s) support your answer
+                - If images don't contain relevant information, say so
+                </instructions>
+                """)
+                .param("question", question)
+                .param("context", context))
+            .call()
+            .content();
+    }
+
+    public record ImageSearchResult(
+        String id,
+        String description,
+        Map<String, Object> metadata,
+        double relevance
+    ) {}
+}
+```
+
+### 8.2 Document Multimodal RAG
+
+```java
+@Service
+public class DocumentMultimodalRAG {
+
+    private final ChatClient chatClient;
+    private final VectorStore vectorStore;
+    private final VisionService visionService;
+
+    /**
+     * Index PDF with both text and visual understanding
+     */
+    public void indexPDF(String documentId, byte[] pdfData) {
+        // Extract text chunks
+        List<String> textChunks = extractTextChunks(pdfData);
+
+        // Extract and describe images/charts/tables
+        List<VisualElement> visualElements = extractVisualElements(pdfData);
+
+        // Index text chunks
+        for (int i = 0; i < textChunks.size(); i++) {
+            indexTextChunk(documentId, i, textChunks.get(i));
+        }
+
+        // Index visual elements
+        for (VisualElement visual : visualElements) {
+            indexVisualElement(documentId, visual);
+        }
+    }
+
+    private void indexVisualElement(String documentId, VisualElement visual) {
+        // Generate rich description
+        String description = visionService.analyzeImage(
+            visual.imageData(),
+            "image/png",
+            String.format("""
+                This is a %s from a document. Describe it in detail:
+                - What information does it convey?
+                - What are the key data points or elements?
+                - How does it relate to typical document content?
+
+                Context: This appears on page %d of the document.
+                """, visual.type(), visual.pageNumber())
+        );
+
+        Document doc = Document.builder()
+            .id(documentId + "_visual_" + visual.id())
+            .content(description)
+            .metadata(Map.of(
+                "documentId", documentId,
+                "type", "visual_" + visual.type(),
+                "pageNumber", visual.pageNumber(),
+                "elementType", visual.type()
+            ))
+            .build();
+
+        vectorStore.add(List.of(doc));
+    }
+
+    /**
+     * Query that considers both text and visual content
+     */
+    public RAGResponse queryDocument(String documentId, String question) {
+        // Search all content types
+        List<Document> textResults = searchByType(documentId, question, "text");
+        List<Document> visualResults = searchByType(documentId, question, "visual");
+
+        // Build comprehensive context
+        String textContext = formatTextContext(textResults);
+        String visualContext = formatVisualContext(visualResults);
+
+        // Generate answer
+        String answer = chatClient.prompt()
+            .user(u -> u.text("""
+                <task>
+                Answer the question using information from this document.
+                </task>
+
+                <question>
+                {question}
+                </question>
+
+                <text_excerpts>
+                {textContext}
+                </text_excerpts>
+
+                <visual_descriptions>
+                {visualContext}
+                </visual_descriptions>
+
+                <instructions>
+                1. Consider both text and visual information
+                2. Reference specific sections or figures
+                3. If the answer involves data from charts/tables, quote the values
+                4. Indicate confidence level if information is incomplete
+                </instructions>
+                """)
+                .param("question", question)
+                .param("textContext", textContext)
+                .param("visualContext", visualContext))
+            .call()
+            .content();
+
+        return new RAGResponse(answer, textResults, visualResults);
+    }
+
+    public record VisualElement(
+        String id,
+        String type,  // chart, table, figure, diagram
+        int pageNumber,
+        byte[] imageData
+    ) {}
+
+    public record RAGResponse(
+        String answer,
+        List<Document> textSources,
+        List<Document> visualSources
+    ) {}
+}
+```
+
+---
+
+## 9. Security and Privacy Considerations
+
+### 9.1 Image Sanitization
+
+```java
+@Service
+public class ImageSecurityService {
+
+    /**
+     * Check image for sensitive content before processing
+     */
+    public SecurityCheck checkImage(byte[] imageData, String mimeType) {
+        List<String> concerns = new ArrayList<>();
+
+        // Check for steganography or hidden data
+        if (containsHiddenData(imageData)) {
+            concerns.add("Image may contain hidden data");
+        }
+
+        // Check EXIF for sensitive metadata
+        ExifData exif = extractExif(imageData);
+        if (exif.hasGpsCoordinates()) {
+            concerns.add("Image contains GPS coordinates");
+        }
+        if (exif.hasCameraSerialNumber()) {
+            concerns.add("Image contains device identifiers");
+        }
+
+        return new SecurityCheck(
+            concerns.isEmpty(),
+            concerns,
+            exif
+        );
+    }
+
+    /**
+     * Sanitize image before sending to API
+     */
+    public byte[] sanitizeImage(byte[] imageData, SanitizationConfig config) {
+        BufferedImage image = readImage(imageData);
+
+        // Remove EXIF metadata
+        image = stripExifData(image);
+
+        // Optionally blur faces
+        if (config.blurFaces()) {
+            image = detectAndBlurFaces(image);
+        }
+
+        // Optionally redact text
+        if (config.redactText()) {
+            image = detectAndRedactText(image);
+        }
+
+        // Optionally redact specific regions
+        for (Region region : config.redactRegions()) {
+            image = redactRegion(image, region);
+        }
+
+        return toBytes(image, "image/jpeg");
+    }
+
+    /**
+     * Check API response for data leakage
+     */
+    public boolean checkResponseForLeakage(String response, List<String> sensitivePatterns) {
+        for (String pattern : sensitivePatterns) {
+            if (Pattern.compile(pattern).matcher(response).find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public record SecurityCheck(
+        boolean safe,
+        List<String> concerns,
+        ExifData exifData
+    ) {}
+
+    public record SanitizationConfig(
+        boolean blurFaces,
+        boolean redactText,
+        List<Region> redactRegions
+    ) {}
+
+    public record Region(int x, int y, int width, int height) {}
+}
+```
+
+### 9.2 Content Moderation
+
+```java
+@Service
+public class VisionContentModerationService {
+
+    private final ChatClient chatClient;
+
+    private static final String MODERATION_PROMPT = """
+        <role>
+        You are a content moderation system. Analyze this image for policy violations.
+        </role>
+
+        <policies>
+        The following content is NOT allowed:
+        1. Violence or graphic content
+        2. Adult/sexual content
+        3. Hate symbols or discriminatory imagery
+        4. Personal information (IDs, credit cards, etc.)
+        5. Dangerous activities or self-harm
+        6. Deceptive or misleading content
+        7. Copyrighted material (logos, characters)
+        </policies>
+
+        <output_format>
+        Return JSON:
+        {
+          "approved": boolean,
+          "violations": [
+            {
+              "policy": "string",
+              "severity": "low/medium/high/critical",
+              "description": "string",
+              "region": "description of where in image"
+            }
+          ],
+          "confidence": 0.0-1.0,
+          "recommendations": ["string"]
+        }
+        </output_format>
+        """;
+
+    public ModerationResult moderate(byte[] imageData, String mimeType) {
+        UserMessage message = new UserMessage(
+            MODERATION_PROMPT,
+            new Media(mimeType, imageData)
+        );
+
+        return chatClient.prompt()
+            .user(message)
+            .call()
+            .entity(ModerationResult.class);
+    }
+
+    public record ModerationResult(
+        boolean approved,
+        List<Violation> violations,
+        double confidence,
+        List<String> recommendations
+    ) {}
+
+    public record Violation(
+        String policy,
+        String severity,
+        String description,
+        String region
+    ) {}
+}
+```
+
+---
+
+## 10. Performance Optimization
+
+### 10.1 Caching Strategies
+
+```java
+@Service
+public class VisionCacheService {
+
+    private final Cache<String, CachedAnalysis> analysisCache;
+
+    public VisionCacheService() {
+        this.analysisCache = Caffeine.newBuilder()
+            .maximumSize(1000)
+            .expireAfterWrite(Duration.ofHours(24))
+            .build();
+    }
+
+    /**
+     * Cache key based on image hash + prompt hash
+     */
+    public String generateCacheKey(byte[] imageData, String prompt) {
+        String imageHash = DigestUtils.sha256Hex(imageData);
+        String promptHash = DigestUtils.sha256Hex(prompt);
+        return imageHash + "_" + promptHash;
+    }
+
+    /**
+     * Get or compute analysis
+     */
+    public String getOrAnalyze(
+            byte[] imageData,
+            String prompt,
+            Supplier<String> analyzer) {
+
+        String key = generateCacheKey(imageData, prompt);
+
+        CachedAnalysis cached = analysisCache.getIfPresent(key);
+        if (cached != null) {
+            return cached.analysis();
+        }
+
+        String result = analyzer.get();
+        analysisCache.put(key, new CachedAnalysis(result, Instant.now()));
+
+        return result;
+    }
+
+    public record CachedAnalysis(String analysis, Instant timestamp) {}
+}
+```
+
+### 10.2 Batch Processing
+
+```java
+@Service
+public class BatchVisionService {
+
+    private final ChatClient chatClient;
+    private final ExecutorService executor;
+
+    public BatchVisionService(ChatClient chatClient) {
+        this.chatClient = chatClient;
+        this.executor = Executors.newFixedThreadPool(4);
+    }
+
+    /**
+     * Process multiple images in parallel
+     */
+    public List<BatchResult> processBatch(
+            List<ImageTask> tasks,
+            int concurrency) {
+
+        Semaphore semaphore = new Semaphore(concurrency);
+        List<CompletableFuture<BatchResult>> futures = new ArrayList<>();
+
+        for (ImageTask task : tasks) {
+            CompletableFuture<BatchResult> future = CompletableFuture.supplyAsync(() -> {
+                try {
+                    semaphore.acquire();
+                    String result = processImage(task);
+                    return new BatchResult(task.id(), result, null);
+                } catch (Exception e) {
+                    return new BatchResult(task.id(), null, e.getMessage());
+                } finally {
+                    semaphore.release();
+                }
+            }, executor);
+
+            futures.add(future);
+        }
+
+        return futures.stream()
+            .map(CompletableFuture::join)
+            .collect(Collectors.toList());
+    }
+
+    private String processImage(ImageTask task) {
+        UserMessage message = new UserMessage(
+            task.prompt(),
+            new Media(task.mimeType(), task.imageData())
+        );
+
+        return chatClient.prompt()
+            .user(message)
+            .call()
+            .content();
+    }
+
+    public record ImageTask(
+        String id,
+        byte[] imageData,
+        String mimeType,
+        String prompt
+    ) {}
+
+    public record BatchResult(
+        String id,
+        String result,
+        String error
+    ) {}
+}
+```
+
+---
+
+## 11. Common Mistakes and Solutions
+
+| Mistake | Problem | Solution |
+|---------|---------|----------|
+| **Vague prompts** | "Describe this image" | Specify exactly what to focus on and output format |
+| **No output schema** | Unparseable responses | Always specify JSON/structured output |
+| **Ignoring image quality** | Poor extraction results | Pre-process: resize, enhance contrast, fix orientation |
+| **Overloading images** | Token limits, slow processing | Batch process, use appropriate resolution |
+| **No validation** | "I cannot see" responses unhandled | Check for error patterns, implement fallbacks |
+| **Sensitive data exposure** | PII in images sent to API | Sanitize images, redact sensitive regions |
+| **Single model approach** | Suboptimal results | Use model-specific prompts, select best model per task |
+| **No caching** | Redundant API calls | Cache by image+prompt hash |
+
+---
+
+## 12. Quick Reference
+
+### Prompt Templates by Use Case
+
+```java
+public class VisionPromptTemplates {
+
+    public static final String OCR = """
+        Extract ALL text from this image verbatim.
+        Preserve formatting, line breaks, and structure.
+        Return as plain text, no JSON.
+        """;
+
+    public static final String CLASSIFICATION = """
+        Classify this image into exactly ONE of these categories:
+        {categories}
+
+        Return JSON: {"category": "...", "confidence": 0.0-1.0, "reasoning": "..."}
+        """;
+
+    public static final String DATA_EXTRACTION = """
+        Extract the following fields from this document:
+        {fields}
+
+        Return JSON with field names as keys. Use null for missing fields.
+        """;
+
+    public static final String COMPARISON = """
+        Compare these images and identify:
+        1. Similarities
+        2. Differences
+        3. Which is better for: {criteria}
+
+        Provide structured analysis.
+        """;
+
+    public static final String ACCESSIBILITY = """
+        Generate an accessibility description for this image suitable for screen readers.
+        Include: main subject, important details, text content, colors if meaningful.
+        Keep under 200 words.
+        """;
+}
+```
+
+---
+
+## References
+
+### Documentation
+
+- [OpenAI GPT-4V Vision Documentation](https://platform.openai.com/docs/guides/vision)
+- [Anthropic Claude Vision Guide](https://docs.anthropic.com/claude/docs/vision)
+- [Google Gemini Multimodal](https://ai.google.dev/docs/multimodal_concepts)
+- [Spring AI Vision Support](https://docs.spring.io/spring-ai/reference/)
+
+### Research Papers
+
+1. Alayrac et al. (2022): "Flamingo: a Visual Language Model for Few-Shot Learning"
+2. Liu et al. (2024): "Visual Instruction Tuning" (LLaVA)
+3. OpenAI (2024): "GPT-4V(ision) System Card"
+4. Google (2024): "Gemini: A Family of Highly Capable Multimodal Models"
+5. Anthropic (2024): "Claude 3 Model Card"
+
+---
+
+**Previous**: [3.1 Advanced Techniques](./07-advanced-techniques.mdx) ←
+**Next**: [3.3 Agent Orchestration](./09-agent-orchestration.mdx) →

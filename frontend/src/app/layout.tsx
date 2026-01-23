@@ -30,6 +30,12 @@ const authorName = "Yi Wang";
 const authorEmail = "yiwang2457@gmail.com";
 
 export const metadata: Metadata = {
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
   // Basic metadata
   title: {
     default: siteName,

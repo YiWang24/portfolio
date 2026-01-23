@@ -1,0 +1,1311 @@
+---
+title: "6 Evaluation & Version Control"
+description: "Measuring prompt quality, A/B testing, metrics frameworks, and managing prompts in production"
+published: 2025-01-21
+tags: ["prompt-engineering", "evaluation", "testing", "mlops", "metrics"]
+category: "prompt-engineering"
+series: "Prompt Engineering Guide"
+seriesOrder: 5
+draft: false
+---
+
+## Why Evaluation Matters
+
+**Without measurement, prompt engineering is guesswork.** Production AI systems require systematic evaluation, version control, and continuous improvement — just like traditional software.
+
+### The Evaluation Gap
+
+```plaintext
+Traditional Software:                  AI/Prompt Development:
+┌─────────────────────────────┐        ┌─────────────────────────────┐
+│ ✅ Unit tests               │        │ ❌ "It looks good"          │
+│ ✅ Integration tests        │        │ ❌ Manual spot checks       │
+│ ✅ Coverage metrics         │        │ ❌ Vibes-based iteration    │
+│ ✅ CI/CD gates              │        │ ❌ Ship and pray            │
+│ ✅ Performance benchmarks   │        │ ❌ Unknown regressions      │
+└─────────────────────────────┘        └─────────────────────────────┘
+
+        Good Engineering          vs         "Prompt Vibes"
+```
+
+### The Professional Approach
+
+```plaintext
+Systematic Prompt Engineering:
+┌──────────────────────────────────────────────────────────────────────┐
+│  Define → Measure → Iterate → Validate → Deploy → Monitor → Repeat  │
+├──────────────────────────────────────────────────────────────────────┤
+│  ✅ Evaluation datasets with ground truth                           │
+│  ✅ Automated metrics (accuracy, relevance, coherence)              │
+│  ✅ LLM-as-Judge for subjective quality                             │
+│  ✅ A/B testing infrastructure                                       │
+│  ✅ Version control for prompts                                      │
+│  ✅ CI/CD quality gates                                              │
+│  ✅ Production monitoring and alerting                               │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 1. Evaluation Fundamentals
+
+### 1.1 What is an Eval?
+
+An **eval** (evaluation) is a structured test measuring prompt performance on a specific task. It consists of:
+
+```plaintext
+Eval Components:
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│  1. DATASET                2. METRIC               3. THRESHOLD     │
+│  ┌─────────────────┐       ┌─────────────────┐     ┌─────────────┐ │
+│  │ Input: "What is │       │ Accuracy: 95%   │     │ Pass: >90%  │ │
+│  │   the capital   │  →    │ Relevance: 0.87 │  →  │ Fail: <90%  │ │
+│  │   of France?"   │       │ Latency: 1.2s   │     │             │ │
+│  │ Expected: Paris │       │                 │     │             │ │
+│  └─────────────────┘       └─────────────────┘     └─────────────┘ │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 1.2 Types of Evaluation
+
+| Type | Description | When to Use |
+|------|-------------|-------------|
+| **Offline Eval** | Batch evaluation on test dataset | Development, CI/CD |
+| **Online Eval** | A/B testing with real users | Production validation |
+| **LLM-as-Judge** | Another LLM evaluates responses | No ground truth available |
+| **Human Eval** | Expert human annotation | Gold standard, calibration |
+| **Automated Metrics** | BLEU, ROUGE, BERTScore | Translation, summarization |
+
+### 1.3 Evaluation Dataset Design
+
+:::warning[Dataset Size Guidelines]
+Minimum dataset sizes vary by task complexity. Too small = unreliable metrics. Too large = wasted resources.
+:::
+
+| Task Type | Minimum Samples | Recommended | Notes |
+|-----------|-----------------|-------------|-------|
+| Binary Classification | 100 | 500+ | Balance classes |
+| Multi-class (5 classes) | 200 | 1000+ | 40+ per class |
+| Open-ended Generation | 50 | 200+ | Diverse scenarios |
+| RAG Evaluation | 100 | 300+ | Varied query types |
+| Summarization | 50 | 150+ | Different document lengths |
+| Code Generation | 100 | 500+ | Cover edge cases |
+
+**Dataset Structure**:
+
+```json
+{
+  "dataset_id": "customer-support-v2",
+  "created": "2025-01-21",
+  "task_type": "classification",
+  "samples": [
+    {
+      "id": "cs-001",
+      "input": "My order hasn't arrived yet, it's been 2 weeks",
+      "expected_output": "shipping_delay",
+      "metadata": {
+        "category": "shipping",
+        "difficulty": "easy",
+        "source": "production_logs"
+      }
+    },
+    {
+      "id": "cs-002",
+      "input": "I want to return this item but the return button doesn't work",
+      "expected_output": "return_technical_issue",
+      "metadata": {
+        "category": "returns",
+        "difficulty": "medium",
+        "source": "manual_annotation"
+      }
+    }
+  ]
+}
+```
+
+---
+
+## 2. Evaluation Metrics Deep Dive
+
+### 2.1 Classification Metrics
+
+```java
+public class ClassificationMetrics {
+
+    public static double accuracy(List<Prediction> predictions) {
+        long correct = predictions.stream()
+            .filter(p -> p.predicted().equals(p.expected()))
+            .count();
+        return (double) correct / predictions.size();
+    }
+
+    public static double precision(List<Prediction> predictions, String positiveClass) {
+        long truePositives = predictions.stream()
+            .filter(p -> p.predicted().equals(positiveClass) &&
+                        p.expected().equals(positiveClass))
+            .count();
+        long predictedPositives = predictions.stream()
+            .filter(p -> p.predicted().equals(positiveClass))
+            .count();
+        return predictedPositives == 0 ? 0 : (double) truePositives / predictedPositives;
+    }
+
+    public static double recall(List<Prediction> predictions, String positiveClass) {
+        long truePositives = predictions.stream()
+            .filter(p -> p.predicted().equals(positiveClass) &&
+                        p.expected().equals(positiveClass))
+            .count();
+        long actualPositives = predictions.stream()
+            .filter(p -> p.expected().equals(positiveClass))
+            .count();
+        return actualPositives == 0 ? 0 : (double) truePositives / actualPositives;
+    }
+
+    public static double f1Score(double precision, double recall) {
+        if (precision + recall == 0) return 0;
+        return 2 * (precision * recall) / (precision + recall);
+    }
+}
+```
+
+### 2.2 Text Generation Metrics
+
+| Metric | Formula/Description | Best For | Limitations |
+|--------|---------------------|----------|-------------|
+| **BLEU** | N-gram precision overlap | Translation | Penalizes paraphrasing |
+| **ROUGE-N** | N-gram recall overlap | Summarization | Ignores semantics |
+| **ROUGE-L** | Longest common subsequence | Summarization | Order-sensitive |
+| **BERTScore** | Semantic embedding similarity | Any generation | Compute intensive |
+| **METEOR** | Harmonic mean with synonyms | Translation | Requires resources |
+
+**Implementation**:
+
+```python
+# Using evaluate library
+import evaluate
+
+# BLEU Score
+bleu = evaluate.load("bleu")
+results = bleu.compute(
+    predictions=["The cat sat on the mat"],
+    references=[["The cat is on the mat"]]
+)
+print(f"BLEU: {results['bleu']:.3f}")
+
+# ROUGE Score
+rouge = evaluate.load("rouge")
+results = rouge.compute(
+    predictions=["AI is transforming healthcare"],
+    references=["Artificial intelligence is revolutionizing the healthcare industry"]
+)
+print(f"ROUGE-L: {results['rougeL']:.3f}")
+
+# BERTScore (semantic similarity)
+bertscore = evaluate.load("bertscore")
+results = bertscore.compute(
+    predictions=["The weather is nice today"],
+    references=["It's a beautiful day outside"],
+    lang="en"
+)
+print(f"BERTScore F1: {results['f1'][0]:.3f}")
+```
+
+### 2.3 RAG-Specific Metrics
+
+```java
+public class RagMetrics {
+
+    /**
+     * Measures how much of the retrieved context is relevant to the query
+     */
+    public static double contextRelevance(
+            String query,
+            List<Document> retrievedDocs,
+            EmbeddingModel embeddingModel) {
+
+        float[] queryEmbedding = embeddingModel.embed(query);
+
+        return retrievedDocs.stream()
+            .mapToDouble(doc -> {
+                float[] docEmbedding = embeddingModel.embed(doc.getContent());
+                return cosineSimilarity(queryEmbedding, docEmbedding);
+            })
+            .average()
+            .orElse(0.0);
+    }
+
+    /**
+     * Measures how well the answer is grounded in the retrieved context
+     */
+    public static double faithfulness(
+            String answer,
+            List<Document> context,
+            ChatClient judgeClient) {
+
+        String prompt = """
+            Given the context and answer below, rate how well the answer
+            is supported by the context on a scale of 0-1.
+
+            Context:
+            %s
+
+            Answer:
+            %s
+
+            Return only a number between 0 and 1.
+            """.formatted(
+                context.stream().map(Document::getContent).collect(joining("\n\n")),
+                answer
+            );
+
+        String score = judgeClient.prompt().user(prompt).call().content();
+        return Double.parseDouble(score.trim());
+    }
+
+    /**
+     * Measures if the answer actually addresses the question
+     */
+    public static double answerRelevance(
+            String query,
+            String answer,
+            ChatClient judgeClient) {
+
+        String prompt = """
+            Rate how well this answer addresses the question on a scale of 0-1.
+
+            Question: %s
+            Answer: %s
+
+            Return only a number between 0 and 1.
+            """.formatted(query, answer);
+
+        String score = judgeClient.prompt().user(prompt).call().content();
+        return Double.parseDouble(score.trim());
+    }
+}
+```
+
+### 2.4 RAG Evaluation Framework (RAGAS-style)
+
+```plaintext
+RAG Evaluation Dimensions:
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│  ┌─────────────────┐     ┌─────────────────┐     ┌───────────────┐ │
+│  │ Context         │     │ Faithfulness    │     │ Answer        │ │
+│  │ Relevance       │     │                 │     │ Relevance     │ │
+│  │                 │     │                 │     │               │ │
+│  │ "Are retrieved  │     │ "Is the answer  │     │ "Does answer  │ │
+│  │  docs relevant  │     │  grounded in    │     │  address the  │ │
+│  │  to query?"     │     │  context?"      │     │  question?"   │ │
+│  └────────┬────────┘     └────────┬────────┘     └───────┬───────┘ │
+│           │                       │                      │         │
+│           └───────────────────────┼──────────────────────┘         │
+│                                   ▼                                 │
+│                    ┌─────────────────────────────┐                 │
+│                    │   Overall RAG Score         │                 │
+│                    │   = weighted average        │                 │
+│                    └─────────────────────────────┘                 │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3. LLM-as-Judge Evaluation
+
+When ground truth doesn't exist or is subjective, use another LLM to evaluate.
+
+### 3.1 Single-Point Grading
+
+```java
+@Service
+public class LlmJudgeService {
+
+    private final ChatClient judgeClient;
+
+    public EvaluationResult evaluateResponse(
+            String query,
+            String response,
+            List<String> criteria) {
+
+        String criteriaList = criteria.stream()
+            .map(c -> "- " + c)
+            .collect(Collectors.joining("\n"));
+
+        String prompt = """
+            You are an expert evaluator. Rate the following response.
+
+            ## Query
+            %s
+
+            ## Response
+            %s
+
+            ## Evaluation Criteria
+            %s
+
+            ## Instructions
+            For each criterion, provide:
+            1. Score (1-5, where 5 is excellent)
+            2. Brief justification
+
+            Return your evaluation as JSON:
+            {
+              "scores": {
+                "criterion_name": {"score": X, "reason": "..."}
+              },
+              "overall_score": X.X,
+              "summary": "Overall assessment..."
+            }
+            """.formatted(query, response, criteriaList);
+
+        String result = judgeClient.prompt()
+            .user(prompt)
+            .call()
+            .content();
+
+        return parseEvaluationResult(result);
+    }
+}
+```
+
+### 3.2 Pairwise Comparison
+
+```java
+public class PairwiseJudge {
+
+    private final ChatClient judgeClient;
+
+    public ComparisonResult compare(
+            String query,
+            String responseA,
+            String responseB) {
+
+        String prompt = """
+            Compare these two responses to the same query.
+
+            ## Query
+            %s
+
+            ## Response A
+            %s
+
+            ## Response B
+            %s
+
+            ## Instructions
+            Which response is better? Consider:
+            - Accuracy and correctness
+            - Completeness
+            - Clarity and helpfulness
+            - Conciseness
+
+            Return JSON:
+            {
+              "winner": "A" or "B" or "tie",
+              "confidence": 0.0-1.0,
+              "reasoning": "..."
+            }
+            """.formatted(query, responseA, responseB);
+
+        // Reduce position bias by also testing reverse order
+        String promptReversed = prompt
+            .replace("Response A", "Response X")
+            .replace("Response B", "Response A")
+            .replace("Response X", "Response B");
+
+        String result1 = judgeClient.prompt().user(prompt).call().content();
+        String result2 = judgeClient.prompt().user(promptReversed).call().content();
+
+        return reconcileResults(result1, result2);
+    }
+}
+```
+
+### 3.3 Reference-Based Grading
+
+```java
+public class ReferenceGrader {
+
+    private final ChatClient judgeClient;
+
+    public GradingResult gradeWithReference(
+            String query,
+            String response,
+            String referenceAnswer) {
+
+        String prompt = """
+            Grade this response against the reference answer.
+
+            ## Query
+            %s
+
+            ## Student Response
+            %s
+
+            ## Reference Answer
+            %s
+
+            ## Grading Rubric
+            - 5: Equivalent or better than reference
+            - 4: Mostly correct, minor omissions
+            - 3: Partially correct, some errors
+            - 2: Significant errors or missing content
+            - 1: Incorrect or irrelevant
+
+            Return JSON:
+            {
+              "grade": X,
+              "correct_elements": ["..."],
+              "missing_elements": ["..."],
+              "errors": ["..."],
+              "feedback": "..."
+            }
+            """.formatted(query, response, referenceAnswer);
+
+        return parseGradingResult(
+            judgeClient.prompt().user(prompt).call().content()
+        );
+    }
+}
+```
+
+### 3.4 Multi-Judge Ensemble
+
+```java
+@Service
+public class EnsembleJudge {
+
+    private final List<ChatClient> judges;  // Different models
+
+    public EnsembleResult evaluate(String query, String response) {
+        List<Double> scores = judges.parallelStream()
+            .map(judge -> evaluateWithJudge(judge, query, response))
+            .toList();
+
+        double mean = scores.stream().mapToDouble(d -> d).average().orElse(0);
+        double variance = scores.stream()
+            .mapToDouble(s -> Math.pow(s - mean, 2))
+            .average()
+            .orElse(0);
+
+        return new EnsembleResult(
+            mean,
+            Math.sqrt(variance),  // Standard deviation
+            scores,
+            variance > 0.5 ? "High disagreement - needs human review" : "Consistent"
+        );
+    }
+
+    private double evaluateWithJudge(ChatClient judge, String query, String response) {
+        // Same evaluation prompt for all judges
+        String prompt = createEvaluationPrompt(query, response);
+        return Double.parseDouble(judge.prompt().user(prompt).call().content().trim());
+    }
+}
+```
+
+---
+
+## 4. A/B Testing Infrastructure
+
+### 4.1 Experiment Framework
+
+```java
+@Component
+public class PromptExperimentService {
+
+    private final ExperimentRepository experimentRepo;
+    private final MetricsCollector metricsCollector;
+    private final Map<String, ChatClient> variants;
+
+    public ExperimentResult runExperiment(
+            String experimentId,
+            String userId,
+            String query) {
+
+        Experiment experiment = experimentRepo.findById(experimentId)
+            .orElseThrow(() -> new ExperimentNotFoundException(experimentId));
+
+        // Deterministic assignment based on user ID
+        String variantId = assignVariant(userId, experiment);
+        ChatClient client = variants.get(variantId);
+
+        // Execute and measure
+        long startTime = System.currentTimeMillis();
+        String response = client.prompt().user(query).call().content();
+        long latency = System.currentTimeMillis() - startTime;
+
+        // Record metrics
+        metricsCollector.record(ExperimentMetric.builder()
+            .experimentId(experimentId)
+            .variantId(variantId)
+            .userId(userId)
+            .query(query)
+            .response(response)
+            .latencyMs(latency)
+            .timestamp(Instant.now())
+            .build());
+
+        return new ExperimentResult(variantId, response, latency);
+    }
+
+    private String assignVariant(String userId, Experiment experiment) {
+        // Consistent hashing for stable assignment
+        int hash = Math.abs(userId.hashCode() % 100);
+        int cumulative = 0;
+
+        for (Variant variant : experiment.getVariants()) {
+            cumulative += variant.getTrafficPercentage();
+            if (hash < cumulative) {
+                return variant.getId();
+            }
+        }
+
+        return experiment.getVariants().get(0).getId();  // Fallback
+    }
+}
+```
+
+### 4.2 Experiment Configuration
+
+```yaml
+# experiments/chat-prompt-v2.yaml
+experiment:
+  id: "chat-prompt-v2-test"
+  name: "Test new system prompt"
+  description: "Compare concise vs detailed system prompts"
+  start_date: "2025-01-21"
+  end_date: "2025-02-21"
+
+  variants:
+    - id: "control"
+      name: "Current Production"
+      traffic_percentage: 50
+      prompt_version: "chat-v1.0"
+
+    - id: "treatment"
+      name: "New Concise Prompt"
+      traffic_percentage: 50
+      prompt_version: "chat-v2.0"
+
+  metrics:
+    primary:
+      - name: "user_satisfaction"
+        type: "thumbs_up_rate"
+        minimum_improvement: 0.05  # 5% improvement needed
+
+    secondary:
+      - name: "response_latency_p95"
+        type: "latency_percentile"
+        threshold_ms: 3000
+
+      - name: "token_usage"
+        type: "average_tokens"
+
+      - name: "task_completion_rate"
+        type: "conversion"
+
+  guardrails:
+    min_sample_size: 1000
+    max_degradation: 0.10  # Stop if 10% worse
+    confidence_level: 0.95
+```
+
+### 4.3 Statistical Analysis
+
+```java
+@Service
+public class ExperimentAnalyzer {
+
+    public AnalysisResult analyze(String experimentId) {
+        List<ExperimentMetric> controlMetrics = metricsRepo
+            .findByExperimentAndVariant(experimentId, "control");
+        List<ExperimentMetric> treatmentMetrics = metricsRepo
+            .findByExperimentAndVariant(experimentId, "treatment");
+
+        // Sample size check
+        if (controlMetrics.size() < 1000 || treatmentMetrics.size() < 1000) {
+            return AnalysisResult.insufficientData();
+        }
+
+        // Calculate metrics
+        double controlSatisfaction = calculateSatisfactionRate(controlMetrics);
+        double treatmentSatisfaction = calculateSatisfactionRate(treatmentMetrics);
+
+        // Statistical significance (two-proportion z-test)
+        double zScore = calculateZScore(
+            controlSatisfaction, controlMetrics.size(),
+            treatmentSatisfaction, treatmentMetrics.size()
+        );
+        double pValue = calculatePValue(zScore);
+
+        // Effect size
+        double relativeImprovement =
+            (treatmentSatisfaction - controlSatisfaction) / controlSatisfaction;
+
+        return AnalysisResult.builder()
+            .controlMetric(controlSatisfaction)
+            .treatmentMetric(treatmentSatisfaction)
+            .absoluteDifference(treatmentSatisfaction - controlSatisfaction)
+            .relativeImprovement(relativeImprovement)
+            .pValue(pValue)
+            .isSignificant(pValue < 0.05)
+            .recommendation(generateRecommendation(pValue, relativeImprovement))
+            .build();
+    }
+
+    private String generateRecommendation(double pValue, double improvement) {
+        if (pValue >= 0.05) {
+            return "CONTINUE - Not yet statistically significant";
+        }
+        if (improvement > 0.05) {
+            return "SHIP - Significant positive improvement";
+        }
+        if (improvement < -0.05) {
+            return "ROLLBACK - Significant negative impact";
+        }
+        return "NO_CHANGE - Difference too small to matter";
+    }
+}
+```
+
+---
+
+## 5. Prompt Version Control
+
+### 5.1 File-Based Version Control
+
+```plaintext
+prompts/
+├── system/
+│   ├── customer-support/
+│   │   ├── v1.0.yaml
+│   │   ├── v1.1.yaml
+│   │   └── v2.0.yaml
+│   └── code-assistant/
+│       └── v1.0.yaml
+├── tasks/
+│   ├── summarization/
+│   │   └── v1.0.yaml
+│   └── classification/
+│       └── v1.0.yaml
+└── experiments/
+    ├── exp-001-concise-prompt/
+    │   ├── control.yaml
+    │   └── treatment.yaml
+    └── exp-002-few-shot/
+        ├── zero-shot.yaml
+        └── three-shot.yaml
+```
+
+### 5.2 Prompt Template Schema
+
+```yaml
+# prompts/system/customer-support/v2.0.yaml
+metadata:
+  id: "customer-support-v2.0"
+  version: "2.0.0"
+  created: "2025-01-21"
+  author: "ai-team"
+  status: "production"  # draft, staging, production, deprecated
+  parent_version: "1.1.0"
+
+  change_log: |
+    - Added product return handling
+    - Improved tone for frustrated customers
+    - Reduced response length by 20%
+
+  evaluation:
+    dataset: "customer-support-eval-v3"
+    metrics:
+      accuracy: 0.94
+      user_satisfaction: 0.88
+      avg_latency_ms: 1200
+    evaluated_at: "2025-01-20"
+
+config:
+  model: "gpt-4o"
+  temperature: 0.7
+  max_tokens: 500
+  top_p: 0.95
+
+prompt:
+  system: |
+    You are a customer support agent for TechCorp.
+
+    ## Guidelines
+    - Be helpful, concise, and empathetic
+    - If customer is frustrated, acknowledge their feelings first
+    - Always offer to escalate if you can't resolve the issue
+    - Never make promises about refunds without checking policy
+
+    ## Capabilities
+    - Check order status
+    - Process returns (within 30 days)
+    - Answer product questions
+    - Schedule callbacks
+
+    ## Limitations
+    - Cannot access payment details
+    - Cannot modify existing orders
+    - Must escalate billing disputes
+
+  user: |
+    Customer message: {customer_message}
+
+    Order history: {order_history}
+
+    Previous conversation: {conversation_history}
+```
+
+### 5.3 Prompt Registry Service
+
+```java
+@Service
+public class PromptRegistry {
+
+    private final PromptRepository promptRepo;
+    private final CacheManager cacheManager;
+
+    @Cacheable(value = "prompts", key = "#promptId + ':' + #version")
+    public PromptTemplate getPrompt(String promptId, String version) {
+        return promptRepo.findByIdAndVersion(promptId, version)
+            .map(this::toPromptTemplate)
+            .orElseThrow(() -> new PromptNotFoundException(promptId, version));
+    }
+
+    public PromptTemplate getLatestPrompt(String promptId) {
+        return promptRepo.findLatestByStatus(promptId, "production")
+            .map(this::toPromptTemplate)
+            .orElseThrow(() -> new PromptNotFoundException(promptId));
+    }
+
+    @Transactional
+    public PromptVersion createVersion(String promptId, PromptVersionRequest request) {
+        // Validate prompt syntax
+        validatePromptSyntax(request.getPromptContent());
+
+        // Create new version
+        PromptVersion newVersion = PromptVersion.builder()
+            .promptId(promptId)
+            .version(incrementVersion(promptId))
+            .content(request.getPromptContent())
+            .config(request.getConfig())
+            .status("draft")
+            .createdBy(getCurrentUser())
+            .build();
+
+        promptRepo.save(newVersion);
+
+        // Invalidate cache
+        cacheManager.getCache("prompts").evict(promptId);
+
+        return newVersion;
+    }
+
+    @Transactional
+    public void promoteToProduction(String promptId, String version) {
+        // Demote current production version
+        promptRepo.findByIdAndStatus(promptId, "production")
+            .ifPresent(current -> {
+                current.setStatus("deprecated");
+                promptRepo.save(current);
+            });
+
+        // Promote new version
+        PromptVersion newProd = promptRepo.findByIdAndVersion(promptId, version)
+            .orElseThrow();
+        newProd.setStatus("production");
+        newProd.setPromotedAt(Instant.now());
+        promptRepo.save(newProd);
+
+        // Clear all caches for this prompt
+        cacheManager.getCache("prompts").clear();
+    }
+}
+```
+
+---
+
+## 6. CI/CD Integration
+
+### 6.1 GitHub Actions Workflow
+
+```yaml
+# .github/workflows/prompt-evaluation.yml
+name: Prompt Evaluation Pipeline
+
+on:
+  pull_request:
+    paths:
+      - 'prompts/**'
+
+env:
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate YAML syntax
+        run: |
+          pip install yamllint
+          yamllint prompts/
+
+      - name: Validate prompt schema
+        run: |
+          python scripts/validate_prompts.py prompts/
+
+  evaluate:
+    runs-on: ubuntu-latest
+    needs: syntax-check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Identify changed prompts
+        id: changes
+        run: |
+          CHANGED=$(git diff --name-only origin/main...HEAD | grep "^prompts/" | head -20)
+          echo "changed_prompts=$CHANGED" >> $GITHUB_OUTPUT
+
+      - name: Run evaluations
+        run: |
+          ./mvnw test -Dtest=PromptEvaluationTest \
+            -Dprompts.changed="${{ steps.changes.outputs.changed_prompts }}"
+
+      - name: Check quality gates
+        run: |
+          python scripts/check_quality_gates.py \
+            --results target/eval-results.json \
+            --min-accuracy 0.90 \
+            --min-relevance 0.85
+
+      - name: Upload evaluation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-report
+          path: target/eval-results.json
+
+      - name: Comment PR with results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('target/eval-results.json'));
+
+            const comment = `## Prompt Evaluation Results
+
+            | Metric | Value | Threshold | Status |
+            |--------|-------|-----------|--------|
+            | Accuracy | ${results.accuracy.toFixed(3)} | 0.90 | ${results.accuracy >= 0.90 ? '✅' : '❌'} |
+            | Relevance | ${results.relevance.toFixed(3)} | 0.85 | ${results.relevance >= 0.85 ? '✅' : '❌'} |
+            | Avg Latency | ${results.latency_ms}ms | 2000ms | ${results.latency_ms <= 2000 ? '✅' : '❌'} |
+
+            ${results.passed ? '**✅ All quality gates passed**' : '**❌ Quality gates failed**'}
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  regression-test:
+    runs-on: ubuntu-latest
+    needs: evaluate
+    steps:
+      - name: Compare with baseline
+        run: |
+          python scripts/regression_check.py \
+            --current target/eval-results.json \
+            --baseline baselines/production.json \
+            --max-degradation 0.05
+```
+
+### 6.2 Quality Gate Implementation
+
+```java
+@Service
+public class QualityGateService {
+
+    private final EvaluationService evaluationService;
+    private final PromptRegistry promptRegistry;
+
+    public QualityGateResult evaluate(String promptId, String version) {
+        PromptTemplate prompt = promptRegistry.getPrompt(promptId, version);
+        EvaluationResult evalResult = evaluationService.runFullEvaluation(prompt);
+
+        List<GateCheck> checks = new ArrayList<>();
+
+        // Accuracy gate
+        checks.add(new GateCheck(
+            "accuracy",
+            evalResult.getAccuracy(),
+            0.90,
+            evalResult.getAccuracy() >= 0.90
+        ));
+
+        // Relevance gate (for RAG)
+        if (prompt.isRagEnabled()) {
+            checks.add(new GateCheck(
+                "relevance",
+                evalResult.getRelevance(),
+                0.85,
+                evalResult.getRelevance() >= 0.85
+            ));
+        }
+
+        // Latency gate
+        checks.add(new GateCheck(
+            "latency_p95_ms",
+            evalResult.getLatencyP95(),
+            2000.0,
+            evalResult.getLatencyP95() <= 2000
+        ));
+
+        // Token efficiency
+        checks.add(new GateCheck(
+            "avg_tokens",
+            evalResult.getAvgTokens(),
+            1500.0,
+            evalResult.getAvgTokens() <= 1500
+        ));
+
+        // Regression check against production baseline
+        if (promptRegistry.hasProductionVersion(promptId)) {
+            EvaluationResult baseline = getProductionBaseline(promptId);
+            double degradation = (baseline.getAccuracy() - evalResult.getAccuracy())
+                / baseline.getAccuracy();
+
+            checks.add(new GateCheck(
+                "regression",
+                degradation,
+                0.05,  // Max 5% degradation
+                degradation <= 0.05
+            ));
+        }
+
+        boolean allPassed = checks.stream().allMatch(GateCheck::passed);
+
+        return new QualityGateResult(
+            promptId,
+            version,
+            allPassed,
+            checks,
+            allPassed ? "Ready for deployment" : "Quality gates failed"
+        );
+    }
+}
+```
+
+---
+
+## 7. Production Monitoring
+
+### 7.1 Metrics Collection
+
+```java
+@Component
+public class PromptMetricsCollector {
+
+    private final MeterRegistry meterRegistry;
+
+    public void recordRequest(PromptExecution execution) {
+        // Latency
+        meterRegistry.timer("prompt.latency",
+            "prompt_id", execution.getPromptId(),
+            "version", execution.getVersion())
+            .record(Duration.ofMillis(execution.getLatencyMs()));
+
+        // Token usage
+        meterRegistry.counter("prompt.tokens.input",
+            "prompt_id", execution.getPromptId())
+            .increment(execution.getInputTokens());
+
+        meterRegistry.counter("prompt.tokens.output",
+            "prompt_id", execution.getPromptId())
+            .increment(execution.getOutputTokens());
+
+        // Cost estimation
+        double cost = calculateCost(
+            execution.getModel(),
+            execution.getInputTokens(),
+            execution.getOutputTokens()
+        );
+        meterRegistry.counter("prompt.cost.usd",
+            "prompt_id", execution.getPromptId(),
+            "model", execution.getModel())
+            .increment(cost);
+
+        // Error tracking
+        if (execution.isError()) {
+            meterRegistry.counter("prompt.errors",
+                "prompt_id", execution.getPromptId(),
+                "error_type", execution.getErrorType())
+                .increment();
+        }
+    }
+
+    public void recordFeedback(String promptId, boolean positive) {
+        meterRegistry.counter("prompt.feedback",
+            "prompt_id", promptId,
+            "sentiment", positive ? "positive" : "negative")
+            .increment();
+    }
+}
+```
+
+### 7.2 Monitoring Dashboard Queries
+
+```yaml
+# Grafana dashboard configuration
+panels:
+  - title: "Prompt Latency (P95)"
+    query: |
+      histogram_quantile(0.95,
+        sum(rate(prompt_latency_seconds_bucket[5m])) by (le, prompt_id)
+      )
+    alert:
+      threshold: 3
+      condition: "> 3s for 5 minutes"
+
+  - title: "Error Rate by Prompt"
+    query: |
+      sum(rate(prompt_errors_total[5m])) by (prompt_id, error_type)
+      /
+      sum(rate(prompt_requests_total[5m])) by (prompt_id)
+    alert:
+      threshold: 0.05
+      condition: "> 5% error rate"
+
+  - title: "User Satisfaction Rate"
+    query: |
+      sum(prompt_feedback_total{sentiment="positive"}) by (prompt_id)
+      /
+      sum(prompt_feedback_total) by (prompt_id)
+    alert:
+      threshold: 0.80
+      condition: "< 80% satisfaction"
+
+  - title: "Cost per 1K Requests"
+    query: |
+      (sum(rate(prompt_cost_usd_total[1h])) by (prompt_id) * 1000)
+      /
+      (sum(rate(prompt_requests_total[1h])) by (prompt_id))
+```
+
+### 7.3 Alerting Configuration
+
+```yaml
+# alerts/prompt-alerts.yaml
+alerts:
+  - name: high_error_rate
+    description: "Prompt error rate above threshold"
+    query: |
+      sum(rate(prompt_errors_total[5m])) by (prompt_id)
+      / sum(rate(prompt_requests_total[5m])) by (prompt_id)
+      > 0.05
+    severity: critical
+    channels: ["pagerduty", "slack-ai-alerts"]
+
+  - name: latency_degradation
+    description: "P95 latency significantly increased"
+    query: |
+      histogram_quantile(0.95, rate(prompt_latency_seconds_bucket[10m]))
+      > 3
+    severity: warning
+    channels: ["slack-ai-alerts"]
+
+  - name: satisfaction_drop
+    description: "User satisfaction dropped below 80%"
+    query: |
+      sum(prompt_feedback_total{sentiment="positive"}) by (prompt_id)
+      / sum(prompt_feedback_total) by (prompt_id)
+      < 0.80
+    severity: warning
+    channels: ["slack-ai-alerts"]
+
+  - name: cost_spike
+    description: "Unusual cost increase detected"
+    query: |
+      rate(prompt_cost_usd_total[1h])
+      > 2 * avg_over_time(rate(prompt_cost_usd_total[1h])[24h:1h])
+    severity: warning
+    channels: ["slack-ai-alerts"]
+```
+
+---
+
+## 8. Continuous Improvement Workflow
+
+```plaintext
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    Continuous Improvement Loop                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐     │
+│   │ COLLECT  │ ──→ │ ANALYZE  │ ──→ │ ITERATE  │ ──→ │ VALIDATE │     │
+│   │          │     │          │     │          │     │          │     │
+│   │ • Traces │     │ • Find   │     │ • Create │     │ • Run    │     │
+│   │ • Errors │     │   failure│     │   variant│     │   evals  │     │
+│   │ • Feedback     │   patterns│     │ • A/B    │     │ • Quality│     │
+│   │ • Metrics│     │ • Cluster│     │   test   │     │   gates  │     │
+│   └──────────┘     │   issues │     └──────────┘     └──────────┘     │
+│        ▲           └──────────┘           │               │           │
+│        │                                  │               │           │
+│        │     ┌──────────┐     ┌──────────┐               │           │
+│        │     │ MONITOR  │ ←── │  DEPLOY  │ ←─────────────┘           │
+│        │     │          │     │          │                           │
+│        │     │ • Alerts │     │ • Promote│                           │
+│        │     │ • Dashbrd│     │   winner │                           │
+│        │     │ • Anomaly│     │ • Update │                           │
+│        └─────│   detect │     │   registry                           │
+│              └──────────┘     └──────────┘                           │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 8.1 Production Trace Collection
+
+```java
+@Service
+public class TraceCollector {
+
+    private final TraceRepository traceRepo;
+    private final EvaluationDatasetBuilder datasetBuilder;
+
+    @Async
+    public void collectTrace(PromptTrace trace) {
+        // Store trace
+        traceRepo.save(trace);
+
+        // Automatically flag interesting cases
+        if (shouldFlagForReview(trace)) {
+            flagForHumanReview(trace);
+        }
+
+        // Convert negative feedback to test cases
+        if (trace.getFeedback() != null && !trace.getFeedback().isPositive()) {
+            datasetBuilder.addNegativeExample(
+                trace.getPromptId(),
+                trace.getQuery(),
+                trace.getResponse(),
+                trace.getFeedback().getComment()
+            );
+        }
+    }
+
+    private boolean shouldFlagForReview(PromptTrace trace) {
+        return trace.getLatencyMs() > 5000 ||  // Slow
+               trace.isError() ||               // Failed
+               trace.getOutputTokens() > 2000 || // Too verbose
+               containsSensitivePattern(trace.getResponse());  // Safety concern
+    }
+}
+```
+
+### 8.2 Automated Test Case Generation
+
+```java
+@Service
+public class TestCaseGenerator {
+
+    private final TraceRepository traceRepo;
+    private final ChatClient judgeClient;
+
+    public List<TestCase> generateFromProduction(
+            String promptId,
+            int count,
+            TestCaseStrategy strategy) {
+
+        List<PromptTrace> traces = switch (strategy) {
+            case FAILURES -> traceRepo.findFailedTraces(promptId, count);
+            case EDGE_CASES -> traceRepo.findEdgeCases(promptId, count);
+            case DIVERSE -> traceRepo.findDiverseTraces(promptId, count);
+            case NEGATIVE_FEEDBACK -> traceRepo.findNegativeFeedback(promptId, count);
+        };
+
+        return traces.stream()
+            .map(this::traceToTestCase)
+            .filter(Objects::nonNull)
+            .toList();
+    }
+
+    private TestCase traceToTestCase(PromptTrace trace) {
+        // Use LLM to generate expected output from human feedback
+        if (trace.getFeedback() != null) {
+            String expectedOutput = generateExpectedOutput(
+                trace.getQuery(),
+                trace.getResponse(),
+                trace.getFeedback().getComment()
+            );
+
+            return new TestCase(
+                trace.getQuery(),
+                expectedOutput,
+                TestCase.Source.PRODUCTION_FEEDBACK,
+                trace.getId()
+            );
+        }
+
+        return null;
+    }
+}
+```
+
+---
+
+## 9. Best Practices Summary
+
+### Evaluation Checklist
+
+- [ ] **Define success metrics** before building
+- [ ] **Create evaluation dataset** with 100+ samples minimum
+- [ ] **Implement automated evals** in CI/CD
+- [ ] **Use LLM-as-Judge** for subjective quality
+- [ ] **Run A/B tests** before full deployment
+- [ ] **Set quality gates** with clear thresholds
+- [ ] **Monitor production** with real-time dashboards
+- [ ] **Collect user feedback** (thumbs up/down)
+- [ ] **Convert failures to test cases** automatically
+- [ ] **Version control prompts** like code
+
+### Metric Targets by Use Case
+
+| Use Case | Primary Metric | Target | Secondary Metrics |
+|----------|----------------|--------|-------------------|
+| Classification | Accuracy | >95% | F1, Latency |
+| RAG Q&A | Faithfulness | >90% | Relevance, Latency |
+| Summarization | ROUGE-L | >0.4 | BERTScore, Length |
+| Code Gen | Pass@1 | >70% | Syntax valid, Latency |
+| Customer Support | Satisfaction | >85% | Resolution rate |
+| Translation | BLEU | >0.3 | BERTScore |
+
+---
+
+## References
+
+1. Anthropic. (2024). *Evaluating AI Models*. [Anthropic Research](https://www.anthropic.com/research)
+2. OpenAI. (2024). *Building Evals*. [OpenAI Cookbook](https://cookbook.openai.com/articles/related_resources)
+3. Braintrust. (2025). *Best Prompt Evaluation Tools 2025*.
+4. RAGAS. (2024). *RAG Evaluation Framework*. [GitHub](https://github.com/explodinggradients/ragas)
+5. Spring AI. (2025). *Evaluation Documentation*. [Spring.io](https://docs.spring.io/spring-ai/reference/)
+6. Lakera. (2025). *Ultimate Guide to Prompt Engineering*.
+
+---
+
+**Previous**: [2.4 Spring AI Implementation](./05-spring-ai.mdx) ←
+**Next**: [3.1 Advanced Techniques](./07-advanced-techniques.mdx) →

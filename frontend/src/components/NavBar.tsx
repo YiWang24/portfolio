@@ -1,9 +1,10 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ModeToggle } from "./mode-toggle";
 import { smoothScrollTo } from "@/lib/utils/scroll";
+import { Menu, X } from "lucide-react";
 
 type NavbarProfile = {
   name: string;
@@ -16,6 +17,8 @@ export default function Navbar({ about }: Props) {
   // Simulated latency for tech feel
   const [latency, setLatency] = useState(12);
   const [activeSection, setActiveSection] = useState("");
+  // Mobile menu state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -49,13 +52,13 @@ export default function Navbar({ about }: Props) {
     return () => observer.disconnect();
   }, []);
 
-  const navLinks = [
+  const navLinks = useMemo(() => [
     { href: "#about", label: "About" },
     { href: "#experience", label: "Experience" },
     { href: "#projects", label: "Projects" },
     { href: "#stack", label: "Stack" },
     { href: "#licenses", label: "Credentials" },
-  ];
+  ], []);
 
   return (
     <motion.header
@@ -100,10 +103,15 @@ export default function Navbar({ about }: Props) {
                 e.preventDefault();
                 smoothScrollTo(link.href, { duration: 1000, easing: 'ios' });
               }}
-              className={`px-3 lg:px-4 py-2 font-mono text-xs uppercase tracking-wider rounded-lg transition-all duration-300 relative whitespace-nowrap ${activeSection === link.href.replace('#', '')
-                ? 'text-slate-900 bg-slate-100 dark:text-foreground dark:bg-accent'
-                : 'text-slate-600 hover:text-teal-600 hover:bg-slate-50 dark:text-muted-foreground dark:hover:bg-accent/50 dark:hover:text-accent-foreground'
-                }`}
+              className="min-h-[44px] min-w-[44px] px-3 lg:px-4 py-2 font-mono text-xs uppercase tracking-wider rounded-lg transition-all duration-300 relative whitespace-nowrap cursor-pointer"
+              style={{
+                color: activeSection === link.href.replace('#', '')
+                  ? 'rgb(15, 23, 42)'
+                  : 'rgb(71, 85, 105)',
+                backgroundColor: activeSection === link.href.replace('#', '')
+                  ? 'rgb(241, 245, 249)'
+                  : 'transparent'
+              }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -119,8 +127,40 @@ export default function Navbar({ about }: Props) {
           ))}
         </div>
 
-        {/* Right Section: Actions + Status */}
-        <div className="flex items-center gap-2 lg:gap-3">
+        {/* Mobile Menu Button - Show only on mobile, positioned on right */}
+        <motion.button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center p-3 rounded-lg border border-slate-200 dark:border-border bg-white/80 dark:bg-background/80 backdrop-blur-xl shadow-sm cursor-pointer z-10 relative"
+          whileTap={{ scale: 0.95 }}
+          aria-label="Toggle menu"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {isMobileMenuOpen ? (
+              <motion.div
+                key="close"
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <X className="w-5 h-5 text-slate-800 dark:text-foreground" />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="menu"
+                initial={{ rotate: 90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: -90, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Menu className="w-5 h-5 text-slate-800 dark:text-foreground" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.button>
+
+        {/* Right Section: Actions + Status - Hide on mobile when menu is open */}
+        <div className={`hidden md:flex items-center gap-2 lg:gap-3 ${isMobileMenuOpen ? 'invisible' : ''}`}>
 
           {/* Separator Line */}
           <div className="hidden sm:block h-4 w-px bg-slate-200 dark:bg-border" />
@@ -170,6 +210,115 @@ export default function Navbar({ about }: Props) {
           </motion.button>
         </div>
       </nav>
+
+      {/* Mobile Menu Dropdown */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -20, height: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="fixed top-[72px] left-1/2 -translate-x-1/2 z-40 w-full max-w-screen-xl px-4"
+          >
+            <nav className="flex flex-col gap-2 p-4 mt-2 rounded-2xl border border-slate-200 dark:border-border bg-white/95 dark:bg-background/95 backdrop-blur-xl shadow-lg shadow-slate-200/50 dark:shadow-lg">
+              {navLinks.map((link) => (
+                <motion.button
+                  key={link.href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsMobileMenuOpen(false);
+                    smoothScrollTo(link.href, { duration: 1000, easing: 'ios' });
+                  }}
+                  className="min-h-[48px] w-full text-left px-4 py-3 font-mono text-sm uppercase tracking-wider rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-between"
+                  style={{
+                    color: activeSection === link.href.replace('#', '')
+                      ? 'rgb(13, 148, 136)'
+                      : 'rgb(71, 85, 105)',
+                    backgroundColor: activeSection === link.href.replace('#', '')
+                      ? 'rgb(240, 253, 250)'
+                      : 'transparent'
+                  }}
+                  whileHover={{ scale: 1.02, x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <span>{link.label}</span>
+                  {activeSection === link.href.replace('#', '') && (
+                    <motion.div
+                      layoutId="activeMobileNav"
+                      className="w-2 h-2 rounded-full bg-teal-600"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                </motion.button>
+              ))}
+
+              {/* Divider */}
+              <div className="h-px bg-slate-200 dark:border-border my-2" />
+
+              {/* Mobile Action Buttons */}
+              <div className="flex flex-col gap-2">
+                <motion.a
+                  href={process.env.NEXT_PUBLIC_DOCS_URL || '/documentation/'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="min-h-[48px] flex items-center justify-between px-4 py-3 font-mono text-sm uppercase tracking-wider rounded-xl bg-amber-50 text-amber-700 dark:bg-slate-800 dark:text-amber-400 border border-amber-200 dark:border-slate-700 cursor-pointer"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <span className="flex items-center gap-3">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    Docs
+                  </span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </motion.a>
+
+                <motion.a
+                  href="/resume.pdf"
+                  target="_blank"
+                  className="min-h-[48px] flex items-center justify-between px-4 py-3 font-mono text-sm uppercase tracking-wider rounded-xl bg-slate-100 text-slate-700 dark:bg-secondary/50 dark:text-muted-foreground border border-transparent dark:border-border cursor-pointer"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <span className="flex items-center gap-3">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Resume
+                  </span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </motion.a>
+
+                <motion.button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    window.dispatchEvent(new CustomEvent('openContact'));
+                  }}
+                  className="min-h-[48px] flex items-center justify-between px-4 py-3 font-mono text-sm uppercase tracking-wider font-semibold rounded-xl bg-teal-600 text-white dark:bg-gradient-to-r dark:from-emerald-400 dark:to-cyan-400 dark:text-black shadow-md shadow-teal-600/20 dark:shadow-[0_0_20px_rgba(16,185,129,0.3)] cursor-pointer"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <span className="flex items-center gap-3">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Contact
+                  </span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </motion.button>
+              </div>
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 }

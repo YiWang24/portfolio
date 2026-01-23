@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 import { streamChat } from "@/services/sse";
 import type { StreamHandlers } from "@/types/stream";
 import { createMessageId } from "../../utils/terminal";
@@ -25,6 +26,7 @@ import {
 import type { TerminalMessage, MessageStatus, ItemStatus } from "@/types/message";
 import { TerminalBio } from "./TerminalBio";
 import { motion, useAnimation } from "framer-motion";
+import { safeOpenUrl } from "@/lib/utils/validation";
 
 export type TerminalConversationRef = {
   focus: () => void;
@@ -366,11 +368,11 @@ const TerminalConversation = forwardRef<
     const trimmed = message.trim();
     setError(null);
 
-    // 1. 检查是否是本地命令
+    // 1. Check local commands
     const localResponse = processLocalCommand(trimmed, { userIp });
 
     if (localResponse) {
-      // 添加用户消息
+      // Add user message
       const userId = createMessageId("user");
       setMessages((prev) => [
         ...prev,
@@ -382,47 +384,47 @@ const TerminalConversation = forwardRef<
         },
       ]);
 
-      // 检查是否需要触发特殊操作
+      // Check if special action needs to be triggered
       const action = getCommandAction(localResponse);
 
       if (action === "clear-screen") {
-        // 清屏
+        // Clear screen
         setMessages([]);
         return;
       }
 
       if (action === "contact-modal") {
-        // 打开联系弹窗
+        // Open contact modal
         setTimeout(() => onOpenContact(), 300);
         return;
       }
 
       if (action === "resume-download") {
-        // 触发下载（可以在这里添加实际的下载逻辑）
-        window.open("/resume.pdf", "_blank");
+        // Trigger download (can add actual download logic here)
+        safeOpenUrl("/resume.pdf");
         return;
       }
 
       if (action === "matrix-trigger") {
-        // 触发 Matrix 数字雨特效 - 阻塞效果
-        // 立即显示特效和所有提示信息
+        // Trigger Matrix digital rain effect - blocking effect
+        // Immediately display the effect and all prompt information
         setMatrixActive(true);
 
-        // 显示所有提示信息（包括运行中和退出提示）
+        // Display all prompt information (including running and exit prompts)
         const runningMsgId = createMessageId("system");
         setMessages((prev) => [
           ...prev,
           {
             id: runningMsgId,
             role: "system",
-            content: localResponse.content, // 直接显示完整的提示信息
+            content: localResponse.content, // Directly display the complete prompt information
             status: "completed" as MessageStatus,
           },
         ]);
         return;
       }
 
-      // 添加系统响应
+      // Add system response
       setTimeout(() => {
         setMessages((prev) => [...prev, localResponse]);
       }, 100);
@@ -430,7 +432,7 @@ const TerminalConversation = forwardRef<
       return;
     }
 
-    // 2. 不是本地命令，发送给 AI
+    // 2. Not a local command, send to AI
     const userId = createMessageId("user");
     const agentId = createMessageId("agent");
     streamingIdRef.current = agentId;
@@ -599,7 +601,7 @@ const TerminalConversation = forwardRef<
               {/* Show content when streaming or completed */}
               {msg.content && (
                 <div className="cli-response-content terminal-text">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{msg.content}</ReactMarkdown>
                 </div>
               )}
 

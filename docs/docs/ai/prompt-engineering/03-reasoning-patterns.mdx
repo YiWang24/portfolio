@@ -1,0 +1,1210 @@
+---
+title: "3 Core Reasoning Patterns"
+description: "Master Zero-shot, Few-shot, CoT, ReAct, Tree of Thoughts, Self-Consistency, and when to use each"
+published: 2025-01-21
+tags: ["prompt-engineering", "reasoning", "ai", "llm", "cot", "react"]
+category: "prompt-engineering"
+series: "Prompt Engineering Guide"
+seriesOrder: 2
+draft: false
+---
+
+## Introduction
+
+Large language models don't inherently reason—they predict tokens. However, research from 2022-2025 has shown that **specific prompting patterns can elicit systematic reasoning behavior**, dramatically improving performance on complex tasks.
+
+This chapter covers the core reasoning patterns every prompt engineer should master, from foundational techniques like Zero-shot and Few-shot to advanced methods like Tree of Thoughts and Self-Consistency.
+
+### The Evolution of LLM Reasoning
+
+```
+2020: Basic Prompting
+├─ Direct questions, direct answers
+└─ No reasoning structure
+
+2022: Chain-of-Thought Revolution
+├─ Wei et al. introduce CoT (+23-50% on math)
+├─ Kojima et al. discover zero-shot CoT
+└─ "Let's think step by step" becomes iconic
+
+2023: Advanced Reasoning
+├─ Tree of Thoughts (74% vs 4% on Game of 24)
+├─ ReAct pattern for tool use (+34%)
+├─ Self-Consistency for robustness (+11-17%)
+└─ Graph of Thoughts emerges
+
+2024-2025: Reasoning Models
+├─ OpenAI o1 and o3 with extended thinking
+├─ DeepSeek R1 with long chain-of-thought
+├─ Test-time compute scaling
+└─ Intrinsic reasoning capabilities mature
+```
+
+### Performance Summary
+
+| Pattern | Best For | Performance Gain | Token Cost |
+|---------|----------|-----------------|------------|
+| **Zero-Shot** | Simple tasks | Baseline | Low |
+| **Zero-Shot CoT** | Quick reasoning | +10-25% | Medium |
+| **Few-Shot** | Format alignment | +40% | Medium |
+| **Few-Shot CoT** | Complex reasoning | +23-50% | High |
+| **Self-Consistency** | High-stakes decisions | +11-17% over CoT | Very High |
+| **ReAct** | Tool use, agents | +34% on agent tasks | High |
+| **Tree of Thoughts** | Multi-step problems | 74% vs 4% (CoT) | Very High |
+
+## 1. Zero-Shot Prompting
+
+### What It Is
+
+Zero-shot prompting provides a task without any examples. The model relies entirely on its pre-training knowledge to understand and complete the task.
+
+### When to Use
+
+| Use Case | Why Zero-Shot Works |
+|----------|-------------------|
+| Simple factual queries | Models have extensive world knowledge |
+| Common tasks | Well-represented in training data |
+| Quick prototyping | Fast to iterate without crafting examples |
+| Strong modern models | GPT-4, Claude 3, Gemini Pro excel at zero-shot |
+
+### Research Insight (2024-2025)
+
+Recent research shows that **modern instruction-tuned models have largely internalized reasoning capabilities**, making zero-shot prompting surprisingly effective:
+
+> "Recent strong models already exhibit strong reasoning capabilities under the Zero-shot CoT setting, and the primary role of Few-shot CoT exemplars is to align the output format." — EMNLP 2025 Findings
+
+**Key finding**: For GPT-4, Claude 3, and similar models, zero-shot often matches or exceeds few-shot performance on math reasoning tasks when output format is specified.
+
+### Best Practices
+
+**1. Be specific about the task:**
+```xml
+<!-- ❌ Too vague -->
+<instruction>Help me with this code</instruction>
+
+<!-- ✅ Specific -->
+<instruction>
+Review this Java method for null pointer exceptions.
+List each risk with line number and suggested fix.
+</instruction>
+```
+
+**2. Specify output format explicitly:**
+```xml
+<instruction>
+Classify the sentiment of the following review.
+
+Output format:
+{
+  "sentiment": "positive" | "negative" | "neutral",
+  "confidence": 0.0-1.0,
+  "key_phrases": ["phrase1", "phrase2"]
+}
+
+Review: [text here]
+</instruction>
+```
+
+**3. Use Zero-Shot CoT for reasoning:**
+```xml
+<instruction>
+Solve this problem step by step, then provide the final answer.
+
+Problem: [complex problem]
+
+Think through this carefully before answering.
+</instruction>
+```
+
+### Spring AI Implementation
+
+```java
+@Service
+public class ZeroShotService {
+
+    private final ChatClient chatClient;
+
+    public ZeroShotService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+
+    public String classify(String text) {
+        return chatClient.prompt()
+            .system("""
+                You are a sentiment classifier.
+                Respond with exactly one word: positive, negative, or neutral.
+                """)
+            .user(text)
+            .call()
+            .content();
+    }
+
+    // Zero-Shot CoT for reasoning
+    public String solveWithReasoning(String problem) {
+        return chatClient.prompt()
+            .user("""
+                Solve this problem step by step:
+
+                %s
+
+                Think through each step carefully, then provide your final answer.
+                """.formatted(problem))
+            .call()
+            .content();
+    }
+}
+```
+
+## 2. Few-Shot Prompting
+
+### What It Is
+
+Few-shot prompting provides examples (typically 2-8) demonstrating the desired input-output pattern. The model learns from these examples to handle similar tasks.
+
+### Research Findings
+
+**Performance**: +40% improvement over zero-shot on format-sensitive tasks (Brown et al., 2020)
+
+**Optimal number of examples**:
+- 3-5 examples: Best cost/performance ratio
+- More examples: Diminishing returns, increased cost
+- Quality over quantity: One excellent example beats five mediocre ones
+
+**Recent insight (2024-2025)**: For modern reasoning models (o1, R1), few-shot can actually **hurt** performance by overriding the model's superior internal reasoning.
+
+### When to Use
+
+| Scenario | Recommendation |
+|----------|---------------|
+| **Output format alignment** | ✅ Excellent—examples show exact format |
+| **Domain-specific patterns** | ✅ Great for specialized terminology/style |
+| **Classification tasks** | ✅ Very effective for label alignment |
+| **Complex reasoning (strong models)** | ⚠️ May not help or can hurt performance |
+| **Simple factual queries** | ❌ Unnecessary overhead |
+
+### Best Practices
+
+**1. Choose diverse, representative examples:**
+```xml
+<examples>
+<!-- Example 1: Simple case -->
+Input: "The product arrived on time and works great!"
+Output: {"sentiment": "positive", "confidence": 0.95}
+
+<!-- Example 2: Negative case -->
+Input: "Terrible quality. Broke after one day."
+Output: {"sentiment": "negative", "confidence": 0.92}
+
+<!-- Example 3: Edge case (mixed) -->
+Input: "Good features but overpriced for what you get."
+Output: {"sentiment": "neutral", "confidence": 0.78}
+</examples>
+```
+
+**2. Include edge cases:**
+```xml
+<examples>
+<!-- Normal case -->
+Input: "What is the capital of France?"
+Output: {"answer": "Paris", "confidence": "high"}
+
+<!-- Edge case: Ambiguous question -->
+Input: "What is the capital?"
+Output: {"answer": null, "confidence": "low", "clarification_needed": "Which country?"}
+
+<!-- Edge case: Multiple valid answers -->
+Input: "Name a prime number"
+Output: {"answer": "7", "confidence": "high", "alternatives": [2, 3, 5, 11]}
+</examples>
+```
+
+**3. Match example complexity to task:**
+```xml
+<!-- For SQL generation -->
+<examples>
+<!-- Simple query -->
+User: Find all active users
+SQL: SELECT * FROM users WHERE status = 'active';
+
+<!-- Join query -->
+User: Get orders with customer names
+SQL: SELECT o.id, o.total, c.name
+     FROM orders o
+     JOIN customers c ON o.customer_id = c.id;
+
+<!-- Complex aggregation -->
+User: Monthly revenue by product category
+SQL: SELECT
+       DATE_TRUNC('month', o.created_at) as month,
+       p.category,
+       SUM(oi.quantity * oi.price) as revenue
+     FROM orders o
+     JOIN order_items oi ON o.id = oi.order_id
+     JOIN products p ON oi.product_id = p.id
+     GROUP BY 1, 2
+     ORDER BY 1, 3 DESC;
+</examples>
+```
+
+### Spring AI Implementation
+
+```java
+@Service
+public class FewShotService {
+
+    private final ChatClient chatClient;
+
+    // Store examples as structured data
+    private static final List<Example> SQL_EXAMPLES = List.of(
+        new Example(
+            "Find users created last 7 days",
+            "SELECT * FROM users WHERE created_at >= NOW() - INTERVAL '7 days'"
+        ),
+        new Example(
+            "Count orders by status",
+            "SELECT status, COUNT(*) as count FROM orders GROUP BY status"
+        ),
+        new Example(
+            "Get top 5 customers by total spend",
+            """
+            SELECT c.name, SUM(o.total) as total_spend
+            FROM customers c
+            JOIN orders o ON c.id = o.customer_id
+            GROUP BY c.id
+            ORDER BY total_spend DESC
+            LIMIT 5
+            """
+        )
+    );
+
+    public String generateSQL(String naturalLanguage) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("Generate SQL from natural language.\n\n");
+        prompt.append("Examples:\n");
+
+        for (Example ex : SQL_EXAMPLES) {
+            prompt.append("User: ").append(ex.input()).append("\n");
+            prompt.append("SQL: ").append(ex.output()).append("\n\n");
+        }
+
+        prompt.append("User: ").append(naturalLanguage).append("\n");
+        prompt.append("SQL: ");
+
+        return chatClient.prompt()
+            .user(prompt.toString())
+            .call()
+            .content();
+    }
+
+    record Example(String input, String output) {}
+}
+```
+
+## 3. Chain-of-Thought (CoT) Prompting
+
+### What It Is
+
+Chain-of-Thought prompting elicits step-by-step reasoning from the model, breaking complex problems into intermediate steps before arriving at a final answer.
+
+### The Science Behind CoT
+
+**Why it works**: CoT allows models to use intermediate tokens as "working memory," decomposing complex problems into simpler sub-problems that can be solved sequentially.
+
+**Key research findings**:
+
+| Study | Finding |
+|-------|---------|
+| Wei et al. (2022) | +23-50% on math/logic problems with 100B+ models |
+| Kojima et al. (2022) | "Let's think step by step" triggers reasoning in zero-shot |
+| Wang et al. (2023) | Self-consistency further improves CoT by 11-17% |
+| NeurIPS 2024 | CoT can be elicited through decoding, not just prompting |
+
+**Model size matters**: CoT provides significant benefits only for large models (100B+ parameters). Smaller models may produce fluent but faulty reasoning.
+
+### Zero-Shot CoT
+
+The simplest form: add "Let's think step by step" to trigger reasoning.
+
+```xml
+<instruction>
+Solve this problem:
+
+A store sells apples for $2 each and oranges for $3 each.
+If Sarah buys 4 apples and 3 oranges, and pays with a $20 bill,
+how much change does she receive?
+
+Let's think step by step.
+</instruction>
+```
+
+**Output**:
+```
+Let me work through this step by step:
+
+Step 1: Calculate the cost of apples
+4 apples × $2 = $8
+
+Step 2: Calculate the cost of oranges
+3 oranges × $3 = $9
+
+Step 3: Calculate total cost
+$8 + $9 = $17
+
+Step 4: Calculate change
+$20 - $17 = $3
+
+Sarah receives $3 in change.
+```
+
+### Few-Shot CoT
+
+Provide examples with explicit reasoning chains:
+
+```xml
+<instruction>
+Solve math word problems by showing your work.
+
+Example 1:
+Problem: Tom has 5 marbles. He gives 2 to Jane and receives 3 from Bob.
+How many marbles does Tom have now?
+
+Solution:
+- Start: Tom has 5 marbles
+- After giving to Jane: 5 - 2 = 3 marbles
+- After receiving from Bob: 3 + 3 = 6 marbles
+- Answer: Tom has 6 marbles
+
+Example 2:
+Problem: A rectangle has a length of 8cm and width of 5cm.
+What is its perimeter?
+
+Solution:
+- Perimeter formula: 2 × (length + width)
+- Substitute values: 2 × (8 + 5)
+- Calculate sum: 2 × 13
+- Calculate perimeter: 26
+- Answer: The perimeter is 26cm
+
+Now solve:
+Problem: [Your problem here]
+
+Solution:
+</instruction>
+```
+
+### Advanced CoT Variants
+
+**1. Auto-CoT (Zhang et al., 2022)**
+
+Automatically generates diverse examples using clustering:
+```
+1. Cluster questions by type
+2. Select representative from each cluster
+3. Generate reasoning chains with "Let's think step by step"
+4. Use these as few-shot examples
+```
+
+**2. Structured CoT**
+
+Enforce specific reasoning structure:
+````xml
+<instruction>
+Analyze this code for bugs using this structure:
+
+1. UNDERSTAND: What should the code do?
+2. TRACE: Walk through the execution step by step
+3. IDENTIFY: What unexpected behavior occurs?
+4. EXPLAIN: Why does this bug happen?
+5. FIX: Provide corrected code
+
+Code:
+```java
+public int divide(int a, int b) {
+    return a / b;
+}
+```
+</instruction>
+````
+
+**3. Verification CoT**
+
+Add verification step:
+```xml
+<instruction>
+Solve this problem, then verify your answer:
+
+Problem: [problem]
+
+Steps:
+1. Solve the problem showing all work
+2. State your answer clearly
+3. Verify by working backwards or using a different method
+4. Confirm or correct your answer
+</instruction>
+```
+
+### When CoT Hurts Performance
+
+**Recent research (ICML 2025)** shows CoT can reduce performance in specific scenarios:
+
+| Scenario | Why CoT Hurts | Alternative |
+|----------|---------------|-------------|
+| **Pattern recognition** | Overthinking disrupts intuition | Zero-shot |
+| **Simple factual queries** | Unnecessary reasoning adds noise | Direct answer |
+| **Time-sensitive tasks** | Reasoning tokens increase latency | Zero-shot |
+| **Implicit knowledge tasks** | Verbalization interferes with recall | Zero-shot |
+
+**Rule of thumb**: Use CoT for problems requiring explicit logical steps. Skip it for pattern matching or factual recall.
+
+### Spring AI Implementation
+
+```java
+@Service
+public class ChainOfThoughtService {
+
+    private final ChatClient chatClient;
+
+    public ChainOfThoughtService(ChatClient.Builder builder) {
+        this.chatClient = builder
+            .defaultSystem("""
+                You are a mathematical problem solver.
+                Always show your reasoning step by step.
+                Format each step clearly, then state the final answer.
+                """)
+            .build();
+    }
+
+    // Zero-Shot CoT
+    public String solveWithReasoning(String problem) {
+        return chatClient.prompt()
+            .user("""
+                Solve this problem step by step:
+
+                %s
+
+                Let's think through this carefully.
+                """.formatted(problem))
+            .call()
+            .content();
+    }
+
+    // Structured CoT with verification
+    public ReasoningResult solveAndVerify(String problem) {
+        String response = chatClient.prompt()
+            .user("""
+                Solve this problem using the following structure:
+
+                ## Problem
+                %s
+
+                ## Step-by-Step Solution
+                [Show each step of your reasoning]
+
+                ## Answer
+                [State the final answer clearly]
+
+                ## Verification
+                [Verify your answer using a different method]
+
+                ## Confidence
+                [Rate your confidence: HIGH, MEDIUM, or LOW]
+                """.formatted(problem))
+            .call()
+            .content();
+
+        return parseReasoningResult(response);
+    }
+
+    record ReasoningResult(
+        String solution,
+        String answer,
+        String verification,
+        String confidence
+    ) {}
+}
+```
+
+## 4. Self-Consistency
+
+### What It Is
+
+Self-Consistency generates multiple reasoning paths for the same problem and selects the answer that appears most frequently (majority voting).
+
+### The Science
+
+**Key insight**: Different reasoning paths may have errors, but correct answers tend to converge across multiple attempts.
+
+**Performance**: +11-17% over standard CoT (Wang et al., 2023)
+
+**How it works**:
+```
+Problem → Generate N reasoning paths → Extract answers → Vote → Most common answer
+```
+
+### When to Use
+
+| Scenario | Recommendation |
+|----------|---------------|
+| **High-stakes decisions** | ✅ Excellent—reduces individual path errors |
+| **Math/logic problems** | ✅ Great for verifiable answers |
+| **Ambiguous questions** | ✅ Good for identifying uncertainty |
+| **Simple queries** | ❌ Overkill—use zero-shot |
+| **Cost-sensitive apps** | ⚠️ N× token cost |
+
+### Implementation Strategy
+
+**Basic approach**:
+1. Generate 5-10 different solutions with temperature > 0
+2. Extract final answer from each
+3. Return majority answer with confidence score
+
+**Temperature settings**:
+- `temperature: 0.7-1.0` for diverse paths
+- Higher temperature = more diversity but potentially lower quality per path
+- Balance: `0.8` is often optimal
+
+### Spring AI Implementation
+
+```java
+@Service
+public class SelfConsistencyService {
+
+    private final ChatClient chatClient;
+    private static final int NUM_PATHS = 5;
+
+    public SelfConsistencyResult solveWithConsistency(String problem) {
+        List<String> answers = new ArrayList<>();
+        List<String> reasoningPaths = new ArrayList<>();
+
+        // Generate multiple reasoning paths
+        for (int i = 0; i < NUM_PATHS; i++) {
+            String response = chatClient.prompt()
+                .user("""
+                    Solve this problem step by step:
+
+                    %s
+
+                    End with "FINAL ANSWER: [your answer]"
+                    """.formatted(problem))
+                .options(ChatOptions.builder()
+                    .temperature(0.8)  // Higher for diversity
+                    .build())
+                .call()
+                .content();
+
+            reasoningPaths.add(response);
+            answers.add(extractFinalAnswer(response));
+        }
+
+        // Majority voting
+        Map<String, Long> answerCounts = answers.stream()
+            .collect(Collectors.groupingBy(
+                Function.identity(),
+                Collectors.counting()
+            ));
+
+        String majorityAnswer = answerCounts.entrySet().stream()
+            .max(Map.Entry.comparingByValue())
+            .map(Map.Entry::getKey)
+            .orElse("No consensus");
+
+        double confidence = (double) answerCounts.getOrDefault(majorityAnswer, 0L)
+            / NUM_PATHS;
+
+        return new SelfConsistencyResult(
+            majorityAnswer,
+            confidence,
+            answerCounts,
+            reasoningPaths
+        );
+    }
+
+    private String extractFinalAnswer(String response) {
+        Pattern pattern = Pattern.compile("FINAL ANSWER:\\s*(.+?)(?:\\n|$)",
+            Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(response);
+        return matcher.find() ? matcher.group(1).trim() : "UNKNOWN";
+    }
+
+    record SelfConsistencyResult(
+        String answer,
+        double confidence,
+        Map<String, Long> answerDistribution,
+        List<String> reasoningPaths
+    ) {}
+}
+```
+
+### Advanced: Weighted Self-Consistency
+
+Weight answers by reasoning quality:
+
+```java
+public WeightedResult solveWithWeightedConsistency(String problem) {
+    List<ScoredAnswer> scoredAnswers = new ArrayList<>();
+
+    for (int i = 0; i < NUM_PATHS; i++) {
+        String reasoning = generateReasoning(problem);
+        String answer = extractAnswer(reasoning);
+        double quality = evaluateReasoningQuality(reasoning);
+
+        scoredAnswers.add(new ScoredAnswer(answer, quality, reasoning));
+    }
+
+    // Weighted voting
+    Map<String, Double> weightedScores = scoredAnswers.stream()
+        .collect(Collectors.groupingBy(
+            ScoredAnswer::answer,
+            Collectors.summingDouble(ScoredAnswer::quality)
+        ));
+
+    String bestAnswer = weightedScores.entrySet().stream()
+        .max(Map.Entry.comparingByValue())
+        .map(Map.Entry::getKey)
+        .orElse("No consensus");
+
+    return new WeightedResult(bestAnswer, weightedScores);
+}
+
+record ScoredAnswer(String answer, double quality, String reasoning) {}
+```
+
+## 5. ReAct (Reasoning + Acting)
+
+### What It Is
+
+ReAct interleaves reasoning (thinking) with actions (tool calls), allowing models to gather information and adjust their approach dynamically.
+
+### The Pattern
+
+```
+Thought: [What I need to figure out]
+Action: [tool_name(parameters)]
+Observation: [Result from tool]
+... repeat ...
+Thought: [I now have enough information]
+Answer: [Final answer based on observations]
+```
+
+### Research Findings
+
+**Performance**: +34% on agent tasks requiring external information (Yao et al., 2022)
+
+**Key benefits**:
+- **Grounded reasoning**: Actions provide real data
+- **Error recovery**: Model can adjust based on observations
+- **Transparency**: Clear reasoning trace for debugging
+- **Tool integration**: Natural pattern for function calling
+
+### When to Use
+
+| Scenario | Why ReAct Excels |
+|----------|-----------------|
+| **Information retrieval** | Can search and verify facts |
+| **Multi-step tasks** | Adjusts approach based on results |
+| **Tool-heavy workflows** | Natural integration with APIs |
+| **Debugging/investigation** | Clear trace of reasoning |
+
+### ReAct Template
+
+```xml
+<system>
+You are a research assistant with access to these tools:
+
+1. search(query) - Search the web for information
+2. calculate(expression) - Evaluate mathematical expressions
+3. lookup(term) - Look up definitions or facts
+4. verify(claim) - Fact-check a statement
+
+Use this format:
+Thought: [Your reasoning about what to do next]
+Action: tool_name(parameters)
+Observation: [Tool result will appear here]
+... continue until you have the answer ...
+Thought: [I have enough information to answer]
+Answer: [Your final answer with citations]
+
+Always think before acting. Verify important facts.
+</system>
+
+<user>
+Question: What is the current market cap of Apple, and how does it compare
+to Microsoft's market cap?
+</user>
+```
+
+**Expected Response**:
+```
+Thought: I need to find the current market caps of both Apple and Microsoft.
+Let me search for the most recent data.
+
+Action: search("Apple market cap 2025")
+Observation: Apple's market cap is approximately $3.5 trillion as of January 2025.
+
+Thought: Now I need Microsoft's market cap for comparison.
+
+Action: search("Microsoft market cap 2025")
+Observation: Microsoft's market cap is approximately $3.1 trillion as of January 2025.
+
+Thought: I have both figures. Let me calculate the difference.
+
+Action: calculate("3.5 - 3.1")
+Observation: 0.4
+
+Thought: I now have all the information needed to answer comprehensively.
+
+Answer: As of January 2025, Apple has a market cap of approximately $3.5 trillion,
+while Microsoft's market cap is approximately $3.1 trillion. Apple's market cap
+is about $400 billion (or roughly 13%) higher than Microsoft's.
+```
+
+### Spring AI Implementation with Tool Calling
+
+```java
+@Service
+public class ReActService {
+
+    private final ChatClient chatClient;
+
+    public ReActService(ChatClient.Builder builder) {
+        this.chatClient = builder
+            .defaultSystem("""
+                You are a research assistant that reasons step by step.
+
+                For each step:
+                1. THOUGHT: Explain what you need to find out
+                2. ACTION: Use a tool if needed
+                3. OBSERVATION: Note the result
+                4. Repeat until you can answer
+
+                Always verify important facts before concluding.
+                """)
+            .defaultTools(
+                new SearchTool(),
+                new CalculatorTool(),
+                new FactCheckerTool()
+            )
+            .build();
+    }
+
+    public ResearchResult research(String question) {
+        String response = chatClient.prompt()
+            .user(question)
+            .call()
+            .content();
+
+        return parseResearchResult(response);
+    }
+
+    // Tool definitions
+    @Tool
+    @Description("Search the web for current information")
+    static class SearchTool {
+        public String search(
+            @Description("Search query") String query
+        ) {
+            // Implementation: call search API
+            return searchService.search(query);
+        }
+    }
+
+    @Tool
+    @Description("Calculate mathematical expressions")
+    static class CalculatorTool {
+        public String calculate(
+            @Description("Mathematical expression") String expression
+        ) {
+            // Implementation: evaluate expression
+            return String.valueOf(evaluator.evaluate(expression));
+        }
+    }
+
+    @Tool
+    @Description("Verify a factual claim")
+    static class FactCheckerTool {
+        public String verify(
+            @Description("Claim to verify") String claim
+        ) {
+            // Implementation: fact-check against reliable sources
+            return factChecker.verify(claim);
+        }
+    }
+}
+```
+
+## 6. Tree of Thoughts (ToT)
+
+### What It Is
+
+Tree of Thoughts extends CoT by exploring multiple reasoning paths simultaneously, evaluating each path's promise, and backtracking when needed.
+
+### The Science
+
+**Key insight**: Complex problems often require exploring multiple approaches before finding the right one. ToT allows deliberate, systematic exploration.
+
+**Performance**:
+- Game of 24: **74% success vs 4%** for standard CoT
+- Creative writing: **60% vs 16%** on coherent story generation
+
+### How It Works
+
+```
+                    [Problem]
+                        │
+            ┌───────────┼───────────┐
+            ▼           ▼           ▼
+        [Path A]    [Path B]    [Path C]
+            │           │           │
+        [Eval: 0.8] [Eval: 0.3] [Eval: 0.9] ← Evaluate promise
+            │                       │
+            ▼                       ▼
+        [Continue]              [Continue]  ← Explore promising paths
+            │                       │
+        [Dead end]              [Solution!]
+```
+
+**Process**:
+1. **Decompose**: Break problem into thought steps
+2. **Generate**: Create multiple candidate thoughts at each step
+3. **Evaluate**: Score each thought's promise
+4. **Search**: Explore promising paths (BFS or DFS)
+5. **Backtrack**: Return to earlier states if stuck
+
+### When to Use
+
+| Problem Type | ToT Benefit |
+|-------------|-------------|
+| **Math puzzles** | Explore different equation arrangements |
+| **Planning** | Consider multiple action sequences |
+| **Creative writing** | Try different plot directions |
+| **Code debugging** | Test multiple hypotheses |
+| **Game playing** | Evaluate move sequences |
+
+**NOT recommended for**:
+- Simple, direct questions
+- Time-critical applications (high latency)
+- Cost-sensitive scenarios (many API calls)
+
+### ToT Implementation Approaches
+
+**1. Single-Prompt ToT (Simpler)**:
+
+```xml
+<instruction>
+Solve this puzzle using Tree of Thoughts reasoning.
+
+Puzzle: Use the numbers 4, 5, 6, 20 and basic operations (+, -, ×, ÷)
+to make 24. Each number must be used exactly once.
+
+Process:
+1. Generate 3 different initial approaches
+2. Evaluate which looks most promising (rate 1-10)
+3. Explore the top 2 approaches further
+4. If stuck, backtrack and try a different path
+5. Continue until you find a solution
+
+Show your exploration tree:
+</instruction>
+```
+
+**2. Multi-Step ToT (More Powerful)**:
+
+```java
+@Service
+public class TreeOfThoughtsService {
+
+    private final ChatClient chatClient;
+    private static final int BREADTH = 3;  // Thoughts per step
+    private static final int MAX_DEPTH = 5;
+
+    public ToTResult solve(String problem) {
+        ThoughtNode root = new ThoughtNode(problem, null, 0);
+        return bfsSearch(root);
+    }
+
+    private ToTResult bfsSearch(ThoughtNode root) {
+        Queue<ThoughtNode> queue = new LinkedList<>();
+        queue.offer(root);
+
+        while (!queue.isEmpty()) {
+            ThoughtNode current = queue.poll();
+
+            if (current.depth >= MAX_DEPTH) continue;
+
+            // Generate candidate thoughts
+            List<String> thoughts = generateThoughts(current);
+
+            // Evaluate each thought
+            for (String thought : thoughts) {
+                double score = evaluateThought(current, thought);
+
+                if (isSolution(thought)) {
+                    return new ToTResult(thought, current.getPath());
+                }
+
+                if (score > 0.5) {  // Only explore promising paths
+                    ThoughtNode child = new ThoughtNode(
+                        thought, current, current.depth + 1
+                    );
+                    child.score = score;
+                    queue.offer(child);
+                }
+            }
+        }
+
+        return ToTResult.noSolution();
+    }
+
+    private List<String> generateThoughts(ThoughtNode node) {
+        String response = chatClient.prompt()
+            .user("""
+                Current problem state:
+                %s
+
+                Previous thoughts:
+                %s
+
+                Generate %d different next steps to explore.
+                Format each as a separate numbered option.
+                """.formatted(
+                    node.state,
+                    node.getPath(),
+                    BREADTH
+                ))
+            .call()
+            .content();
+
+        return parseThoughts(response);
+    }
+
+    private double evaluateThought(ThoughtNode parent, String thought) {
+        String evaluation = chatClient.prompt()
+            .user("""
+                Evaluate this reasoning step on a scale of 0-1:
+
+                Problem: %s
+                Previous steps: %s
+                Proposed step: %s
+
+                Consider:
+                - Does it make progress toward the solution?
+                - Is the logic valid?
+                - Does it avoid dead ends?
+
+                Return only a number between 0 and 1.
+                """.formatted(
+                    parent.state,
+                    parent.getPath(),
+                    thought
+                ))
+            .call()
+            .content();
+
+        return Double.parseDouble(evaluation.trim());
+    }
+}
+```
+
+### Simplified ToT Prompt
+
+For quick ToT without complex code:
+
+```xml
+<instruction>
+Solve this using deliberate exploration:
+
+Problem: [Your problem]
+
+## Step 1: Generate Initial Approaches
+List 3 fundamentally different ways to approach this problem.
+
+## Step 2: Quick Evaluation
+For each approach, rate its promise (1-10) and explain briefly.
+
+## Step 3: Deep Dive
+Take the top-rated approach and work through it step by step.
+If you hit a dead end, note "BACKTRACK" and try the next approach.
+
+## Step 4: Solution
+Present your final answer and the successful reasoning path.
+</instruction>
+```
+
+## 7. Advanced Patterns
+
+### Graph of Thoughts (GoT)
+
+Extends ToT by allowing thoughts to merge and form arbitrary graph structures:
+
+```
+    [Thought A] ──────┐
+                      ▼
+    [Thought B] ─────[Merged Insight]────▶ [Solution]
+                      ▲
+    [Thought C] ──────┘
+```
+
+**Use case**: Problems where different reasoning paths provide complementary insights.
+
+### Least-to-Most Prompting
+
+Break complex problems into simpler sub-problems:
+
+```xml
+<instruction>
+Solve this complex problem by breaking it down:
+
+Problem: [Complex problem]
+
+Step 1: List the sub-problems needed to solve this (simplest first)
+Step 2: Solve each sub-problem in order
+Step 3: Combine solutions to answer the original question
+</instruction>
+```
+
+### Program of Thoughts (PoT)
+
+Generate code to solve the problem, then execute:
+
+```xml
+<instruction>
+Solve this by writing Python code:
+
+Problem: Calculate the compound interest on $10,000 at 5% annual rate,
+compounded monthly, for 3 years.
+
+Write a Python program to calculate this, then show the result.
+</instruction>
+```
+
+**Output**:
+```python
+principal = 10000
+rate = 0.05
+n = 12  # monthly compounding
+t = 3   # years
+
+amount = principal * (1 + rate/n)**(n*t)
+interest = amount - principal
+
+print(f"Final amount: ${amount:.2f}")
+print(f"Interest earned: ${interest:.2f}")
+
+# Result:
+# Final amount: $11,614.72
+# Interest earned: $1,614.72
+```
+
+## Pattern Selection Guide
+
+### Decision Tree
+
+```
+Start: What type of problem?
+
+├─ Simple factual query?
+│  └─ Zero-Shot
+│
+├─ Format-sensitive task?
+│  └─ Few-Shot (focus on output format)
+│
+├─ Multi-step reasoning needed?
+│  ├─ Single correct answer expected?
+│  │  └─ Chain-of-Thought
+│  │
+│  ├─ High-stakes, need confidence?
+│  │  └─ Self-Consistency (CoT × N paths)
+│  │
+│  └─ Multiple valid approaches exist?
+│     └─ Tree of Thoughts
+│
+├─ External information needed?
+│  └─ ReAct (with tool calling)
+│
+└─ Creative/open-ended task?
+   └─ ToT or Graph of Thoughts
+```
+
+### Quick Reference Table
+
+| Pattern | Tokens | Latency | Best For | Avoid When |
+|---------|--------|---------|----------|------------|
+| **Zero-Shot** | Low | Fast | Simple tasks | Complex reasoning |
+| **Zero-Shot CoT** | Medium | Medium | Quick reasoning | Pattern recognition |
+| **Few-Shot** | Medium | Medium | Format alignment | Strong modern models |
+| **Few-Shot CoT** | High | Slow | Complex math/logic | Simple queries |
+| **Self-Consistency** | Very High | Slow | High-stakes decisions | Cost-sensitive |
+| **ReAct** | High | Variable | Tool-heavy tasks | No tools available |
+| **ToT** | Very High | Very Slow | Multi-step puzzles | Time-critical apps |
+
+## Common Mistakes
+
+### Mistake 1: Using CoT for Everything
+
+**Problem**: CoT adds unnecessary overhead for simple tasks.
+
+```xml
+<!-- ❌ Overkill -->
+Q: What is 2 + 2?
+Let's think step by step...
+
+<!-- ✅ Appropriate -->
+Q: What is 2 + 2?
+A: 4
+```
+
+### Mistake 2: Wrong Temperature for Self-Consistency
+
+**Problem**: Low temperature produces identical paths.
+
+```java
+// ❌ All paths will be nearly identical
+.options(ChatOptions.builder().temperature(0.0).build())
+
+// ✅ Diverse paths for meaningful voting
+.options(ChatOptions.builder().temperature(0.8).build())
+```
+
+### Mistake 3: Insufficient Examples in Few-Shot
+
+**Problem**: Examples don't cover the task space.
+
+```xml
+<!-- ❌ Only positive examples -->
+Examples: [positive, positive, positive]
+Result: Model may never predict negative
+
+<!-- ✅ Balanced examples -->
+Examples: [positive, negative, neutral, edge_case]
+```
+
+### Mistake 4: ReAct Without Proper Tools
+
+**Problem**: Model hallucinates tool results.
+
+```xml
+<!-- ❌ No actual tools available -->
+Action: search("query")
+Observation: [model makes up results]
+
+<!-- ✅ Real tool integration -->
+Action: search("query")
+Observation: [actual API response]
+```
+
+## Summary
+
+**Key Takeaways**:
+
+1. **Start simple**: Zero-shot first, add complexity only when needed
+2. **Match pattern to problem**: CoT for reasoning, ReAct for tools, ToT for exploration
+3. **Modern models are capable**: GPT-4/Claude often don't need few-shot
+4. **Measure everything**: Track accuracy, latency, and cost per pattern
+5. **CoT isn't universal**: Some tasks are hurt by explicit reasoning
+
+**Next Chapter**: Now that you understand reasoning patterns, learn how to get **Structured Output** from LLMs—JSON schemas, XML tagging, and type-safe responses with Spring AI.
+
+---
+
+**Previous**: [2.1 Anatomy of a Prompt](./02-prompt-anatomy.mdx) ←
+**Next**: [2.3 Structured Output](./04-structured-output.mdx) →

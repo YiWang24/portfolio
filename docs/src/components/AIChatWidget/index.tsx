@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import styles from './AIChatWidget.module.css';
+import { Analytics } from "@vercel/analytics/next"
 
 interface Message {
     id: string;

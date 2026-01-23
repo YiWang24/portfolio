@@ -2,6 +2,10 @@
  * Enhanced Streaming Event Types
  * Matches backend ChatController event protocol
  * Similar to OpenAI o1/Gemini streaming behavior
+ *
+ * PURPOSE: Low-level SSE protocol event types
+ * Use for: StreamHandlers, StreamEvent, ToolExecution, parseStreamEvent
+ * See types/message.ts for high-level terminal message types
  */
 
 /**

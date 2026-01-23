@@ -1,0 +1,1548 @@
+---
+title: "5 Spring AI Implementation"
+description: "Production-ready AI applications with Spring AI 1.0: ChatClient, Advisors, RAG, Tool Calling, and enterprise patterns"
+published: 2025-01-21
+tags: ["prompt-engineering", "spring-ai", "java", "rag", "tool-calling"]
+category: "prompt-engineering"
+series: "Prompt Engineering Guide"
+seriesOrder: 4
+draft: false
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## Spring AI 1.0: Enterprise AI for Java
+
+Spring AI 1.0 (GA May 2025) provides production-grade abstractions for building AI-native applications with Spring Boot. Think "Spring Data for AI" — unified APIs across OpenAI, Anthropic, Gemini, Mistral, Ollama, and many more.
+
+### Why Spring AI?
+
+```plaintext
+Traditional AI Integration:                Spring AI:
+┌─────────────────────────────────┐        ┌─────────────────────────────────┐
+│ Raw HTTP calls to each provider │        │ Unified ChatClient API          │
+│ Manual JSON parsing             │        │ Type-safe responses             │
+│ No retry/resilience             │        │ Built-in resilience             │
+│ Custom RAG implementation       │        │ RAG with Advisors               │
+│ Ad-hoc tool calling             │        │ @Tool annotation                │
+│ No observability                │        │ Micrometer integration          │
+│ Copy-paste templates            │        │ PromptTemplate                  │
+└─────────────────────────────────┘        └─────────────────────────────────┘
+         Hours of boilerplate        →           Minutes to production
+```
+
+### Architecture Overview
+
+```plaintext
+┌──────────────────────────────────────────────────────────────────────┐
+│                         Spring AI 1.0                                │
+├──────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │
+│  │ ChatClient  │  │  Advisors   │  │VectorStore  │  │   Tools     │ │
+│  │   (Entry)   │  │  (Chain)    │  │   (RAG)     │  │ (@Tool)     │ │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘ │
+│         │                │                │                │        │
+│  ┌──────▼────────────────▼────────────────▼────────────────▼──────┐ │
+│  │                      ChatModel Abstraction                     │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│         │                │                │                │        │
+│  ┌──────▼──────┐  ┌──────▼──────┐  ┌──────▼──────┐  ┌──────▼──────┐ │
+│  │   OpenAI    │  │  Anthropic  │  │   Gemini    │  │   Ollama    │ │
+│  │   Client    │  │   Client    │  │   Client    │  │   Client    │ │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘ │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 1. ChatClient: The Foundation
+
+**ChatClient** is the primary entry point for all LLM interactions. It provides a fluent API for building prompts, calling models, and handling responses.
+
+### 1.1 Basic Configuration
+
+```java
+@Configuration
+public class AiConfig {
+
+    @Bean
+    public ChatClient chatClient(ChatClient.Builder builder) {
+        return builder
+            .defaultSystem("""
+                You are a helpful assistant for an e-commerce platform.
+                Always be concise and professional.
+                When uncertain, ask for clarification.
+                """)
+            .build();
+    }
+}
+
+@RestController
+@RequestMapping("/api/ai")
+@RequiredArgsConstructor
+public class ChatController {
+
+    private final ChatClient chatClient;
+
+    @PostMapping("/chat")
+    public Map<String, String> chat(@RequestBody ChatRequest request) {
+        String response = chatClient.prompt()
+            .user(request.message())
+            .call()
+            .content();
+
+        return Map.of("response", response);
+    }
+}
+```
+
+### 1.2 ChatClient Builder Deep Dive
+
+```java
+@Bean
+public ChatClient chatClient(
+        ChatClient.Builder builder,
+        VectorStore vectorStore,
+        ChatMemory chatMemory) {
+
+    return builder
+        // System prompt configuration
+        .defaultSystem(s -> s
+            .text("""
+                You are {role} for {company}.
+                Today's date: {date}.
+                Guidelines: {guidelines}
+                """)
+            .param("role", "customer support agent")
+            .param("company", "TechCorp")
+            .param("date", LocalDate.now().toString())
+            .param("guidelines", loadGuidelines()))
+
+        // Default user template
+        .defaultUser(u -> u
+            .text("{input}")
+            .media(MimeTypeUtils.IMAGE_PNG, imageResource)  // Multi-modal
+        )
+
+        // Default advisors (executed in order)
+        .defaultAdvisors(
+            // Memory advisor - must be first
+            MessageChatMemoryAdvisor.builder(chatMemory)
+                .chatMemoryRetrieveSize(10)
+                .build(),
+
+            // RAG advisor
+            QuestionAnswerAdvisor.builder(vectorStore)
+                .searchRequest(SearchRequest.builder()
+                    .topK(5)
+                    .similarityThreshold(0.7)
+                    .build())
+                .build(),
+
+            // Logging advisor
+            new SimpleLoggerAdvisor()
+        )
+
+        // Default tools
+        .defaultTools(
+            new WeatherTools(),
+            new CalculatorTools(),
+            new DatabaseTools()
+        )
+
+        // Default function callbacks (legacy)
+        .defaultFunctions("weatherFunction", "stockFunction")
+
+        .build();
+}
+```
+
+### 1.3 Call vs Stream
+
+<Tabs>
+<TabItem label="Blocking Call" value="blocking">
+```java
+@Service
+@RequiredArgsConstructor
+public class SyncChatService {
+
+    private final ChatClient chatClient;
+
+    public ChatResponse chat(String userMessage) {
+        // Blocking call - waits for complete response
+        ChatResponse response = chatClient.prompt()
+            .user(userMessage)
+            .call()
+            .chatResponse();
+
+        // Access metadata
+        String content = response.getResult().getOutput().getText();
+        Usage usage = response.getMetadata().getUsage();
+
+        log.info("Tokens used: input={}, output={}",
+            usage.getPromptTokens(),
+            usage.getCompletionTokens());
+
+        return response;
+    }
+
+    // Direct content extraction
+    public String getContent(String userMessage) {
+        return chatClient.prompt()
+            .user(userMessage)
+            .call()
+            .content();  // Returns String directly
+    }
+
+    // Typed entity extraction
+    public ProductAnalysis analyze(String productDescription) {
+        return chatClient.prompt()
+            .user("Analyze this product: " + productDescription)
+            .call()
+            .entity(ProductAnalysis.class);  // Type-safe
+    }
+}
+```
+</TabItem>
+
+<TabItem label="Streaming" value="streaming">
+```java
+@Service
+@RequiredArgsConstructor
+public class StreamingChatService {
+
+    private final ChatClient chatClient;
+
+    // Stream content chunks
+    public Flux<String> streamChat(String userMessage) {
+        return chatClient.prompt()
+            .user(userMessage)
+            .stream()
+            .content();  // Flux<String> of content chunks
+    }
+
+    // Stream with full response access
+    public Flux<ChatResponse> streamWithMetadata(String userMessage) {
+        return chatClient.prompt()
+            .user(userMessage)
+            .stream()
+            .chatResponse();  // Flux<ChatResponse>
+    }
+
+    // Server-Sent Events endpoint
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> streamEndpoint(
+            @RequestParam String message) {
+
+        return chatClient.prompt()
+            .user(message)
+            .stream()
+            .content()
+            .map(chunk -> ServerSentEvent.<String>builder()
+                .data(chunk)
+                .build())
+            .concatWith(Flux.just(ServerSentEvent.<String>builder()
+                .event("done")
+                .data("[DONE]")
+                .build()));
+    }
+
+    // Aggregated streaming (get full response after stream)
+    public Mono<String> streamAndAggregate(String userMessage) {
+        return chatClient.prompt()
+            .user(userMessage)
+            .stream()
+            .content()
+            .reduce("", (acc, chunk) -> acc + chunk);
+    }
+}
+```
+</TabItem>
+</Tabs>
+
+### 1.4 Multi-turn Conversations
+
+```java
+@Service
+public class ConversationService {
+
+    private final ChatClient chatClient;
+    private final ChatMemory chatMemory;
+
+    public ConversationService(ChatClient.Builder builder) {
+        this.chatMemory = new InMemoryChatMemory();
+        this.chatClient = builder
+            .defaultAdvisors(
+                MessageChatMemoryAdvisor.builder(chatMemory)
+                    .chatMemoryRetrieveSize(20)
+                    .build()
+            )
+            .build();
+    }
+
+    public String chat(String sessionId, String userMessage) {
+        return chatClient.prompt()
+            .user(userMessage)
+            .advisors(a -> a
+                .param(ChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY, sessionId))
+            .call()
+            .content();
+    }
+
+    // Clear conversation
+    public void clearConversation(String sessionId) {
+        chatMemory.clear(sessionId);
+    }
+
+    // Get conversation history
+    public List<Message> getHistory(String sessionId) {
+        return chatMemory.get(sessionId, 100);
+    }
+}
+```
+
+---
+
+## 2. PromptTemplate: Professional Prompt Management
+
+Spring AI's **PromptTemplate** provides first-class prompt management with variable substitution, custom delimiters, and resource loading.
+
+### 2.1 Basic Templates
+
+```java
+@Service
+public class PromptService {
+
+    private final ChatClient chatClient;
+
+    // Inline template
+    public String translate(String text, String targetLanguage) {
+        PromptTemplate template = PromptTemplate.builder()
+            .template("""
+                Translate the following text to {language}.
+                Maintain the original tone and style.
+                Only output the translation, nothing else.
+
+                Text: {text}
+                """)
+            .build();
+
+        return chatClient.prompt()
+            .user(u -> u.text(template.render(Map.of(
+                "language", targetLanguage,
+                "text", text
+            ))))
+            .call()
+            .content();
+    }
+
+    // Template from resource
+    public String analyzeCode(String code) {
+        PromptTemplate template = PromptTemplate.builder()
+            .resource(new ClassPathResource("prompts/code-review.st"))
+            .build();
+
+        return chatClient.prompt()
+            .user(u -> u.text(template.render(Map.of("code", code))))
+            .call()
+            .content();
+    }
+}
+```
+
+### 2.2 Custom Delimiters
+
+```java
+// Default: {variable}
+PromptTemplate defaultTemplate = PromptTemplate.builder()
+    .template("Hello {name}, welcome to {company}")
+    .build();
+
+// Custom: <variable>
+PromptTemplate angleTemplate = PromptTemplate.builder()
+    .renderer(StTemplateRenderer.builder()
+        .startDelimiterToken('<')
+        .endDelimiterToken('>')
+        .build())
+    .template("Hello <name>, welcome to <company>")
+    .build();
+
+// Custom: {{variable}} (useful when { } appear in content)
+PromptTemplate doubleTemplate = PromptTemplate.builder()
+    .renderer(StTemplateRenderer.builder()
+        .startDelimiterToken("{{")
+        .endDelimiterToken("}}")
+        .build())
+    .template("Generate JSON: {{schema}}")
+    .build();
+```
+
+### 2.3 Template Composition
+
+```java
+@Configuration
+public class PromptTemplateConfig {
+
+    @Bean
+    public PromptTemplate systemTemplate() {
+        return PromptTemplate.builder()
+            .resource(new ClassPathResource("prompts/system.st"))
+            .build();
+    }
+
+    @Bean
+    public PromptTemplate codeReviewTemplate() {
+        return PromptTemplate.builder()
+            .resource(new ClassPathResource("prompts/code-review.st"))
+            .build();
+    }
+
+    @Bean
+    public PromptTemplate ragTemplate() {
+        return PromptTemplate.builder()
+            .template("""
+                Context information is below.
+                ---------------------
+                {context}
+                ---------------------
+                Given the context information and not prior knowledge,
+                answer the query.
+                Query: {query}
+                Answer:
+                """)
+            .build();
+    }
+}
+
+@Service
+@RequiredArgsConstructor
+public class CompositePromptService {
+
+    private final ChatClient chatClient;
+    private final PromptTemplate systemTemplate;
+    private final PromptTemplate codeReviewTemplate;
+
+    public String reviewCode(String code, String language) {
+        String systemPrompt = systemTemplate.render(Map.of(
+            "role", "senior code reviewer",
+            "expertise", language
+        ));
+
+        String userPrompt = codeReviewTemplate.render(Map.of(
+            "code", code,
+            "language", language,
+            "focus_areas", List.of("security", "performance", "readability")
+        ));
+
+        return chatClient.prompt()
+            .system(systemPrompt)
+            .user(userPrompt)
+            .call()
+            .content();
+    }
+}
+```
+
+---
+
+## 3. Advisor API: The Chain of Responsibility
+
+Advisors provide a powerful chain-of-responsibility pattern for cross-cutting concerns like logging, RAG, memory, and custom processing.
+
+### 3.1 Advisor Architecture
+
+```plaintext
+Request Flow:
+┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+│  Memory  │ → │   RAG    │ → │ Logging  │ → │  Model   │
+│ Advisor  │    │ Advisor  │    │ Advisor  │    │          │
+└──────────┘    └──────────┘    └──────────┘    └──────────┘
+     │               │               │               │
+     │  Load chat    │  Retrieve     │  Log          │  Generate
+     │  history      │  context      │  request      │  response
+     │               │               │               │
+     ▼               ▼               ▼               ▼
+Response Flow (reverse order):
+┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+│  Model   │ → │ Logging  │ → │   RAG    │ → │  Memory  │
+│          │    │ Advisor  │    │ Advisor  │    │ Advisor  │
+└──────────┘    └──────────┘    └──────────┘    └──────────┘
+     │               │               │               │
+     │  Response     │  Log          │  (pass-      │  Save to
+     │  generated    │  response     │   through)   │  history
+```
+
+### 3.2 Built-in Advisors
+
+```java
+@Configuration
+public class AdvisorConfig {
+
+    @Bean
+    public ChatClient chatClient(
+            ChatClient.Builder builder,
+            VectorStore vectorStore,
+            ChatMemory chatMemory) {
+
+        return builder
+            .defaultAdvisors(
+                // 1. Memory Advisor - Conversation history
+                MessageChatMemoryAdvisor.builder(chatMemory)
+                    .chatMemoryRetrieveSize(15)
+                    .order(Ordered.HIGHEST_PRECEDENCE)  // First
+                    .build(),
+
+                // 2. RAG Advisor - Knowledge retrieval
+                QuestionAnswerAdvisor.builder(vectorStore)
+                    .searchRequest(SearchRequest.builder()
+                        .topK(5)
+                        .similarityThreshold(0.75)
+                        .filterExpression("category == 'docs'")
+                        .build())
+                    .order(Ordered.HIGHEST_PRECEDENCE + 100)
+                    .build(),
+
+                // 3. Safety Advisor - Content filtering
+                SafeGuardAdvisor.builder()
+                    .sensitiveWords(List.of("password", "secret", "key"))
+                    .build(),
+
+                // 4. Logging Advisor - Observability
+                new SimpleLoggerAdvisor()
+            )
+            .build();
+    }
+}
+```
+
+### 3.3 Custom Advisor Implementation
+
+```java
+@Component
+public class PromptEnhancementAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
+
+    private static final String ENHANCEMENT_TEMPLATE = """
+
+        Additional Instructions:
+        - Be concise and direct
+        - Use examples when explaining concepts
+        - Format code blocks with appropriate language tags
+        """;
+
+    @Override
+    public AdvisedResponse aroundCall(AdvisedRequest request, CallAroundAdvisorChain chain) {
+        // Modify the request before it reaches the model
+        AdvisedRequest enhancedRequest = AdvisedRequest.from(request)
+            .userText(request.userText() + ENHANCEMENT_TEMPLATE)
+            .build();
+
+        // Call next advisor in chain
+        AdvisedResponse response = chain.nextAroundCall(enhancedRequest);
+
+        // Optionally modify response
+        return response;
+    }
+
+    @Override
+    public Flux<AdvisedResponse> aroundStream(AdvisedRequest request, StreamAroundAdvisorChain chain) {
+        AdvisedRequest enhancedRequest = AdvisedRequest.from(request)
+            .userText(request.userText() + ENHANCEMENT_TEMPLATE)
+            .build();
+
+        return chain.nextAroundStream(enhancedRequest);
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE + 50;  // After memory, before RAG
+    }
+
+    @Override
+    public String getName() {
+        return "PromptEnhancementAdvisor";
+    }
+}
+
+// Rate Limiting Advisor
+@Component
+public class RateLimitingAdvisor implements CallAroundAdvisor {
+
+    private final RateLimiter rateLimiter;
+
+    public RateLimitingAdvisor(
+            @Value("${ai.rate-limit.requests-per-minute:60}") int rpm) {
+        this.rateLimiter = RateLimiter.create(rpm / 60.0);
+    }
+
+    @Override
+    public AdvisedResponse aroundCall(AdvisedRequest request, CallAroundAdvisorChain chain) {
+        if (!rateLimiter.tryAcquire(Duration.ofSeconds(30))) {
+            throw new RateLimitExceededException("Rate limit exceeded. Try again later.");
+        }
+        return chain.nextAroundCall(request);
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE;  // Very first
+    }
+}
+
+// Context Enrichment Advisor
+@Component
+@RequiredArgsConstructor
+public class UserContextAdvisor implements CallAroundAdvisor {
+
+    private final UserService userService;
+
+    @Override
+    public AdvisedResponse aroundCall(AdvisedRequest request, CallAroundAdvisorChain chain) {
+        // Get user context from request
+        String userId = (String) request.adviseContext().get("userId");
+
+        if (userId != null) {
+            User user = userService.findById(userId);
+            String contextEnhancement = String.format("""
+
+                User Context:
+                - Name: %s
+                - Subscription: %s
+                - Preferences: %s
+                """, user.getName(), user.getSubscription(), user.getPreferences());
+
+            AdvisedRequest enrichedRequest = AdvisedRequest.from(request)
+                .systemText(request.systemText() + contextEnhancement)
+                .build();
+
+            return chain.nextAroundCall(enrichedRequest);
+        }
+
+        return chain.nextAroundCall(request);
+    }
+}
+```
+
+---
+
+## 4. Retrieval-Augmented Generation (RAG)
+
+RAG enables AI to ground responses in your data by retrieving relevant context from vector stores.
+
+### 4.1 Vector Store Setup
+
+```java
+@Configuration
+public class VectorStoreConfig {
+
+    // PGVector (PostgreSQL)
+    @Bean
+    @Profile("postgres")
+    public VectorStore pgVectorStore(
+            JdbcTemplate jdbcTemplate,
+            EmbeddingModel embeddingModel) {
+        return PgVectorStore.builder(jdbcTemplate, embeddingModel)
+            .dimensions(1536)  // OpenAI embedding dimension
+            .distanceType(PgVectorStore.PgDistanceType.COSINE_DISTANCE)
+            .indexType(PgVectorStore.PgIndexType.HNSW)
+            .initializeSchema(true)
+            .build();
+    }
+
+    // Pinecone
+    @Bean
+    @Profile("pinecone")
+    public VectorStore pineconeVectorStore(
+            PineconeVectorStoreConfig config,
+            EmbeddingModel embeddingModel) {
+        return new PineconeVectorStore(config, embeddingModel);
+    }
+
+    // Redis
+    @Bean
+    @Profile("redis")
+    public VectorStore redisVectorStore(
+            RedisVectorStoreConfig config,
+            EmbeddingModel embeddingModel) {
+        return new RedisVectorStore(config, embeddingModel);
+    }
+
+    // Simple in-memory (for development)
+    @Bean
+    @Profile("dev")
+    public VectorStore simpleVectorStore(EmbeddingModel embeddingModel) {
+        return SimpleVectorStore.builder(embeddingModel).build();
+    }
+}
+```
+
+### 4.2 Document Ingestion Pipeline
+
+```java
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class DocumentIngestionService {
+
+    private final VectorStore vectorStore;
+    private final EmbeddingModel embeddingModel;
+
+    public void ingestDocuments(List<Resource> resources) {
+        // 1. Load documents
+        List<Document> documents = resources.stream()
+            .flatMap(resource -> loadDocument(resource).stream())
+            .toList();
+
+        // 2. Split into chunks
+        TokenTextSplitter splitter = new TokenTextSplitter(
+            500,   // chunk size in tokens
+            100,   // overlap
+            5,     // minimum chunk size
+            1000,  // max chunk size
+            true   // keep separator
+        );
+
+        List<Document> chunks = splitter.apply(documents);
+
+        // 3. Enrich with metadata
+        chunks.forEach(chunk -> {
+            chunk.getMetadata().put("ingested_at", Instant.now().toString());
+            chunk.getMetadata().put("chunk_index", chunks.indexOf(chunk));
+        });
+
+        // 4. Add to vector store (embeddings computed automatically)
+        vectorStore.add(chunks);
+
+        log.info("Ingested {} documents into {} chunks", resources.size(), chunks.size());
+    }
+
+    private List<Document> loadDocument(Resource resource) {
+        String filename = resource.getFilename();
+
+        if (filename.endsWith(".pdf")) {
+            return new PagePdfDocumentReader(resource).read();
+        } else if (filename.endsWith(".md") || filename.endsWith(".txt")) {
+            return new TextReader(resource).read();
+        } else if (filename.endsWith(".json")) {
+            return new JsonReader(resource).read();
+        }
+
+        throw new IllegalArgumentException("Unsupported file type: " + filename);
+    }
+
+    // Semantic search directly
+    public List<Document> search(String query, int topK) {
+        return vectorStore.similaritySearch(
+            SearchRequest.builder()
+                .query(query)
+                .topK(topK)
+                .similarityThreshold(0.7)
+                .build()
+        );
+    }
+}
+```
+
+### 4.3 QuestionAnswerAdvisor Configuration
+
+```java
+@Configuration
+public class RagConfig {
+
+    @Bean
+    public QuestionAnswerAdvisor questionAnswerAdvisor(VectorStore vectorStore) {
+        // Custom RAG prompt template
+        PromptTemplate ragPromptTemplate = PromptTemplate.builder()
+            .template("""
+                You are a helpful assistant with access to a knowledge base.
+
+                CONTEXT INFORMATION:
+                ---------------------
+                {question_answer_context}
+                ---------------------
+
+                INSTRUCTIONS:
+                1. Answer the user's question based ONLY on the context above
+                2. If the context doesn't contain enough information, say so clearly
+                3. Never make up information not present in the context
+                4. Cite specific parts of the context when relevant
+                5. Be concise and direct
+
+                USER QUESTION: {question}
+
+                ANSWER:
+                """)
+            .build();
+
+        return QuestionAnswerAdvisor.builder(vectorStore)
+            .searchRequest(SearchRequest.builder()
+                .topK(5)
+                .similarityThreshold(0.75)
+                .build())
+            .promptTemplate(ragPromptTemplate)
+            .build();
+    }
+
+    // Dynamic filtering based on user context
+    @Bean
+    public QuestionAnswerAdvisor contextAwareRagAdvisor(VectorStore vectorStore) {
+        return QuestionAnswerAdvisor.builder(vectorStore)
+            .searchRequest(SearchRequest.builder()
+                .topK(10)
+                .similarityThreshold(0.7)
+                .filterExpression(new FilterExpressionBuilder()
+                    .eq("department", "engineering")
+                    .and()
+                    .gte("updated_at", "2024-01-01")
+                    .build())
+                .build())
+            .build();
+    }
+}
+
+@Service
+@RequiredArgsConstructor
+public class RagChatService {
+
+    private final ChatClient chatClient;
+    private final QuestionAnswerAdvisor ragAdvisor;
+
+    public String chat(String question, String department) {
+        // Dynamic filter based on runtime context
+        SearchRequest dynamicSearch = SearchRequest.builder()
+            .query(question)
+            .topK(5)
+            .filterExpression("department == '" + department + "'")
+            .build();
+
+        return chatClient.prompt()
+            .user(question)
+            .advisors(ragAdvisor.withSearchRequest(dynamicSearch))
+            .call()
+            .content();
+    }
+}
+```
+
+---
+
+## 5. Tool Calling: AI-Powered Function Execution
+
+Tool calling enables AI models to interact with your application's APIs, databases, and external services.
+
+### 5.1 @Tool Annotation (Recommended)
+
+```java
+@Component
+public class CustomerTools {
+
+    private final CustomerRepository customerRepository;
+    private final OrderService orderService;
+
+    @Tool(description = "Look up customer information by email address")
+    public CustomerInfo getCustomerByEmail(
+            @ToolParam(description = "Customer's email address") String email) {
+
+        return customerRepository.findByEmail(email)
+            .map(c -> new CustomerInfo(c.getName(), c.getEmail(), c.getTier()))
+            .orElse(null);
+    }
+
+    @Tool(description = "Get recent orders for a customer")
+    public List<OrderSummary> getCustomerOrders(
+            @ToolParam(description = "Customer ID") String customerId,
+            @ToolParam(description = "Number of recent orders to retrieve") int limit) {
+
+        return orderService.getRecentOrders(customerId, limit)
+            .stream()
+            .map(o -> new OrderSummary(o.getId(), o.getTotal(), o.getStatus()))
+            .toList();
+    }
+
+    @Tool(description = "Create a support ticket for a customer issue")
+    public TicketResponse createSupportTicket(
+            @ToolParam(description = "Customer ID") String customerId,
+            @ToolParam(description = "Issue category: billing, technical, shipping, other") String category,
+            @ToolParam(description = "Detailed description of the issue") String description) {
+
+        Ticket ticket = supportService.createTicket(customerId, category, description);
+        return new TicketResponse(ticket.getId(), ticket.getStatus(), ticket.getEstimatedResponse());
+    }
+}
+
+@Component
+public class WeatherTools {
+
+    private final WeatherService weatherService;
+
+    @Tool(description = "Get current weather conditions for a city")
+    public WeatherInfo getCurrentWeather(
+            @ToolParam(description = "City name") String city,
+            @ToolParam(description = "Country code (ISO 3166-1 alpha-2)") String countryCode) {
+
+        return weatherService.getCurrentWeather(city, countryCode);
+    }
+
+    @Tool(description = "Get weather forecast for the next N days")
+    public List<ForecastDay> getWeatherForecast(
+            @ToolParam(description = "City name") String city,
+            @ToolParam(description = "Number of days (1-7)") int days) {
+
+        return weatherService.getForecast(city, Math.min(days, 7));
+    }
+}
+```
+
+### 5.2 Using Tools with ChatClient
+
+```java
+@Service
+@RequiredArgsConstructor
+public class ToolEnabledChatService {
+
+    private final ChatClient chatClient;
+    private final CustomerTools customerTools;
+    private final WeatherTools weatherTools;
+
+    public String chat(String userMessage) {
+        return chatClient.prompt()
+            .user(userMessage)
+            .tools(customerTools, weatherTools)  // Register tools
+            .call()
+            .content();
+    }
+
+    // With specific tools only
+    public String chatWithCustomerSupport(String userMessage) {
+        return chatClient.prompt()
+            .system("""
+                You are a customer support agent. Use the available tools to:
+                1. Look up customer information
+                2. Check order status
+                3. Create support tickets when needed
+                Always verify customer identity before sharing sensitive information.
+                """)
+            .user(userMessage)
+            .tools(customerTools)  // Only customer tools
+            .call()
+            .content();
+    }
+}
+```
+
+### 5.3 FunctionCallback (Programmatic)
+
+```java
+@Configuration
+public class FunctionConfig {
+
+    @Bean
+    public FunctionCallback calculateTaxFunction() {
+        return FunctionCallback.builder()
+            .function("calculateTax", (TaxRequest request) -> {
+                double tax = request.amount() * getTaxRate(request.state());
+                return new TaxResponse(tax, request.state());
+            })
+            .description("Calculate sales tax for a purchase amount")
+            .inputType(TaxRequest.class)
+            .build();
+    }
+
+    @Bean
+    public FunctionCallback searchProductsFunction(ProductService productService) {
+        return FunctionCallback.builder()
+            .function("searchProducts", (SearchRequest req) ->
+                productService.search(req.query(), req.category(), req.maxResults()))
+            .description("Search for products in the catalog")
+            .inputType(SearchRequest.class)
+            .build();
+    }
+
+    private double getTaxRate(String state) {
+        return switch (state) {
+            case "CA" -> 0.0725;
+            case "TX" -> 0.0625;
+            case "NY" -> 0.08;
+            default -> 0.05;
+        };
+    }
+
+    record TaxRequest(double amount, String state) {}
+    record TaxResponse(double tax, String state) {}
+    record SearchRequest(String query, String category, int maxResults) {}
+}
+```
+
+### 5.4 Tool Execution Control
+
+```java
+@Service
+public class ControlledToolService {
+
+    private final ChatClient chatClient;
+
+    // Let model decide which tools to call
+    public String autoToolSelection(String message, Object... tools) {
+        return chatClient.prompt()
+            .user(message)
+            .tools(tools)
+            .toolChoice(ToolChoice.AUTO)  // Default
+            .call()
+            .content();
+    }
+
+    // Force a specific tool to be called
+    public String forceToolCall(String message, String toolName, Object... tools) {
+        return chatClient.prompt()
+            .user(message)
+            .tools(tools)
+            .toolChoice(ToolChoice.function(toolName))
+            .call()
+            .content();
+    }
+
+    // Disable tool calling
+    public String noTools(String message) {
+        return chatClient.prompt()
+            .user(message)
+            .toolChoice(ToolChoice.NONE)
+            .call()
+            .content();
+    }
+}
+```
+
+---
+
+## 6. Structured Output with Type Safety
+
+Spring AI provides **BeanOutputConverter** for type-safe response parsing.
+
+### 6.1 Basic Usage
+
+```java
+@Service
+@RequiredArgsConstructor
+public class StructuredOutputService {
+
+    private final ChatClient chatClient;
+
+    // Using .entity() shorthand
+    public ProductAnalysis analyzeProduct(String description) {
+        return chatClient.prompt()
+            .user("Analyze this product: " + description)
+            .call()
+            .entity(ProductAnalysis.class);
+    }
+
+    // Using explicit converter
+    public SentimentResult analyzeSentiment(String text) {
+        BeanOutputConverter<SentimentResult> converter =
+            new BeanOutputConverter<>(SentimentResult.class);
+
+        String response = chatClient.prompt()
+            .user(u -> u.text("""
+                Analyze the sentiment of this text:
+                {text}
+
+                {format}
+                """)
+                .param("text", text)
+                .param("format", converter.getFormat()))
+            .call()
+            .content();
+
+        return converter.convert(response);
+    }
+
+    // List output
+    public List<ExtractedEntity> extractEntities(String text) {
+        return chatClient.prompt()
+            .user("Extract all named entities from: " + text)
+            .call()
+            .entity(new ParameterizedTypeReference<List<ExtractedEntity>>() {});
+    }
+}
+
+// Response types with Jackson annotations
+@JsonClassDescription("Product analysis result")
+public record ProductAnalysis(
+    @JsonProperty(required = true)
+    @JsonPropertyDescription("Product category")
+    String category,
+
+    @JsonProperty(required = true)
+    @JsonPropertyDescription("Quality score from 1-10")
+    int qualityScore,
+
+    @JsonProperty(required = true)
+    @JsonPropertyDescription("Key features identified")
+    List<String> features,
+
+    @JsonPropertyDescription("Potential improvements")
+    List<String> improvements,
+
+    @JsonProperty(required = true)
+    @JsonPropertyDescription("Confidence level: LOW, MEDIUM, HIGH")
+    ConfidenceLevel confidence
+) {
+    public enum ConfidenceLevel { LOW, MEDIUM, HIGH }
+}
+```
+
+### 6.2 Complex Nested Types
+
+```java
+public record OrderAnalysis(
+    @JsonProperty(required = true)
+    CustomerProfile customer,
+
+    @JsonProperty(required = true)
+    List<ProductRecommendation> recommendations,
+
+    @JsonProperty(required = true)
+    RiskAssessment risk,
+
+    ActionPlan nextSteps
+) {
+    public record CustomerProfile(
+        String segment,
+        double lifetimeValue,
+        List<String> preferences
+    ) {}
+
+    public record ProductRecommendation(
+        String productId,
+        String reason,
+        double confidence
+    ) {}
+
+    public record RiskAssessment(
+        String level,
+        List<String> factors
+    ) {}
+
+    public record ActionPlan(
+        List<String> immediate,
+        List<String> shortTerm,
+        List<String> longTerm
+    ) {}
+}
+```
+
+---
+
+## 7. Model Context Protocol (MCP) Integration
+
+Spring AI supports MCP for connecting to external tool providers.
+
+```java
+@Configuration
+public class McpConfig {
+
+    @Bean
+    public McpSyncClient mcpClient() {
+        return McpSyncClient.builder()
+            .transport(new StdioClientTransport(
+                "npx", "-y", "@anthropic-ai/mcp-server-filesystem"))
+            .build();
+    }
+
+    @Bean
+    public List<ToolCallback> mcpTools(McpSyncClient mcpClient) {
+        // Convert MCP tools to Spring AI ToolCallbacks
+        return mcpClient.listTools().tools().stream()
+            .map(tool -> McpFunctionCallback.builder()
+                .function(tool.name(), mcpClient)
+                .description(tool.description())
+                .inputSchema(tool.inputSchema())
+                .build())
+            .toList();
+    }
+}
+```
+
+---
+
+## 8. Error Handling & Resilience
+
+### 8.1 Retry Configuration
+
+```java
+@Configuration
+public class AiResilienceConfig {
+
+    @Bean
+    public ChatClient resilientChatClient(
+            ChatClient.Builder builder,
+            RetryTemplate retryTemplate) {
+
+        return builder
+            .defaultAdvisors(new RetryAdvisor(retryTemplate))
+            .build();
+    }
+
+    @Bean
+    public RetryTemplate aiRetryTemplate() {
+        return RetryTemplate.builder()
+            .maxAttempts(3)
+            .exponentialBackoff(Duration.ofSeconds(1), 2.0, Duration.ofSeconds(10))
+            .retryOn(List.of(
+                RateLimitException.class,
+                ServiceUnavailableException.class,
+                TimeoutException.class
+            ))
+            .build();
+    }
+}
+```
+
+### 8.2 Circuit Breaker
+
+```java
+@Service
+public class ResilientAiService {
+
+    private final ChatClient chatClient;
+    private final CircuitBreakerRegistry circuitBreakerRegistry;
+
+    public String chat(String message) {
+        CircuitBreaker breaker = circuitBreakerRegistry.circuitBreaker("ai-service");
+
+        return breaker.executeSupplier(() ->
+            chatClient.prompt()
+                .user(message)
+                .call()
+                .content()
+        );
+    }
+
+    // With fallback
+    public String chatWithFallback(String message) {
+        CircuitBreaker breaker = circuitBreakerRegistry.circuitBreaker("ai-service");
+
+        return Try.ofSupplier(CircuitBreaker.decorateSupplier(breaker, () ->
+            chatClient.prompt().user(message).call().content()
+        )).recover(throwable -> {
+            log.warn("AI service unavailable, using fallback: {}", throwable.getMessage());
+            return "I'm temporarily unavailable. Please try again shortly.";
+        }).get();
+    }
+}
+```
+
+### 8.3 Timeout Handling
+
+```java
+@Service
+public class TimeoutAwareService {
+
+    private final ChatClient chatClient;
+
+    public String chatWithTimeout(String message, Duration timeout) {
+        return chatClient.prompt()
+            .user(message)
+            .options(ChatOptions.builder()
+                .timeout(timeout)
+                .build())
+            .call()
+            .content();
+    }
+
+    // Async with timeout
+    public CompletableFuture<String> asyncChat(String message) {
+        return CompletableFuture.supplyAsync(() ->
+            chatClient.prompt().user(message).call().content()
+        ).orTimeout(30, TimeUnit.SECONDS);
+    }
+}
+```
+
+---
+
+## 9. Observability & Monitoring
+
+### 9.1 Micrometer Integration
+
+```java
+@Configuration
+public class AiObservabilityConfig {
+
+    @Bean
+    public ObservationRegistry observationRegistry() {
+        return ObservationRegistry.create();
+    }
+
+    @Bean
+    public ChatClient observableChatClient(
+            ChatClient.Builder builder,
+            ObservationRegistry registry) {
+
+        return builder
+            .defaultAdvisors(new ObservationAdvisor(registry))
+            .build();
+    }
+}
+
+// Custom metrics advisor
+@Component
+@RequiredArgsConstructor
+public class MetricsAdvisor implements CallAroundAdvisor {
+
+    private final MeterRegistry meterRegistry;
+
+    @Override
+    public AdvisedResponse aroundCall(AdvisedRequest request, CallAroundAdvisorChain chain) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+
+        try {
+            AdvisedResponse response = chain.nextAroundCall(request);
+
+            // Record success metrics
+            sample.stop(Timer.builder("ai.request.duration")
+                .tag("status", "success")
+                .register(meterRegistry));
+
+            // Token usage
+            Usage usage = response.response().getMetadata().getUsage();
+            meterRegistry.counter("ai.tokens.input").increment(usage.getPromptTokens());
+            meterRegistry.counter("ai.tokens.output").increment(usage.getCompletionTokens());
+
+            return response;
+
+        } catch (Exception e) {
+            sample.stop(Timer.builder("ai.request.duration")
+                .tag("status", "error")
+                .tag("exception", e.getClass().getSimpleName())
+                .register(meterRegistry));
+            throw e;
+        }
+    }
+}
+```
+
+### 9.2 Logging Advisor
+
+```java
+@Component
+@Slf4j
+public class DetailedLoggingAdvisor implements CallAroundAdvisor {
+
+    @Override
+    public AdvisedResponse aroundCall(AdvisedRequest request, CallAroundAdvisorChain chain) {
+        String requestId = UUID.randomUUID().toString().substring(0, 8);
+
+        log.info("[{}] AI Request - System: {}chars, User: {}chars",
+            requestId,
+            request.systemText() != null ? request.systemText().length() : 0,
+            request.userText().length());
+
+        long startTime = System.currentTimeMillis();
+        AdvisedResponse response = chain.nextAroundCall(request);
+        long duration = System.currentTimeMillis() - startTime;
+
+        Usage usage = response.response().getMetadata().getUsage();
+        log.info("[{}] AI Response - Duration: {}ms, Tokens: in={}, out={}, Response: {}chars",
+            requestId,
+            duration,
+            usage.getPromptTokens(),
+            usage.getCompletionTokens(),
+            response.response().getResult().getOutput().getText().length());
+
+        return response;
+    }
+}
+```
+
+---
+
+## 10. Testing Spring AI Applications
+
+### 10.1 Mock ChatClient
+
+```java
+@SpringBootTest
+class ChatServiceTest {
+
+    @MockBean
+    private ChatClient.Builder chatClientBuilder;
+
+    @Mock
+    private ChatClient mockChatClient;
+
+    @Autowired
+    private ChatService chatService;
+
+    @BeforeEach
+    void setup() {
+        when(chatClientBuilder.build()).thenReturn(mockChatClient);
+    }
+
+    @Test
+    void shouldReturnExpectedResponse() {
+        // Arrange
+        ChatClient.CallResponseSpec mockSpec = mock(ChatClient.CallResponseSpec.class);
+        when(mockChatClient.prompt()).thenReturn(mock(ChatClient.PromptSpec.class));
+        when(mockChatClient.prompt().user(anyString())).thenReturn(mock(ChatClient.UserSpec.class));
+        when(mockChatClient.prompt().user(anyString()).call()).thenReturn(mockSpec);
+        when(mockSpec.content()).thenReturn("Expected response");
+
+        // Act
+        String result = chatService.chat("Test message");
+
+        // Assert
+        assertThat(result).isEqualTo("Expected response");
+    }
+}
+```
+
+### 10.2 Integration Testing with Testcontainers
+
+```java
+@SpringBootTest
+@Testcontainers
+class RagIntegrationTest {
+
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("pgvector/pgvector:pg16")
+        .withDatabaseName("test")
+        .withUsername("test")
+        .withPassword("test");
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
+
+    @Autowired
+    private VectorStore vectorStore;
+
+    @Autowired
+    private DocumentIngestionService ingestionService;
+
+    @Test
+    void shouldRetrieveRelevantDocuments() {
+        // Ingest test documents
+        ingestionService.ingestDocuments(List.of(
+            new ClassPathResource("test-docs/spring-ai-intro.md"),
+            new ClassPathResource("test-docs/rag-patterns.md")
+        ));
+
+        // Search
+        List<Document> results = vectorStore.similaritySearch(
+            SearchRequest.builder()
+                .query("How does RAG work in Spring AI?")
+                .topK(3)
+                .build()
+        );
+
+        assertThat(results).isNotEmpty();
+        assertThat(results.get(0).getContent()).containsIgnoringCase("RAG");
+    }
+}
+```
+
+### 10.3 Evaluation Testing
+
+```java
+@SpringBootTest
+class PromptEvaluationTest {
+
+    @Autowired
+    private ChatClient chatClient;
+
+    @Test
+    void evaluateResponseQuality() {
+        // Test data
+        String question = "What is the capital of France?";
+        String expectedAnswer = "Paris";
+
+        // Get response
+        String response = chatClient.prompt()
+            .user(question)
+            .call()
+            .content();
+
+        // Evaluate
+        assertThat(response.toLowerCase()).contains("paris");
+    }
+
+    @Test
+    void evaluateRagRelevance() {
+        // Setup evaluation
+        var evaluator = RelevancyEvaluator.builder()
+            .chatClient(chatClient)
+            .build();
+
+        EvaluationRequest request = EvaluationRequest.builder()
+            .userText("What features does Spring AI support?")
+            .responseContent(getActualResponse())
+            .build();
+
+        EvaluationResponse evaluation = evaluator.evaluate(request);
+
+        assertThat(evaluation.isPass()).isTrue();
+        assertThat(evaluation.getScore()).isGreaterThan(0.7);
+    }
+}
+```
+
+---
+
+## 11. Production Patterns
+
+### Pattern Decision Matrix
+
+| Scenario | Pattern | Key Components |
+|----------|---------|----------------|
+| Simple Q&A | Basic ChatClient | ChatClient, PromptTemplate |
+| Knowledge Base | RAG | VectorStore, QuestionAnswerAdvisor |
+| Multi-turn Chat | Memory | ChatMemory, MessageChatMemoryAdvisor |
+| API Integration | Tool Calling | @Tool, FunctionCallback |
+| Data Extraction | Structured Output | BeanOutputConverter |
+| Real-time UI | Streaming | Flux, SSE |
+| High Availability | Resilience | CircuitBreaker, Retry |
+| Cost Control | Rate Limiting | RateLimitingAdvisor |
+
+### Configuration Checklist
+
+```yaml
+# application.yml
+spring:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o
+          temperature: 0.7
+          max-tokens: 2000
+
+    retry:
+      max-attempts: 3
+      backoff:
+        initial-interval: 1000
+        multiplier: 2
+
+    vectorstore:
+      pgvector:
+        dimensions: 1536
+        index-type: hnsw
+```
+
+---
+
+## References
+
+1. Spring AI. (2025). *Spring AI Reference Documentation*. [Spring.io](https://docs.spring.io/spring-ai/reference/)
+2. Spring Blog. (2025). *Spring AI 1.0 GA Released*. [Spring Blog](https://spring.io/blog/2025/05/20/spring-ai-1-0-GA-released)
+3. Anthropic. (2024). *Model Context Protocol Specification*. [MCP Docs](https://modelcontextprotocol.io/)
+4. BrilliantTech. (2025). *Java Spring Boot & Generative AI Guide*.
+5. CodingShuttle. (2025). *RAG in Spring AI*.
+
+---
+
+**Previous**: [2.3 Structured Output](./04-structured-output.mdx) ←
+**Next**: [2.5 Evaluation & Version Control](./06-evaluation-versioning.mdx) →

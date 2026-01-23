@@ -1,10 +1,13 @@
 import Layout from "@theme/Layout";
 import Heading from "@theme/Heading";
 import Link from "@docusaurus/Link";
+import { Analytics } from "@vercel/analytics/next"
+import { JSX } from "react";
 
 export default function Home(): JSX.Element {
   return (
     <Layout title="CS Knowledge Base" description="Computer Science & Engineering Documentation">
+      <Analytics />
       <main>
         {/* Hero Section - Compact Knowledge Entry */}
         <section className="hero">

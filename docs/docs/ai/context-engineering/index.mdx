@@ -1,0 +1,333 @@
+---
+id: index
+title: Context Engineering
+sidebar_label: Overview
+description: Techniques and patterns for managing context windows and optimizing information retrieval in AI applications
+---
+
+# Context Engineering
+
+Context engineering focuses on the critical challenge of managing limited context windows in Large Language Models (LLMs). It encompasses strategies for selecting, organizing, and optimizing the information that models can access at inference time.
+
+## The Context Window Challenge
+
+### What is a Context Window?
+
+The **context window** is the maximum amount of text (measured in tokens) that an LLM can process in a single request. This includes:
+- System prompts
+- Conversation history
+- Retrieved documents
+- User input
+- Expected output
+
+### Context Window Sizes (2025)
+
+| Model | Context Window | Notes |
+|-------|----------------|-------|
+| GPT-4 Turbo | 128K tokens | Production-proven |
+| Claude 3.5 Sonnet | 200K tokens | Excellent for code |
+| Gemini Pro | 1M tokens | Largest available |
+| Claude 3 Opus | 200K tokens | High quality |
+
+**Key Insight:** Token count ≠ Word count. Roughly 1K tokens ≈ 750 words, but code and special characters use more tokens.
+
+## The Core Problems
+
+### 1. Limited Capacity
+
+```
+Problem: Important information gets cut off when it exceeds the context window.
+
+Example: A 500-page technical manual cannot fit in a single request.
+Impact: The model cannot see all relevant information and may miss critical details.
+```
+
+### 2. Information Density
+
+```
+Problem: Not all information is equally valuable.
+
+Example: A 100-page document may contain only 5 pages of relevant information.
+Impact: Filling context with low-value information wastes limited capacity.
+```
+
+### 3. Retrieval Precision
+
+```
+Problem: Finding the RIGHT information is harder than finding SOME information.
+
+Example: Searching for "authentication" may return irrelevant mentions.
+Impact: Poor retrieval leads to poor responses regardless of model quality.
+```
+
+## Context Engineering Strategies
+
+### Strategy 1: Retrieval-Augmented Generation (RAG)
+
+**Concept:** Retrieve only the most relevant documents and inject them into the context.
+
+```python
+# Basic RAG flow
+user_query = "How do I implement OAuth 2.0 with Spring Security?"
+
+# 1. Search for relevant documents
+relevant_docs = vector_store.search(query, top_k=5)
+
+# 2. Build context
+context = "\n\n".join([doc.content for doc in relevant_docs])
+
+# 3. Inject into prompt
+prompt = f"""
+Context:
+{context}
+
+Question: {user_query}
+
+Answer based on the context above.
+"""
+```
+
+**Best Practices:**
+- Use semantic search (embeddings) not keyword search
+- Implement relevance scoring with thresholds
+- Include document metadata (source, date, author)
+
+### Strategy 2: Hierarchical Summarization
+
+**Concept:** Create multi-level summaries to provide both overview and details.
+
+```python
+# Three-tier summary structure
+class DocumentSummary:
+    executive_summary: str  # 100 words, high-level concepts
+    section_summaries: List[str]  # 300 words each, key points
+    detailed_excerpts: List[str]  # Full text for critical sections
+
+# Use based on query complexity
+if query.is_high_level():
+    context = doc.executive_summary
+elif query.requires_detail():
+    context = doc.section_summaries
+else:
+    context = doc.detailed_excerpts
+```
+
+### Strategy 3: Query-Based Routing
+
+**Concept:** Route queries to specialized contexts based on intent.
+
+```python
+# Intent-based context selection
+query_intents = analyze_intents(user_query)
+
+if "code" in query_intents:
+    context = code_repository_context
+elif "documentation" in query_intents:
+    context = documentation_context
+elif "architecture" in query_intents:
+    context = architecture_diagrams_context
+else:
+    context = general_knowledge_base
+```
+
+### Strategy 4: Dynamic Context Pruning
+
+**Concept:** Continuously remove less relevant information as context fills up.
+
+```python
+# Priority-based context management
+context_items = [
+    {"content": item, "priority": score, "timestamp": now}
+    for item, score in retrieved_items
+]
+
+# Sort by priority and keep top-N
+context_items.sort(key=lambda x: x["priority"], reverse=True)
+active_context = context_items[:max_items]
+
+# Remove oldest low-priority items when at capacity
+def should_add(new_item, current_context):
+    if len(current_context) < max_items:
+        return True
+    lowest_priority = min(current_context, key=lambda x: x["priority"])
+    return new_item["priority"] > lowest_priority["priority"]
+```
+
+## Optimization Techniques
+
+### 1. Token Optimization
+
+**Compress prompts without losing meaning:**
+
+```python
+# Verbose: 150 tokens
+"""
+You are a helpful assistant with expertise in Java programming,
+specifically the Spring Boot framework. Please help the user by
+answering their questions about building web applications.
+"""
+
+# Concise: 35 tokens (same effect)
+"Expert Spring Boot developer. Answer questions concisely with code examples."
+```
+
+### 2. Reusable Context Patterns
+
+**Define context templates:**
+
+```python
+# Define once, reuse everywhere
+SYSTEM_PROMPTS = {
+    "code_review": """Senior code reviewer. Focus on: security, performance,
+                     maintainability. Provide specific line references.""",
+
+    "architecture": """Solutions architect. Consider: scalability, reliability,
+                      cost-efficiency. Compare trade-offs explicitly.""",
+
+    "debugging": """Senior engineer. Debug systematically: identify symptoms,
+                  analyze causes, propose solutions with verification steps."""
+}
+```
+
+### 3. Context Caching
+
+**Cache expensive context operations:**
+
+```python
+# Cache embeddings and search results
+@cache.memoize(timeout=3600)
+def get_context_for_query(query: str) -> List[Document]:
+    # Expensive: embedding + search
+    return vector_store.search(query, top_k=10)
+
+# Only retrieve new information each request
+cached_context = get_context_for_query(query)
+new_information = filter_new(cached_context, recent_docs)
+final_context = cached_context + new_information
+```
+
+### 4. Multi-Turn Context Management
+
+**Manage conversation history efficiently:**
+
+```python
+class ConversationManager:
+    def summarize_history(self, messages: List[Message]) -> str:
+        """Compress old messages into summary"""
+        recent = messages[-5:]  # Keep last 5 messages verbatim
+        old = messages[:-5]  # Summarize older messages
+
+        summary = llm.complete(f"""
+        Summarize this conversation concisely:
+        {format_messages(old)}
+
+        Include: topics discussed, decisions made, key information.
+        """)
+
+        return f"Previous conversation summary:\n{summary}\n\nRecent messages:\n{format_messages(recent)}"
+```
+
+## Evaluation Metrics
+
+### Context Quality Metrics
+
+| Metric | Description | Target |
+|--------|-------------|--------|
+| **Retrieval Precision** | % of retrieved docs that are relevant | > 80% |
+| **Retrieval Recall** | % of relevant docs that are retrieved | > 70% |
+| **Context Utilization** | % of context window that's actually used | > 60% |
+| **Answer Accuracy** | % of answers that use retrieved info correctly | > 85% |
+
+### Monitoring
+
+```python
+# Track context performance
+context_metrics = {
+    "retrieval_time": time_taken,
+    "tokens_used": input_tokens + output_tokens,
+    "retrieved_docs": len(retrieved),
+    "context_precision": calculate_precision(retrieved, relevant),
+    "answer_relevance": score_relevance(answer, query),
+}
+
+# Log for analysis
+context_logger.log(context_metrics)
+```
+
+## Tools and Frameworks
+
+### Vector Databases (for Semantic Search)
+
+- **Pinecone**: Managed vector database with excellent performance
+- **Weaviate**: Open-source, supports hybrid search
+- **Qdrant**: High-performance, easy to self-host
+- **pgvector**: PostgreSQL extension for vector search
+
+### Context Management Libraries
+
+- **LangChain**: Context managers, retrievers, and document loaders
+- **LlamaIndex**: Advanced indexing and retrieval strategies
+- **Haystack**: Deep learning for context retrieval
+- **Chroma**: Lightweight vector database for development
+
+## Advanced Patterns
+
+### The Re-Ranking Pattern
+
+```
+1. Initial Retrieval: Get 50-100 documents (fast, approximate)
+2. Re-Ranking: Use a more sophisticated model to rank top 10
+3. Context Injection: Use only the top 5 for actual generation
+```
+
+### The Knowledge Graph Pattern
+
+```
+1. Extract entities and relationships from documents
+2. Build a graph of connected information
+3. Traverse graph to find related context
+4. Provide both documents AND relationships
+```
+
+### The Mixture of Experts Pattern
+
+```
+1. Classify query type (code, architecture, debugging)
+2. Route to specialized retrieval system for that type
+3. Use domain-specific context templates
+4. Merge results for comprehensive answer
+```
+
+## Common Pitfalls
+
+### Pitfall 1: Over-Retrieval
+
+**Problem:** Retrieving too many documents drowns out relevant information.
+
+**Solution:** Focus on precision over recall. Better to miss a document than to have 50 irrelevant ones.
+
+### Pitfall 2: Ignoring Metadata
+
+**Problem:** Not filtering by date, version, or relevance leads to stale information.
+
+**Solution:** Always include metadata in retrieval and display it to users.
+
+### Pitfall 3: Static Context
+
+**Problem:** Using the same context for all queries regardless of intent.
+
+**Solution:** Implement query analysis and dynamic context selection.
+
+## Best Practices Summary
+
+1. **Measure everything**: Track retrieval quality and context utilization
+2. **Iterate constantly**: Context engineering requires continuous refinement
+3. **Balance breadth and depth**: Don't sacrifice breadth for relevance or vice versa
+4. **Involve users**: Let them provide feedback on context quality
+5. **Plan for scale**: Design context systems that handle growth
+
+## Further Reading
+
+- [Attention Mechanisms in Transformers](https://arxiv.org/abs/1706.03762)
+- [Retrieval-Augmented Generation for Large Language Models](https://arxiv.org/abs/2005.11401)
+- [Context Window Optimization Techniques](https://blog.anthropic.com/context-optimization)

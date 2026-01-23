@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Send, Copy, Terminal, CheckCircle2, Github, Linkedin, Mail, Signal, GitBranch, Cpu, Twitter } from "lucide-react";
 import { SectionBadge } from "./SectionBadge";
@@ -26,6 +26,14 @@ export function ContactSection({ email, name, socials }: ContactSectionProps) {
     const developerName = name || "Yi Wang";
     // Prefer email from socials, fallback to prop, then default
     const contactEmail = socials.email || email || "yi@example.com";
+
+    // Memoize social links to prevent recreation on every render
+    const socialLinks = useMemo(() => [
+        { name: "GitHub", icon: Github, href: socials.github || "https://github.com", color: "hover:text-foreground group-hover:border-foreground/20" },
+        { name: "LinkedIn", icon: Linkedin, href: socials.linkedin || "https://linkedin.com", color: "hover:text-blue-400 group-hover:border-blue-400/30" },
+        { name: "Twitter", icon: Twitter, href: socials.twitter || "https://twitter.com", color: "hover:text-sky-400 group-hover:border-sky-400/30" },
+        { name: "Email", icon: Mail, href: `mailto:${socials.email || "yi@example.com"}`, color: "hover:text-primary group-hover:border-primary/30" },
+    ], [socials.github, socials.linkedin, socials.twitter, socials.email]);
 
     const handleCopyEmail = () => {
         navigator.clipboard.writeText(contactEmail);
@@ -70,7 +78,7 @@ export function ContactSection({ email, name, socials }: ContactSectionProps) {
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="text-4xl md:text-5xl font-bold font-mono tracking-tight"
+                        className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold font-mono tracking-tight"
                     >
                         <span className="text-slate-900 dark:text-white">INITIATE_</span>
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500 dark:from-emerald-400 dark:to-cyan-400 ">UPLINK</span>
@@ -160,7 +168,7 @@ export function ContactSection({ email, name, socials }: ContactSectionProps) {
                                             <button
                                                 type="submit"
                                                 disabled={isSubmitting}
-                                                className="w-full py-3 mt-4 border border-teal-600/30 dark:border-emerald-500/50 text-teal-700 dark:text-emerald-500 bg-teal-50 dark:bg-emerald-500/10 font-mono text-sm uppercase tracking-widest font-bold transition-all hover:bg-teal-600 dark:hover:bg-emerald-500 hover:text-white dark:hover:text-black hover:border-teal-600 dark:hover:border-emerald-500 hover:shadow-lg dark:hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden rounded-md"
+                                                className="min-h-[48px] w-full py-3 mt-4 border border-teal-600/30 dark:border-emerald-500/50 text-teal-700 dark:text-emerald-500 bg-teal-50 dark:bg-emerald-500/10 font-mono text-sm uppercase tracking-widest font-bold transition-all hover:bg-teal-600 dark:hover:bg-emerald-500 hover:text-white dark:hover:text-black hover:border-teal-600 dark:hover:border-emerald-500 hover:shadow-lg dark:hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden rounded-md"
                                             >
                                                 <span className="relative z-10 flex items-center justify-center gap-2">
                                                     {isSubmitting ? (
@@ -242,12 +250,7 @@ export function ContactSection({ email, name, socials }: ContactSectionProps) {
 
                         {/* Social Links - Compact 2x2 Grid */}
                         <div className="grid grid-cols-2 gap-3">
-                            {[
-                                { name: "GitHub", icon: Github, href: socials.github || "https://github.com", color: "hover:text-foreground group-hover:border-foreground/20" },
-                                { name: "LinkedIn", icon: Linkedin, href: socials.linkedin || "https://linkedin.com", color: "hover:text-blue-400 group-hover:border-blue-400/30" },
-                                { name: "Twitter", icon: Twitter, href: socials.twitter || "https://twitter.com", color: "hover:text-sky-400 group-hover:border-sky-400/30" },
-                                { name: "Email", icon: Mail, href: `mailto:${socials.email || "yi@example.com"}`, color: "hover:text-primary group-hover:border-primary/30" },
-                            ].map((social) => (
+                            {socialLinks.map((social) => (
                                 <a
                                     key={social.name}
                                     href={social.href}

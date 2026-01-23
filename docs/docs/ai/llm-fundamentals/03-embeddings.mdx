@@ -1,0 +1,456 @@
+---
+id: embeddings
+title: Embeddings - The Semantic Space
+sidebar_label: 3 Embeddings
+description: From Word2Vec to Matryoshka - understanding how LLMs capture meaning in vector space. Updated for 2025.
+slug: /ai/llm-fundamentals/embeddings
+---
+
+# Embeddings: The Semantic Space
+
+> **"Embeddings are the bridge between the discrete world of words and the continuous world of numbers."**
+
+If Tokenization is how LLMs "read," Embeddings are how they "understand." An embedding is a vector—a list of numbers—that represents the meaning of a token.
+
+---
+
+## What is a Vector Embedding?
+
+This section introduces the fundamental concept of vector embeddings and how they enable machines to represent and process meaning numerically.
+
+Imagine a 2D graph.
+- **"Dog"** might be at coordinates `[0.8, 0.2]`.
+- **"Cat"** might be at `[0.7, 0.3]` (close to Dog).
+- **"Car"** might be at `[-0.9, -0.5]` (far away).
+
+Now scale this up to **4,096 dimensions** (Llama 3/4) or **12,288 dimensions** (GPT-4). This high-dimensional space allows the model to capture subtle nuances of meaning—gender, plurality, tone, intent, and relationships.
+
+### The Math of Meaning
+
+The most famous example from the Word2Vec era (2013) still holds true:
+
+$$
+\text{vector("King")} - \text{vector("Man")} + \text{vector("Woman")} \approx \text{vector("Queen")}
+$$
+
+This isn't hard-coded. It's an emergent property of minimizing prediction error during training.
+
+### 2025: Embedding Dimensions by Model
+
+| Model | Embedding Dimension | Type |
+|-------|-------------------|------|
+| **GPT-4o** | 12,288 | Contextual (decoder) |
+| **Llama 3/4** | 4,096 | Contextual (decoder) |
+| **Claude 3.5** | ~12,288 | Contextual (decoder) |
+| **OpenAI ada-002** | 1,536 | Static (sentence encoder) |
+| **all-MiniLM-L6-v2** | 384 | Static (sentence encoder) |
+| **BERT-base** | 768 | Contextual (encoder) |
+| **RoBERTa** | 1,024 | Contextual (encoder) |
+
+---
+
+## Static vs. Contextual Embeddings
+
+Understanding the evolution from static to contextual embeddings is crucial for grasping how modern language models handle ambiguity and context-dependent meanings.
+
+This is a **critical** interview distinction.
+
+### 1. Static Embeddings (Word2Vec, GloVe)
+- **Era**: Pre-2018.
+- **Mechanism**: Every word has **one fixed vector**.
+- **The Problem**: The word "Bank" in "Bank of America" has the exact same vector as in "river bank." The model has to figure out the context *after* the embedding layer.
+
+### 2. Contextual Embeddings (BERT, GPT)
+- **Era**: 2018-Present.
+- **Mechanism**: The initial input embedding is static, but as it passes through the Transformer layers, the vector changes to incorporate context from surrounding words.
+- **Result**: The output vector for "Bank" in "river bank" is mathematically different from "Bank" in "financial bank."
+
+### 3. Sentence Embeddings (2025 Standard)
+
+**Sentence Transformers** (SBERT, all-MiniLM, etc.) take this further:
+- **Goal**: Encode entire sentences/documents into fixed vectors
+- **Use Case**: Semantic search, RAG, clustering, similarity matching
+- **Mechanism**: Mean pooling over token embeddings
+
+$$
+\text{sentence\_embedding} = \frac{1}{n} \sum_{i=1}^{n} v_i
+$$
+
+Where $v_i$ is the contextual embedding of token $i$.
+
+**Example**:
+```python
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer("all-MiniLM-L6-v2")
+sentences = [
+    "The weather is lovely today.",
+    "It's so sunny outside!",
+    "He drove to the stadium.",
+]
+
+embeddings = model.encode(sentences)  # Shape: [3, 384]
+similarities = model.similarity(embeddings, embeddings)
+# [[1.0000, 0.6660, 0.1046],  # Weather sentences similar
+#  [0.6660, 1.0000, 0.1411],
+#  [0.1046, 0.1411, 1.0000]]  # Stadium sentence different
+```
+
+---
+
+## Measuring Similarity: Cosine vs. Dot Product
+
+This section explores the two primary methods for measuring vector similarity and when to use each in different machine learning applications.
+
+How do we know if two vectors are similar?
+
+### Dot Product
+$$ A \cdot B = \sum_{i} A_i B_i $$
+- **Captures**: Magnitude AND Direction.
+- **Use Case**: When the *length* of the vector matters (e.g., in attention scores where we want to preserve signal strength).
+- **Attention**: Self-attention uses scaled dot-product: $(A \cdot B) / \sqrt{d_k}$
+
+### Cosine Similarity
+$$ \text{similarity} = \frac{A \cdot B}{||A|| \times ||B||} $$
+- **Captures**: Direction ONLY (normalized).
+- **Use Case**: Semantic search, RAG. We generally don't care if one text is longer than another; we care if they are about the same topic.
+- **Range**: -1 (Opposite) to 1 (Identical).
+
+```python
+import numpy as np
+
+def cosine_similarity(v1, v2):
+    return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+
+# In high-dimensional space, almost all random vectors are orthogonal (similarity ~0).
+# Meaningful similarity acts as a very strong signal.
+```
+
+### 2025: When to Use Which
+
+| Use Case | Similarity Metric | Why |
+|----------|-------------------|-----|
+| **Self-Attention** | Dot Product (scaled) | Preserves magnitude, efficient |
+| **Semantic Search / RAG** | Cosine Similarity | Length-independent, semantic focus |
+| **Document Clustering** | Cosine Similarity | Normalized comparison |
+| **Recommendation** | Dot Product | Signal strength matters |
+
+---
+
+## Positional Embeddings: How Models Know "Order"
+
+Transformers process all tokens simultaneously, requiring explicit positional information to understand word order. This section covers the evolution of positional encoding techniques.
+
+Since the Transformer architecture processes all tokens in parallel (unlike RNNs), it has no inherent concept of "first," "second," or "third." We must inject this information.
+
+### 1. Absolute Positional Embeddings (Original Transformer, BERT)
+- **Method**: Add a fixed vector `P_0` to the first token, `P_1` to the second.
+- **Limitation**: Hard to generalize to sequences longer than those seen during training.
+
+### 2. Relative Positional Embeddings (T5, ALiBi)
+- **Method**: Instead of "Token 5," learn the distance "Token A is 3 steps away from Token B."
+- **Benefit**: Better generalization to longer contexts.
+
+### 3. RoPE (Rotary Positional Embeddings) - **The Gold Standard**
+Used by **Llama 2/3/4, PaLM, Mistral, GPT-NeoX**.
+
+- **Intuition**: Encode position by **rotating** the vector in space.
+- **Mechanism**:
+    - Tokens at position $m$ are rotated by angle $m\theta$.
+    - The dot product (similarity) between two tokens depends only on their relative distance ($m-n$).
+- **Why it wins**:
+    - **Decay**: Attention naturally decays as tokens get further apart (long-term dependency management).
+    - **Extrapolation**: It handles context lengths longer than training data better than absolute embeddings.
+
+> **Interview Tip**: If asked "Why does Llama use RoPE?", answer: "It allows for better length extrapolation and captures relative position information naturally through vector rotation, combining the benefits of absolute and relative encodings."
+
+### 2025: Advanced Positional Encodings
+
+**PaTH Attention** (MIT 2025):
+- Treats in-between words as a path of data-dependent transformations
+- Each transformation uses Householder reflections
+- Gives models a sense of "positional memory"
+- Combined with **Forgetting Transformers (FoX)** to selectively down-weight old information
+
+**Impact**:
+- Better tracking of state changes in code
+- Improved sequential reasoning
+- Stronger performance on long-context tasks
+
+---
+
+## 2025: Matryoshka Embeddings (MRL)
+
+Matryoshka embeddings represent a breakthrough in efficiency, allowing a single model to produce embeddings at multiple dimensions without quality loss. This section explains this cutting-edge technique and its practical implications.
+
+**The biggest advancement in embeddings for 2024-2025.**
+
+### What are Matryoshka Embeddings?
+
+Inspired by Russian nesting dolls, Matryoshka Representation Learning (MRL) creates **nested, truncatable embeddings**:
+- A single model produces a $d$-dimensional vector
+- The first $k$ dimensions (where $k \in \{64, 128, ..., d\}$) form a valid lower-dimensional embedding
+- No retraining needed to use different dimensions
+
+**Example**: A 1024-dim embedding contains:
+- 64-dim prefix (coarse information)
+- 128-dim prefix (fine-grained)
+- 256-dim prefix (detailed)
+- ...
+- 1024-dim full (maximum fidelity)
+
+### Why MRL Matters
+
+**Adaptive Deployment**:
+```python
+# Same model, different embedding sizes
+embedding_1024 = model.encode(text)        # Full quality
+embedding_512 = model.encode(text)[:512]   # 98% quality, 2x faster
+embedding_128 = model.encode(text)[:128]   # 90% quality, 8x faster
+```
+
+**Cost Savings**:
+- **Storage**: 128-dim embeddings use 12.5% storage of 1024-dim
+- **Memory**: Lower RAM usage for on-device inference
+- **Latency**: Faster vector similarity computation
+- **Trade-off**: Typically only 2-10% performance loss at 128-dim
+
+### Training MRL Models
+
+**Multi-scale InfoNCE Loss**:
+```python
+# Standard contrastive loss at multiple dimensions
+dimensions = [64, 128, 256, 512, 1024]
+total_loss = 0
+
+for dim in dimensions:
+    emb_truncated = embeddings[:, :dim]
+    loss = contrastive_loss(emb_truncated, labels)
+    total_loss += loss
+
+# Optimize all scales simultaneously
+total_loss.backward()
+```
+
+**Key Innovation**: Important information is prioritized in earlier dimensions.
+
+### 2025 State of MRL
+
+**Models**:
+- **mixedbread-ai/mxbai-embed-2d-large-v1**: First 2D-Matryoshka model
+- **OpenAI**: Exploring MRL for next-gen embeddings
+- **Cohere**: Using MRL for efficient retrieval
+
+**Applications**:
+- **Temporal Retrieval**: Time-aware news clustering with MRL
+- **Multimodal**: Cross-modal retrieval with flexible dimensions
+- **On-device**: Mobile search with low-dim embeddings
+- **RAG Systems**: Hybrid retrieval (fast low-dim filter, slow high-dim rerank)
+
+**Binary Quantization + MRL**:
+- Combine MRL (dimensionality reduction) with binary quantization (1-bit per dimension)
+- **Result**: 64 bytes per embedding (vs 4KB for float32 1024-dim)
+- **Performance**: ~85-90% of float32 quality at `<2%` storage cost
+
+---
+
+## Making It Concrete: PyTorch Example
+
+This section provides a hands-on PyTorch implementation demonstrating how embeddings are actually created and used in neural networks.
+
+A simple look at an embedding layer in code.
+
+```python
+import torch.nn as nn
+
+# Vocabulary size: 30,000 tokens
+# Embedding Dimension: 512
+embedding_layer = nn.Embedding(30000, 512)
+
+# Input: Token IDs [101, 45, 23]
+input_ids = torch.tensor([101, 45, 23])
+
+# Output: 3 vectors of size 512
+vectors = embedding_layer(input_ids)
+print(vectors.shape) # torch.Size([3, 512])
+```
+
+The `embedding_layer` is just a lookup table (matrix) of size $30,000 \times 512$. These are learned parameters, updated via backpropagation just like any other weight.
+
+### 2025: Modern Embedding Pipeline
+
+```python
+from sentence_transformers import SentenceTransformer
+
+# Load model with Matryoshka support
+model = SentenceTransformer("mixedbread-ai/mxbai-embed-2d-large-v1")
+
+# Encode with flexible dimensions
+text = "Semantic search is powerful."
+
+# Full 1024-dim embedding
+emb_full = model.encode(text)  # Shape: (1024,)
+
+# Truncated to 256-dim (no retraining needed)
+emb_256 = model.encode(text)[:256]  # Shape: (256,)
+
+# Use for different scenarios
+# - Full 1024: Production search (max quality)
+# - 512-dim: Caching layer
+# - 256-dim: Fast pre-filtering
+# - 128-dim: On-device search
+```
+
+---
+
+## Interview FAQ
+
+Common interview questions about embeddings with detailed, technically accurate answers to help you demonstrate deep understanding in technical discussions.
+
+<details>
+<summary><strong>Q: Why do we use dot product in Attention equations instead of Cosine Similarity?</strong></summary>
+
+**A:** Computational efficiency. Dot product is a simple matrix multiplication. Cosine similarity requires calculating norms (square roots) for every vector pair, which is expensive. In self-attention, we usually scale the dot product by dividing by the square root of $d_k$ (the dimension of keys), written as $1/\sqrt{d_k}$, to prevent gradients from vanishing. This mimics normalization without the full cost.
+
+**2025 Update**: Some modern architectures (e.g., RoPE) implicitly normalize through rotation, making dot product behave more like cosine similarity while retaining efficiency.
+</details>
+
+<details>
+<summary><strong>Q: How do you handle Out-Of-Vocabulary (OOV) words with embeddings?</strong></summary>
+
+**A:** Modern BPE tokenizers eliminate the OOV problem for almost all text. If a word is "unknown," it is broken down into sub-word chunks (or ultimately individual bytes) which *are* in the vocabulary. There is rarely a literal `<UNK>` token in modern production use for general text.
+
+**2025 Update**: Byte-level BPE (standard in GPT-4o, Llama 3/4) guarantees zero OOV since any Unicode text can be represented as bytes.
+</details>
+
+<details>
+<summary><strong>Q: What is the "Curse of Dimensionality" in vector search?</strong></summary>
+
+**A:** As dimensions increase, the notion of "distance" becomes less meaningful—all points tend to be equidistant from each other. However, in the *manifold* where language data lives, embeddings work because the data lies on a lower-dimensional structure within that high-dimensional space.
+
+**2025 Mitigation**: Matryoshka embeddings address this by allowing you to work in lower-dimensional subspaces where distance metrics remain meaningful, only scaling up to full dimensions when needed.
+</details>
+
+<details>
+<summary><strong>Q: What's the difference between ada-002, BERT, and Llama embeddings?</strong></summary>
+
+**A:** Three key differences:
+
+1. **Purpose**:
+   - **ada-002**: Designed for semantic similarity/search (static sentence embeddings)
+   - **BERT**: Designed for masked language modeling (contextual word embeddings)
+   - **Llama**: Designed for next-token prediction (contextual token embeddings)
+
+2. **Usage**:
+   - **ada-002**: Single forward pass, get fixed vector for retrieval/RAG
+   - **BERT**: Encode all tokens, get contextualized vectors (use CLS token or mean pool)
+   - **Llama**: Dynamic embeddings that change during generation
+
+3. **Training**:
+   - **ada-002**: Contrastive learning on query-document pairs
+   - **BERT**: Masked language modeling + next sentence prediction
+   - **Llama**: Causal language modeling (predict next token)
+
+**Rule of thumb**: Use ada-002 for RAG/search, BERT for classification/NLU, Llama for generation.
+</details>
+
+<details>
+<summary><strong>Q: When should I use Matryoshka embeddings vs standard embeddings?</strong></summary>
+
+**A:** Use Matryoshka when:
+- **Resource constraints**: Need to run on mobile/edge devices with limited RAM
+- **Multi-stage retrieval**: Fast low-dim pre-filter, slow high-dim rerank
+- **Variable quality needs**: Different users/devices need different quality levels
+- **Storage concerns**: Want to reduce vector database costs by 50-90%
+
+Use standard embeddings when:
+- **Consistent resources**: All deployments have similar compute
+- **Max quality needed**: Can afford full-dimensional computation
+- **Simple pipeline**: Don't want complexity of variable dimensions
+
+**2025 Verdict**: MRL is becoming the default for production RAG systems due to its flexibility without quality sacrifice.
+</details>
+
+<details>
+<summary><strong>Q: How do pooling strategies (mean, max, CLS) affect sentence embeddings?</strong></summary>
+
+**A:** Three common strategies:
+
+**Mean Pooling** (most common):
+$$
+s = \frac{1}{n} \sum_{i=1}^{n} v_i
+$$
+- Averages all token embeddings
+- Works well for general semantic similarity
+- Used by: Sentence-Transformers, all-MiniLM
+
+**Max Pooling**:
+$$
+s_j = \max_{i=1}^{n} v_{i,j}
+$$
+- Takes maximum value across tokens for each dimension
+- Captures salient features
+- Good for keyword spotting
+
+**CLS Token**:
+$$
+s = v_{\text{[CLS]}}
+$$
+- Uses special classification token
+- BERT-style: trained to represent sentence meaning
+- Can be less reliable for long sentences
+
+**2025 Best Practice**: Mean pooling with normalization (L2 norm) for most semantic search tasks. CLS token for classification tasks.
+</details>
+
+---
+
+## Summary for Interviews
+
+A concise list summarizing key embedding concepts for quick review before technical interviews.
+
+1. **Embeddings bridge discrete tokens and continuous vectors**, capturing semantic meaning.
+2. **Static embeddings** (Word2Vec): One vector per word, no context awareness.
+3. **Contextual embeddings** (BERT, GPT): Vectors change based on surrounding context.
+4. **Sentence embeddings**: Fixed vectors for sentences via mean pooling (SBERT, all-MiniLM).
+5. **RoPE dominates** positional encoding for 2025: Better extrapolation, relative position awareness.
+6. **Matryoshka embeddings (MRL)** are the 2025 breakthrough: Nested, truncatable embeddings without retraining.
+7. **Cosine similarity** for semantic search (length-independent), **dot product** for attention (magnitude matters).
+8. **Dimensionality trends**: 384-1536 for sentence encoders, 4k-12k for LLM token embeddings.
+9. **MRL benefits**: Adaptive deployment, 50-90% cost savings, 2-10% quality loss.
+10. **2025 tooling**: sentence-transformers library, OpenAI ada-002, mixedbread MRL models.
+
+:::tip Practice
+Try the sentence-transformers library to build intuition:
+
+```python
+from sentence_transformers import SentenceTransformer
+import numpy as np
+
+# Load model
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+# Compare sentences
+s1 = "The cat sits on the mat."
+s2 = "A feline is resting on a rug."
+s3 = "The stock market crashed today."
+
+emb1 = model.encode(s1)
+emb2 = model.encode(s2)
+emb3 = model.encode(s3)
+
+# Cosine similarity
+def cos_sim(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+print(f"Similarity (s1, s2): {cos_sim(emb1, emb2):.3f}")  # ~0.7 (high)
+print(f"Similarity (s1, s3): {cos_sim(emb1, emb3):.3f}")  # ~0.1 (low)
+```
+
+For advanced practice, explore Matryoshka models from mixedbread.ai:
+```python
+model = SentenceTransformer("mixedbread-ai/mxbai-embed-2d-large-v1")
+emb_full = model.encode("Your text here")
+emb_128 = emb_full[:128]  # Truncated without retraining!
+```
+:::

@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import profile from "@/data/profile.json";
 import { StatusBar } from "./StatusBar";
 import TerminalConversation, {
   TerminalConversationRef,

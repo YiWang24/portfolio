@@ -90,7 +90,7 @@ function SocialLink({
       aria-label={label}
       whileHover={{ y: -2, scale: 1.08 }}
       whileTap={{ scale: 0.95 }}
-      className="group relative flex items-center justify-center w-12 h-12 rounded-xl border border-border text-muted-foreground hover:text-emerald-400 hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all duration-300"
+      className="group relative flex items-center justify-center w-12 h-12 sm:w-12 sm:h-12 min-h-[48px] min-w-[48px] rounded-xl border border-border text-muted-foreground hover:text-emerald-400 hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all duration-300"
     >
       {/* Glow effect on hover */}
       <div className="absolute inset-0 rounded-xl bg-emerald-500/0 group-hover:bg-emerald-500/5 transition-all duration-300" />
@@ -196,9 +196,9 @@ export function AboutSection({ about, education }: AboutSectionProps) {
   ].filter(Boolean) as Array<{ icon: React.ComponentType<{ className?: string }>; href: string; label: string }>;
 
   return (
-    <section className="relative w-full min-h-[calc(100vh-100px)] flex items-center justify-center overflow-hidden py-4 md:py-8">
+    <section className="relative w-full min-h-[calc(100vh-100px)] flex items-center justify-center overflow-hidden py-6 md:py-8 px-4">
       {/* Main Container - Asymmetric Split */}
-      <div className="relative z-10 w-full max-w-[95%] xl:max-w-[1300px] grid lg:grid-cols-[340px_1fr] gap-8 lg:gap-12 items-start">
+      <div className="relative z-10 w-full max-w-[95%] xl:max-w-[1300px] grid lg:grid-cols-[340px_1fr] gap-6 lg:gap-12 items-start">
         {/* ===== Left Column: Profile Sidebar ===== */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
@@ -208,7 +208,7 @@ export function AboutSection({ about, education }: AboutSectionProps) {
         >
           {/* Profile Section */}
           <div className="relative">
-            <div className="relative p-4 rounded-2xl border border-slate-200 dark:border-border flex flex-col gap-2 bg-white dark:bg-transparent shadow-lg shadow-slate-200/50 dark:shadow-none">
+            <div className="relative p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-border flex flex-col gap-2 bg-white dark:bg-transparent shadow-lg shadow-slate-200/50 dark:shadow-none">
               {/* Avatar with status indicator */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -317,7 +317,7 @@ export function AboutSection({ about, education }: AboutSectionProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
-            className="p-6 rounded-2xl border border-border"
+            className="p-4 md:p-6 rounded-2xl border border-border"
           >
             {/* Education Header */}
             <div className="flex items-center gap-3 mb-6">

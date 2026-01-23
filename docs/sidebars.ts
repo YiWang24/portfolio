@@ -6,11 +6,11 @@ const sidebars: SidebarsConfig = {
     {
       type: "doc",
       id: "cs/index",
-      label: "🧠 CS Core Overview",
+      label: "CS Core Overview",
     },
     {
       type: "category",
-      label: "📊 Algorithms & DS",
+      label: "Algorithms & DS",
       collapsed: false,
       items: [
         {
@@ -23,7 +23,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "🏛️ System Design",
+      label: "System Design",
       collapsed: false,
       items: [
         {
@@ -36,7 +36,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "🗄️ Database Internals",
+      label: "Database Internals",
       collapsed: false,
       items: [
         {
@@ -49,7 +49,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "🌐 Network & OS",
+      label: "Network & OS",
       collapsed: false,
       items: [
         {
@@ -67,24 +67,110 @@ const sidebars: SidebarsConfig = {
     {
       type: "doc",
       id: "ai/index",
-      label: "🤖 AI & Agents Overview",
+      label: "AI & Agents Overview",
     },
     {
       type: "category",
-      label: "🧠 LLM Fundamentals",
+      label: "LLM Foundational",
       collapsed: false,
       items: [
         {
           type: "doc",
-          id: "ai/llm-fundamentals/index",
-          label: "Overview",
+          id: "ai/llm-fundamentals/introduction",
+          label: "Introduction",
         },
-        // Add more LLM topics here
+        {
+          type: "doc",
+          id: "ai/llm-fundamentals/tokenization",
+          label: "Tokenization",
+        },
+        {
+          type: "doc",
+          id: "ai/llm-fundamentals/embeddings",
+          label: "Embeddings",
+        },
+        {
+          type: "doc",
+          id: "ai/llm-fundamentals/transformer-architecture",
+          label: "Transformer Architecture",
+        },
+        {
+          type: "doc",
+          id: "ai/llm-fundamentals/training-pipeline",
+          label: "Training Pipeline",
+        },
+        {
+          type: "doc",
+          id: "ai/llm-fundamentals/inference",
+          label: "Inference",
+        },
+        {
+          type: "doc",
+          id: "ai/llm-fundamentals/limitations",
+          label: "Cognitive Limitations",
+        },
       ],
     },
     {
       type: "category",
-      label: "📚 RAG Systems",
+      label: "Prompt Engineering",
+      collapsed: false,
+      items: [
+        {
+          type: "doc",
+          id: "ai/prompt-engineering/index",
+          label: "Overview",
+        },
+        {
+          type: "doc",
+          id: "ai/prompt-engineering/introduction",
+          label: "1. Introduction",
+        },
+        {
+          type: "doc",
+          id: "ai/prompt-engineering/prompt-anatomy",
+          label: "2.1 Anatomy of a Prompt",
+        },
+        {
+          type: "doc",
+          id: "ai/prompt-engineering/reasoning-patterns",
+          label: "2.2 Core Reasoning Patterns",
+        },
+        {
+          type: "doc",
+          id: "ai/prompt-engineering/structured-output",
+          label: "2.3 Structured Output",
+        },
+        {
+          type: "doc",
+          id: "ai/prompt-engineering/spring-ai",
+          label: "2.4 Spring AI Implementation",
+        },
+        {
+          type: "doc",
+          id: "ai/prompt-engineering/evaluation-versioning",
+          label: "2.5 Evaluation & Versioning",
+        },
+        {
+          type: "doc",
+          id: "ai/prompt-engineering/advanced-techniques",
+          label: "3.1 Advanced Techniques",
+        },
+        {
+          type: "doc",
+          id: "ai/prompt-engineering/multimodal",
+          label: "3.2 Multi-modal Prompting",
+        },
+        {
+          type: "doc",
+          id: "ai/prompt-engineering/agent-orchestration",
+          label: "3.3 Agent Orchestration",
+        },
+      ],
+    },
+    {
+      type: "category",
+      label: "RAG",
       collapsed: false,
       items: [
         {
@@ -92,12 +178,11 @@ const sidebars: SidebarsConfig = {
           id: "ai/rag/index",
           label: "Overview",
         },
-        // Add more RAG topics here
       ],
     },
     {
       type: "category",
-      label: "🤝 Agents & Tools",
+      label: "Agents",
       collapsed: false,
       items: [
         {
@@ -105,21 +190,83 @@ const sidebars: SidebarsConfig = {
           id: "ai/agents/index",
           label: "Overview",
         },
-        // Add more agent topics here
+        {
+          type: "doc",
+          id: "ai/agents/introduction",
+          label: "1. Core Concepts & Definition",
+        },
+        {
+          type: "doc",
+          id: "ai/agents/architecture",
+          label: "2. Architecture Components",
+        },
+        {
+          type: "doc",
+          id: "ai/agents/design-patterns",
+          label: "3. Design Patterns",
+        },
+        {
+          type: "doc",
+          id: "ai/agents/frameworks",
+          label: "4. Frameworks & Tech Stack",
+        },
+        {
+          type: "doc",
+          id: "ai/agents/engineering",
+          label: "5. Engineering & Production",
+        },
+        {
+          type: "doc",
+          id: "ai/agents/frontier",
+          label: "6. Frontier Trends",
+        },
       ],
     },
     {
       type: "category",
-      label: "🍃 Spring AI",
+      label: "MCP",
       collapsed: false,
       items: [
         {
           type: "doc",
-          id: "ai/spring-ai/index",
+          id: "ai/mcp/index",
           label: "Overview",
         },
-        // Add more Spring AI topics here
+        {
+          type: "doc",
+          id: "ai/mcp/interview-qa",
+          label: "Interview Q&A",
+        },
       ],
+    },
+    {
+      type: "category",
+      label: "Context Engineering",
+      collapsed: false,
+      items: [
+        {
+          type: "doc",
+          id: "ai/context-engineering/index",
+          label: "Overview",
+        },
+      ],
+    },
+    {
+      type: "category",
+      label: "AgentOps and Security",
+      collapsed: false,
+      items: [
+        {
+          type: "doc",
+          id: "ai/agentops-security/index",
+          label: "Overview",
+        },
+      ],
+    },
+    {
+      type: "doc",
+      id: "ai/internship/internship",
+      label: "Java & AI Internship Guide",
     },
   ],
 
@@ -128,11 +275,11 @@ const sidebars: SidebarsConfig = {
     {
       type: "doc",
       id: "engineering/index",
-      label: "🛠️ Engineering Overview",
+      label: "Engineering Overview",
     },
     {
       type: "category",
-      label: "☕ Backend (Java)",
+      label: "Backend (Java)",
       collapsed: false,
       items: [
         {
@@ -145,7 +292,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "⚛️ Frontend",
+      label: "Frontend",
       collapsed: false,
       items: [
         {
@@ -158,7 +305,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "☁️ DevOps & Cloud",
+      label: "DevOps & Cloud",
       collapsed: false,
       items: [
         {
@@ -171,7 +318,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "🧰 Dev Tools",
+      label: "Dev Tools",
       collapsed: false,
       items: [
         {
@@ -189,21 +336,20 @@ const sidebars: SidebarsConfig = {
     {
       type: "doc",
       id: "projects/index",
-      label: "🚀 Case Studies Overview",
+      label: "Case Studies Overview",
     },
     {
       type: "doc",
       id: "projects/rag-knowledge-base",
-      label: "📚 RAG Knowledge Base",
+      label: "RAG Knowledge Base",
     },
     {
       type: "doc",
       id: "projects/ecommerce-refactor",
-      label: "🛒 E-commerce Refactor",
+      label: "E-commerce Refactor",
     },
     // Add more case studies here
   ],
 };
 
 export default sidebars;
-

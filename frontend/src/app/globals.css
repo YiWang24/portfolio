@@ -112,6 +112,13 @@
     @apply bg-background text-foreground;
     font-family: var(--font-saira), sans-serif;
     min-height: 100vh;
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  html {
+    overflow-x: hidden;
+    width: 100%;
   }
 }
 
@@ -361,6 +368,7 @@ input {
 
 main {
   width: 100%;
+  max-width: 100vw;
   margin: 0 auto;
   padding: 0;
   display: flex;
@@ -368,6 +376,7 @@ main {
   gap: 0;
   position: relative;
   z-index: 10;
+  overflow-x: hidden;
 }
 
 .hero-frame {
@@ -380,8 +389,10 @@ main {
   -webkit-backdrop-filter: blur(24px);
   border-radius: 12px;
   overflow: hidden;
+  overflow-x: hidden;
   position: relative;
-  
+  width: 100%;
+  max-width: 100vw;
 }
 
 /* Dark Mode: Void glass effect */
@@ -559,6 +570,21 @@ main {
   transition: filter 0.15s;
 }
 
+/* Mobile: Increase touch target size for traffic lights without changing visual size */
+@media (max-width: 767px) {
+  .cli-traffic-lights .light {
+    position: relative;
+  }
+  .cli-traffic-lights .light::before {
+    content: '';
+    position: absolute;
+    inset: -8px; /* Extend touch target to 28x28px */
+  }
+  .cli-traffic-lights {
+    gap: 12px;
+  }
+}
+
 .cli-traffic-lights .light.red {
   background: #ff5f56;
 }
@@ -619,6 +645,8 @@ main {
   line-height: 1.6;
   position: relative;
   z-index: 1;
+  max-width: 100%;
+  width: 100%;
   /* 防止滚动影响外部页面 */
   overscroll-behavior: contain;
   /* Hide scrollbar for IE, Edge and Firefox */
@@ -2235,6 +2263,21 @@ main {
 
   .cli-terminal {
     border-radius: 0;
+  }
+
+  /* Prevent text selection on tap */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Improve scrolling performance */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent double-tap zoom on form elements */
+  input, textarea, select {
+    font-size: 16px !important;
   }
 }
 

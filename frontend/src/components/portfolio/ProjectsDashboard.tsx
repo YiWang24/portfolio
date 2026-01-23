@@ -6,15 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionBadge } from "./SectionBadge";
+import { safeOpenUrl } from "@/lib/utils/validation";
 import type { ProfileData } from "@/types/profile";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 interface ProjectsDashboardProps {
     projects: ProfileData["projects"];
 }
 
 // Visual component for live data visualization
-function LiveSparkline({ seed, color = "text-cyan-500" }: { seed: number, color?: string }) {
+const LiveSparkline = React.memo(function LiveSparkline({ seed, color = "text-cyan-500" }: { seed: number, color?: string }) {
     const [path, setPath] = useState("");
     const [fillPath, setFillPath] = useState("");
 
@@ -81,17 +82,17 @@ function LiveSparkline({ seed, color = "text-cyan-500" }: { seed: number, color?
             />
         </svg>
     );
-}
+});
 
 export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
     const featuredProject = projects[0];
     const standardProjects = projects.slice(1);
 
     return (
-        <section className="relative w-full min-h-screen flex items-center justify-center py-20 px-4">
-            <div className="w-full max-w-6xl space-y-12">
+        <section className="relative w-full min-h-screen flex items-center justify-center py-12 md:py-20 px-4">
+            <div className="w-full max-w-6xl space-y-8 md:space-y-12">
                 {/* Section Header */}
-                <div className="flex flex-row items-center justify-between w-full mb-16">
+                <div className="flex flex-row items-center justify-between w-full mb-8 md:mb-16">
                     <div className="flex-1 flex justify-end pr-4">
                         <SectionBadge icon="projects">Mission Control</SectionBadge>
                     </div>
@@ -100,7 +101,7 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.2 }}
-                        className="text-3xl md:text-4xl font-bold text-center m-0 shrink-0"
+                        className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center m-0 shrink-0"
                     >
                         <span className="text-slate-900 dark:text-white">Active </span>
                         <span className="text-teal-600 dark:text-cyan-400 dark:drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">Deployments</span>
@@ -163,12 +164,12 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-4 mt-8">
+                                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-6 sm:mt-8">
                                         {featuredProject.links?.demo && (
                                             <Button
                                                 variant="default"
-                                                className="bg-teal-600 hover:bg-teal-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-black font-bold font-mono tracking-wide cursor-pointer"
-                                                onClick={() => window.open(featuredProject.links?.website, '_blank')}
+                                                className="min-h-[44px] px-6 bg-teal-600 hover:bg-teal-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-black font-bold font-mono tracking-wide cursor-pointer"
+                                                onClick={() => safeOpenUrl(featuredProject.links?.website ?? '')}
                                             >
                                                 <Globe className="w-4 h-4 mr-2" />
                                                 LAUNCH_
@@ -177,8 +178,8 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                                         {featuredProject.links?.repo && (
                                             <Button
                                                 variant="outline"
-                                                className="border-slate-300 dark:border-white/20 text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white font-mono tracking-wide bg-transparent cursor-pointer"
-                                                onClick={() => window.open(featuredProject.links?.repo, '_blank')}
+                                                className="min-h-[44px] px-6 border-slate-300 dark:border-white/20 text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white font-mono tracking-wide bg-transparent cursor-pointer"
+                                                onClick={() => safeOpenUrl(featuredProject.links?.repo ?? '')}
                                             >
                                                 <Github className="w-4 h-4 mr-2" />
                                                 SOURCE
@@ -235,7 +236,7 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                                 <Card
                                     onClick={() => {
                                         const url = project.links?.demo || project.links?.repo;
-                                        if (url) window.open(url, '_blank');
+                                        if (url) safeOpenUrl(url);
                                     }}
                                     className="group h-full flex flex-col bg-white dark:bg-zinc-900/20 backdrop-blur-md border border-slate-300 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-none hover:border-teal-500/50 dark:hover:border-cyan-500/50 transition-all duration-300 hover:-translate-y-1 overflow-hidden relative cursor-pointer"
                                 >
@@ -272,14 +273,14 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                                                 <span className="text-[10px] font-mono text-muted-foreground uppercase">
                                                     ID: {1024 + index}
                                                 </span>
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-3">
                                                     {project.links?.repo && (
-                                                        <a href={project.links.repo} target="_blank" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-foreground transition-colors">
+                                                        <a href={project.links.repo} target="_blank" onClick={(e) => e.stopPropagation()} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
                                                             <Github className="w-4 h-4" />
                                                         </a>
                                                     )}
                                                     {project.links?.demo && (
-                                                        <a href={project.links.demo} target="_blank" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-primary transition-colors">
+                                                        <a href={project.links.demo} target="_blank" onClick={(e) => e.stopPropagation()} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-primary transition-colors">
                                                             <ExternalLink className="w-4 h-4" />
                                                         </a>
                                                     )}

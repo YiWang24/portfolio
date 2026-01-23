@@ -1,6 +1,10 @@
 /**
  * unified message stream state definition
  * front-end and back-end shared unified state specification
+ *
+ * PURPOSE: High-level terminal message state management
+ * Use for: TerminalMessage, MessageStatus, FunctionStep, ThoughtLog
+ * See types/stream.ts for low-level SSE protocol types
  */
 
 /**

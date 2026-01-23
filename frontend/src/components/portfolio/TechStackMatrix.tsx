@@ -119,7 +119,7 @@ export function TechStackMatrix({ modules }: TechStackMatrixProps) {
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.2 }}
-                        className="text-3xl md:text-4xl font-bold text-center m-0 shrink-0 font-mono tracking-tight"
+                        className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center m-0 shrink-0 font-mono tracking-tight"
                     >
                         <span className="text-slate-900 dark:text-white">SYSTEM_</span>
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-fuchsia-500 dark:from-violet-400 dark:to-fuchsia-300">MATRIX</span>

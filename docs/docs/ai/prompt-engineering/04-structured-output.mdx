@@ -1,0 +1,1084 @@
+---
+title: "4 Structured Output Engineering"
+description: "Master JSON Mode, XML tagging, schema enforcement, and provider-specific techniques for production-grade LLM outputs"
+published: 2025-01-21
+tags: ["prompt-engineering", "structured-output", "json", "schema", "spring-ai"]
+category: "prompt-engineering"
+series: "Prompt Engineering Guide"
+seriesOrder: 3
+draft: false
+---
+
+## Why Structured Output Matters
+
+**Structured output enforcement improves reliability by 3-5x** in enterprise applications. Without it, LLM outputs are unpredictable strings that require complex parsing, error handling, and retry logic.
+
+### The Reliability Problem
+
+```plaintext
+Without Structured Output:
+┌─────────────────────────────────────────────────────────────┐
+│ LLM Response: "Here's the analysis:                        │
+│ - Revenue: probably around $50M                            │
+│ - Growth: Strong! About 15%                                │
+│ - Risk: Medium (see notes below)                           │
+│ Note: Numbers are estimates..."                            │
+└─────────────────────────────────────────────────────────────┘
+                        ↓ Parsing Hell
+         - Regex extraction fails on edge cases
+         - Number formats vary ("$50M" vs "50000000")
+         - Risk levels inconsistent ("Medium" vs "3/5")
+         - Extra text breaks JSON parsing
+
+With Structured Output:
+┌─────────────────────────────────────────────────────────────┐
+│ {                                                          │
+│   "revenue": 50000000,                                     │
+│   "growthRate": 0.15,                                      │
+│   "riskLevel": "MEDIUM",                                   │
+│   "confidence": 0.85                                       │
+│ }                                                          │
+└─────────────────────────────────────────────────────────────┘
+                        ↓ Direct Parse
+         - JSON.parse() works every time
+         - Type-safe deserialization
+         - Validated against schema
+         - No ambiguity
+```
+
+### Business Impact
+
+| Metric | Without Structure | With Structure | Improvement |
+|--------|-------------------|----------------|-------------|
+| Parse Success Rate | 75-85% | 99.9%+ | +15-25% |
+| Retry Rate | 15-25% | less than 1% | -95% |
+| Token Waste | High (verbose) | Low (precise) | -30-50% |
+| Integration Time | Days/weeks | Hours | 10x faster |
+| Production Incidents | Weekly | Rare | -90% |
+
+---
+
+## 1. JSON Mode: Provider Implementations
+
+### 1.1 OpenAI Structured Outputs (2024)
+
+OpenAI's Structured Outputs feature guarantees **100% schema adherence** through constrained decoding. The model is mathematically constrained to only generate tokens that conform to your schema.
+
+:::tip[Key Innovation]
+Unlike "JSON mode" which only ensures valid JSON, Structured Outputs ensure valid JSON **that matches your exact schema**. This is achieved through constrained decoding at the token generation level.
+:::
+
+**How It Works**:
+```plaintext
+Traditional JSON Mode:
+  Model generates → Valid JSON (any structure) → Hope it matches
+
+Structured Outputs:
+  Schema → Constrained Token Space → Only valid tokens generated
+
+  Example: If schema requires "status": enum["active", "inactive"]
+  Token probabilities for other values = 0
+```
+
+**Implementation**:
+
+```typescript
+import OpenAI from 'openai';
+import { z } from 'zod';
+import { zodResponseFormat } from 'openai/helpers/zod';
+
+// Define schema with Zod
+const AnalysisResult = z.object({
+  sentiment: z.enum(['positive', 'negative', 'neutral']),
+  confidence: z.number().min(0).max(1),
+  keyTopics: z.array(z.object({
+    topic: z.string(),
+    relevance: z.number().min(0).max(1),
+    mentions: z.number().int().positive()
+  })),
+  summary: z.string().max(500),
+  actionItems: z.array(z.string()).optional()
+});
+
+const client = new OpenAI();
+
+const response = await client.beta.chat.completions.parse({
+  model: 'gpt-4o-2024-08-06',
+  messages: [
+    { role: 'system', content: 'Analyze customer feedback and extract insights.' },
+    { role: 'user', content: feedbackText }
+  ],
+  response_format: zodResponseFormat(AnalysisResult, 'analysis')
+});
+
+// Fully typed response - no parsing needed!
+const analysis = response.choices[0].message.parsed;
+console.log(analysis.sentiment); // TypeScript knows this is 'positive' | 'negative' | 'neutral'
+```
+
+**Supported Schema Features**:
+
+| Feature | Support | Notes |
+|---------|---------|-------|
+| `string`, `number`, `boolean` | ✅ Full | Basic types |
+| `array` | ✅ Full | With typed items |
+| `object` | ✅ Full | Nested objects supported |
+| `enum` | ✅ Full | String enums |
+| `anyOf` | ✅ Full | Union types |
+| `$ref` / definitions | ✅ Full | Recursive schemas |
+| `additionalProperties: false` | ⚠️ Required | Must be set |
+| `required` | ⚠️ Required | All properties must be required |
+
+**Limitations**:
+- Maximum 5 levels of nesting
+- Maximum 100 total properties
+- No `additionalProperties: true`
+- All fields must be `required` (use `anyOf` with `null` for optional)
+
+### 1.2 Anthropic: Tool-Use Workaround
+
+Anthropic's Claude doesn't have native JSON mode, but achieves structured output through **tool use** (function calling).
+
+:::info[Anthropic's Approach]
+Instead of a dedicated JSON mode, Anthropic recommends using tool definitions as schemas. The model "calls" a tool with structured arguments, effectively producing JSON output.
+:::
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+# Define the "output schema" as a tool
+tools = [{
+    "name": "submit_analysis",
+    "description": "Submit the structured analysis results",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "sentiment": {
+                "type": "string",
+                "enum": ["positive", "negative", "neutral"],
+                "description": "Overall sentiment of the text"
+            },
+            "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Confidence score between 0 and 1"
+            },
+            "key_phrases": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Important phrases extracted from text"
+            },
+            "summary": {
+                "type": "string",
+                "maxLength": 500,
+                "description": "Brief summary of the content"
+            }
+        },
+        "required": ["sentiment", "confidence", "key_phrases", "summary"]
+    }
+}]
+
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    tools=tools,
+    tool_choice={"type": "tool", "name": "submit_analysis"},  # Force tool use
+    messages=[{
+        "role": "user",
+        "content": f"Analyze this customer feedback and submit your analysis:\n\n{feedback_text}"
+    }]
+)
+
+# Extract structured data from tool call
+tool_use = next(block for block in response.content if block.type == "tool_use")
+analysis = tool_use.input  # This is your structured JSON
+```
+
+### 1.3 Google Gemini
+
+Gemini supports JSON mode with schema enforcement:
+
+```python
+import google.generativeai as genai
+from google.generativeai.types import GenerationConfig
+
+# Define schema
+response_schema = {
+    "type": "object",
+    "properties": {
+        "sentiment": {"type": "string", "enum": ["positive", "negative", "neutral"]},
+        "score": {"type": "number"},
+        "themes": {
+            "type": "array",
+            "items": {"type": "string"}
+        }
+    },
+    "required": ["sentiment", "score", "themes"]
+}
+
+model = genai.GenerativeModel(
+    'gemini-1.5-pro',
+    generation_config=GenerationConfig(
+        response_mime_type="application/json",
+        response_schema=response_schema
+    )
+)
+
+response = model.generate_content("Analyze: " + text)
+result = json.loads(response.text)
+```
+
+### 1.4 Provider Comparison Matrix
+
+| Feature | OpenAI | Anthropic | Gemini | Mistral |
+|---------|--------|-----------|--------|---------|
+| Native JSON Mode | ✅ | ❌ | ✅ | ✅ |
+| Schema Enforcement | ✅ 100% | Via tools | ✅ | ⚠️ Partial |
+| Constrained Decoding | ✅ | ❌ | ✅ | ❌ |
+| Nested Objects | ✅ 5 levels | ✅ Unlimited | ✅ | ✅ |
+| Recursive Schemas | ✅ | ✅ | ⚠️ Limited | ❌ |
+| Streaming Support | ✅ | ✅ | ✅ | ✅ |
+| Token Efficiency | High | Medium | High | Medium |
+
+---
+
+## 2. XML Tagging: Structure Without Schema
+
+XML tags provide lightweight structure without requiring API-level schema enforcement. This approach works with **any LLM** and is particularly effective with Claude.
+
+### 2.1 Why XML Beats Markdown Delimiters
+
+```plaintext
+Markdown Delimiters (Problematic):
+┌─────────────────────────────────────────────────────────────┐
+│ ## Instructions                                            │
+│ Review the code                                            │
+│                                                            │
+│ ## Context                                                 │
+│ E-commerce platform                                        │
+│                                                            │
+│ Problem: # and ## appear in code, markdown, conversations  │
+│ LLMs often confuse section boundaries                      │
+└─────────────────────────────────────────────────────────────┘
+
+XML Tags (Reliable):
+┌─────────────────────────────────────────────────────────────┐
+│ <instructions>                                             │
+│ Review the code                                            │
+│ </instructions>                                            │
+│                                                            │
+│ <context>                                                  │
+│ E-commerce platform                                        │
+│ </context>                                                 │
+│                                                            │
+│ Benefits:                                                  │
+│ - Unambiguous boundaries                                   │
+│ - Hierarchical nesting                                     │
+│ - +25% instruction adherence (Anthropic research)          │
+│ - Easy programmatic parsing                                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 XML Tagging Patterns
+
+**Pattern 1: Input Organization**
+
+```xml
+<system_context>
+You are a senior code reviewer at a fintech company.
+Your reviews prioritize security, performance, and maintainability.
+</system_context>
+
+<code_to_review language="typescript">
+async function processPayment(userId: string, amount: number) {
+  const user = await db.users.findById(userId);
+  const result = await paymentGateway.charge(user.cardToken, amount);
+  return result;
+}
+</code_to_review>
+
+<review_focus>
+<item priority="high">Security vulnerabilities</item>
+<item priority="high">Error handling</item>
+<item priority="medium">Performance implications</item>
+<item priority="low">Code style</item>
+</review_focus>
+
+<output_requirements>
+Provide your review in the following format:
+<review>
+<finding severity="critical|high|medium|low">
+<location>file:line</location>
+<issue>Description</issue>
+<recommendation>Fix suggestion</recommendation>
+<code_example>Corrected code</code_example>
+</finding>
+</review>
+</output_requirements>
+```
+
+**Pattern 2: Multi-Document Processing**
+
+```xml
+<documents>
+<document id="1" type="contract">
+[Contract text here]
+</document>
+
+<document id="2" type="amendment">
+[Amendment text here]
+</document>
+
+<document id="3" type="correspondence">
+[Email thread here]
+</document>
+</documents>
+
+<task>
+Cross-reference all documents and identify:
+1. Conflicting terms between contract and amendment
+2. Commitments made in correspondence not in contract
+3. Missing signatures or dates
+</task>
+
+<output>
+<analysis>
+<conflict doc_refs="1,2">
+<section>Payment Terms</section>
+<original>Net 30</original>
+<amended>Net 45</amended>
+<resolution_needed>true</resolution_needed>
+</conflict>
+</analysis>
+</output>
+```
+
+**Pattern 3: Chain-of-Thought with XML**
+
+```xml
+<problem>
+A train leaves Station A at 9:00 AM traveling at 60 mph.
+Another train leaves Station B at 10:00 AM traveling at 80 mph.
+Stations are 280 miles apart. When do they meet?
+</problem>
+
+<instructions>
+Solve step by step, showing your work.
+</instructions>
+
+<response_format>
+<solution>
+<step number="1">
+<action>What you're calculating</action>
+<calculation>Math expression</calculation>
+<result>Intermediate result</result>
+</step>
+<!-- More steps -->
+<answer>Final answer with units</answer>
+<verification>Check your answer</verification>
+</solution>
+</response_format>
+```
+
+### 2.3 Parsing XML Responses
+
+```typescript
+// Simple regex extraction (for well-formed responses)
+function extractXMLContent(response: string, tag: string): string | null {
+  const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i');
+  const match = response.match(regex);
+  return match ? match[1].trim() : null;
+}
+
+// Extract all findings
+function extractFindings(response: string): Finding[] {
+  const findings: Finding[] = [];
+  const regex = /<finding severity="([^"]+)">([\s\S]*?)<\/finding>/gi;
+  let match;
+
+  while ((match = regex.exec(response)) !== null) {
+    const [, severity, content] = match;
+    findings.push({
+      severity: severity as Severity,
+      location: extractXMLContent(content, 'location'),
+      issue: extractXMLContent(content, 'issue'),
+      recommendation: extractXMLContent(content, 'recommendation')
+    });
+  }
+
+  return findings;
+}
+
+// Usage
+const review = extractXMLContent(response, 'review');
+const findings = extractFindings(review);
+```
+
+---
+
+## 3. Anthropic Prefilling: Control Output Start
+
+Anthropic's unique **prefilling** feature lets you pre-populate the assistant's response, forcing specific output formats.
+
+### 3.1 How Prefilling Works
+
+```plaintext
+Normal Flow:
+User: "Analyze this data"
+Assistant: "I'd be happy to analyze this data. Here's what I found..."
+            ↑ Model decides how to start
+
+With Prefilling:
+User: "Analyze this data"
+Assistant: {"analysis":     ← You provide this
+           "sentiment": "positive", ...}
+            ↑ Model continues from your prefix
+```
+
+### 3.2 Prefilling Patterns
+
+**Pattern 1: Force JSON Output**
+
+```python
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[
+        {
+            "role": "user",
+            "content": "Extract entities from: 'Apple CEO Tim Cook announced iPhone 16 in Cupertino'"
+        },
+        {
+            "role": "assistant",
+            "content": '{"entities": ['  # Prefill forces JSON array
+        }
+    ]
+)
+
+# Response continues: '"Apple", "Tim Cook", "iPhone 16", "Cupertino"]}'
+full_json = '{"entities": [' + response.content[0].text
+result = json.loads(full_json)
+```
+
+**Pattern 2: Force Specific Format**
+
+```python
+# Force markdown table output
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    messages=[
+        {"role": "user", "content": "Compare Python vs JavaScript"},
+        {"role": "assistant", "content": "| Feature | Python | JavaScript |\n|---------|--------|------------|\n|"}
+    ]
+)
+
+# Force code block
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    messages=[
+        {"role": "user", "content": "Write a function to reverse a string"},
+        {"role": "assistant", "content": "```python\ndef reverse_string(s: str) -> str:\n    "}
+    ]
+)
+```
+
+**Pattern 3: Skip Preamble**
+
+```python
+# Without prefilling:
+# "I'd be happy to help! Here's the translation..."
+
+# With prefilling - direct output:
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    messages=[
+        {"role": "user", "content": "Translate to French: Hello, how are you?"},
+        {"role": "assistant", "content": "Bonjour"}  # Forces direct translation
+    ]
+)
+# Response: ", comment allez-vous?"
+```
+
+**Pattern 4: XML Structure Prefilling**
+
+````python
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    messages=[
+        {
+            "role": "user",
+            "content": """
+Analyze this code for security issues:
+```python
+def login(username, password):
+    query = f"SELECT * FROM users WHERE name='{username}' AND pass='{password}'"
+    return db.execute(query)
+```
+"""
+        },
+        {
+            "role": "assistant",
+            "content": "<security_analysis>\n<vulnerability severity=\"critical\">\n<type>"
+        }
+    ]
+)
+````
+
+### 3.3 Prefilling Best Practices
+
+| Do | Don't |
+|----|-------|
+| Use for consistent output format | Prefill complete thoughts (model may contradict) |
+| Start JSON objects/arrays | Prefill middle of JSON values |
+| Force direct answers (skip preamble) | Use excessively long prefills |
+| Match expected output structure | Prefill with invalid syntax |
+
+---
+
+## 4. Spring AI: Production-Grade Structured Output
+
+Spring AI provides **type-safe structured output** through `OutputConverter` implementations, particularly the `BeanOutputConverter`.
+
+### 4.1 BeanOutputConverter Deep Dive
+
+```java
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.converter.BeanOutputConverter;
+
+// 1. Define your response types
+@JsonClassDescription("Complete analysis of customer feedback")
+public record FeedbackAnalysis(
+    @JsonPropertyDescription("Overall sentiment: POSITIVE, NEGATIVE, or NEUTRAL")
+    @JsonProperty(required = true)
+    Sentiment sentiment,
+
+    @JsonPropertyDescription("Confidence score between 0 and 1")
+    @JsonProperty(required = true)
+    Double confidence,
+
+    @JsonPropertyDescription("Key themes extracted from feedback")
+    @JsonProperty(required = true)
+    List<Theme> themes,
+
+    @JsonPropertyDescription("Suggested actions based on feedback")
+    List<String> actionItems,
+
+    @JsonPropertyDescription("Priority level for response")
+    @JsonProperty(required = true)
+    Priority priority
+) {
+    public enum Sentiment { POSITIVE, NEGATIVE, NEUTRAL, MIXED }
+    public enum Priority { LOW, MEDIUM, HIGH, CRITICAL }
+}
+
+public record Theme(
+    @JsonProperty(required = true) String name,
+    @JsonProperty(required = true) Double relevance,
+    @JsonProperty(required = true) Integer mentionCount,
+    List<String> exampleQuotes
+) {}
+
+// 2. Service implementation
+@Service
+@Slf4j
+public class FeedbackAnalysisService {
+
+    private final ChatClient chatClient;
+
+    public FeedbackAnalysisService(ChatClient.Builder builder) {
+        this.chatClient = builder.build();
+    }
+
+    public FeedbackAnalysis analyzeFeedback(String feedbackText) {
+        // Create converter - generates JSON schema from Java type
+        BeanOutputConverter<FeedbackAnalysis> converter =
+            new BeanOutputConverter<>(FeedbackAnalysis.class);
+
+        String prompt = """
+            Analyze the following customer feedback and extract insights.
+
+            Feedback:
+            {feedback}
+
+            {format}
+            """;
+
+        FeedbackAnalysis result = chatClient.prompt()
+            .user(u -> u.text(prompt)
+                .param("feedback", feedbackText)
+                .param("format", converter.getFormat()))  // Injects JSON schema
+            .call()
+            .entity(FeedbackAnalysis.class);  // Type-safe conversion
+
+        log.info("Analysis complete: sentiment={}, confidence={}",
+            result.sentiment(), result.confidence());
+
+        return result;
+    }
+}
+```
+
+### 4.2 Generated Schema Example
+
+The `BeanOutputConverter` automatically generates this schema:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "Complete analysis of customer feedback",
+  "properties": {
+    "sentiment": {
+      "type": "string",
+      "enum": ["POSITIVE", "NEGATIVE", "NEUTRAL", "MIXED"],
+      "description": "Overall sentiment: POSITIVE, NEGATIVE, or NEUTRAL"
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Confidence score between 0 and 1"
+    },
+    "themes": {
+      "type": "array",
+      "description": "Key themes extracted from feedback",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "relevance": { "type": "number" },
+          "mentionCount": { "type": "integer" },
+          "exampleQuotes": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "required": ["name", "relevance", "mentionCount"]
+      }
+    },
+    "actionItems": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    }
+  },
+  "required": ["sentiment", "confidence", "themes", "priority"]
+}
+```
+
+### 4.3 List and Complex Type Conversion
+
+```java
+// List of objects
+@Service
+public class ProductExtractor {
+
+    private final ChatClient chatClient;
+
+    public List<Product> extractProducts(String description) {
+        // Use ParameterizedTypeReference for generic types
+        return chatClient.prompt()
+            .user("Extract all products mentioned: " + description)
+            .call()
+            .entity(new ParameterizedTypeReference<List<Product>>() {});
+    }
+}
+
+// Nested complex types
+public record OrderAnalysis(
+    @JsonProperty(required = true)
+    Customer customer,
+
+    @JsonProperty(required = true)
+    List<OrderItem> items,
+
+    @JsonProperty(required = true)
+    PaymentInfo payment,
+
+    ShippingDetails shipping,
+
+    @JsonProperty(required = true)
+    OrderStatus status
+) {
+    public record Customer(String id, String name, String email, CustomerTier tier) {}
+    public record OrderItem(String productId, String name, int quantity, BigDecimal price) {}
+    public record PaymentInfo(String method, String last4, BigDecimal total) {}
+    public record ShippingDetails(String address, String carrier, LocalDate estimatedDelivery) {}
+    public enum CustomerTier { STANDARD, PREMIUM, VIP }
+    public enum OrderStatus { PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED }
+}
+```
+
+### 4.4 Error Handling and Validation
+
+```java
+@Service
+public class RobustStructuredOutputService {
+
+    private final ChatClient chatClient;
+    private final Validator validator;
+
+    public <T> T getStructuredOutput(String prompt, Class<T> responseType) {
+        BeanOutputConverter<T> converter = new BeanOutputConverter<>(responseType);
+
+        int maxRetries = 3;
+        Exception lastException = null;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                T result = chatClient.prompt()
+                    .user(prompt + "\n\n" + converter.getFormat())
+                    .call()
+                    .entity(responseType);
+
+                // Validate with Bean Validation
+                Set<ConstraintViolation<T>> violations = validator.validate(result);
+                if (!violations.isEmpty()) {
+                    String errors = violations.stream()
+                        .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                        .collect(Collectors.joining(", "));
+                    throw new ValidationException("Validation failed: " + errors);
+                }
+
+                return result;
+
+            } catch (JsonParseException | ValidationException e) {
+                lastException = e;
+                log.warn("Attempt {} failed: {}", attempt, e.getMessage());
+
+                if (attempt < maxRetries) {
+                    // Add clarification for retry
+                    prompt = prompt + "\n\nPrevious attempt failed. " +
+                        "Please ensure valid JSON matching the schema exactly.";
+                }
+            }
+        }
+
+        throw new StructuredOutputException(
+            "Failed after " + maxRetries + " attempts", lastException);
+    }
+}
+```
+
+### 4.5 MapOutputConverter for Dynamic Schemas
+
+When you don't have a predefined class:
+
+```java
+@Service
+public class DynamicAnalysisService {
+
+    private final ChatClient chatClient;
+
+    public Map<String, Object> analyzeWithDynamicSchema(String content, String schemaDescription) {
+        MapOutputConverter converter = new MapOutputConverter();
+
+        String prompt = """
+            Analyze the following content and return structured data.
+
+            Content: {content}
+
+            Required fields: {schema}
+
+            {format}
+            """;
+
+        return chatClient.prompt()
+            .user(u -> u.text(prompt)
+                .param("content", content)
+                .param("schema", schemaDescription)
+                .param("format", converter.getFormat()))
+            .call()
+            .entity(new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+}
+```
+
+---
+
+## 5. Advanced Structured Output Patterns
+
+### 5.1 Streaming Structured Output
+
+```java
+@Service
+public class StreamingStructuredService {
+
+    private final ChatClient chatClient;
+
+    public Flux<PartialAnalysis> streamAnalysis(String content) {
+        return chatClient.prompt()
+            .user("Analyze: " + content)
+            .stream()
+            .content()
+            .bufferUntil(chunk -> chunk.contains("},"))  // Buffer until complete object
+            .map(this::parsePartialJson)
+            .filter(Objects::nonNull);
+    }
+
+    // For structured streaming with validation
+    public Flux<StreamingEvent> streamWithProgress(String content) {
+        AtomicReference<StringBuilder> buffer = new AtomicReference<>(new StringBuilder());
+
+        return chatClient.prompt()
+            .user(buildPromptWithStreamingFormat(content))
+            .stream()
+            .content()
+            .map(chunk -> {
+                buffer.get().append(chunk);
+                return parseStreamingEvent(buffer.get().toString());
+            })
+            .filter(event -> event.type() != EventType.INCOMPLETE);
+    }
+}
+```
+
+### 5.2 Multi-Format Output
+
+```java
+public record MultiFormatResponse(
+    @JsonProperty(required = true)
+    Summary summary,
+
+    @JsonProperty(required = true)
+    List<DataPoint> data,
+
+    @JsonProperty(required = true)
+    String markdownReport,
+
+    @JsonProperty(required = true)
+    String sqlQuery,
+
+    Visualization visualization
+) {
+    public record Summary(String title, String description, List<String> keyFindings) {}
+    public record DataPoint(String label, Double value, String unit, String trend) {}
+    public record Visualization(String type, Map<String, Object> config) {}
+}
+
+// Prompt for multi-format
+String prompt = """
+    Analyze the sales data and provide:
+    1. A structured summary
+    2. Key data points as JSON
+    3. A markdown report for stakeholders
+    4. An SQL query to reproduce this analysis
+    5. A visualization configuration
+
+    Data:
+    {data}
+
+    {format}
+    """;
+```
+
+### 5.3 Conditional Schema Selection
+
+```java
+@Service
+public class AdaptiveOutputService {
+
+    private final ChatClient chatClient;
+
+    public Object analyzeWithAdaptiveSchema(String content, AnalysisType type) {
+        return switch (type) {
+            case SENTIMENT -> analyze(content, SentimentAnalysis.class);
+            case ENTITIES -> analyze(content, EntityExtraction.class);
+            case SUMMARY -> analyze(content, DocumentSummary.class);
+            case CLASSIFICATION -> analyze(content, ClassificationResult.class);
+            case FULL -> analyze(content, ComprehensiveAnalysis.class);
+        };
+    }
+
+    private <T> T analyze(String content, Class<T> schemaClass) {
+        BeanOutputConverter<T> converter = new BeanOutputConverter<>(schemaClass);
+
+        return chatClient.prompt()
+            .system(getSystemPromptForType(schemaClass))
+            .user(u -> u.text("{content}\n\n{format}")
+                .param("content", content)
+                .param("format", converter.getFormat()))
+            .call()
+            .entity(schemaClass);
+    }
+}
+```
+
+---
+
+## 6. Common Mistakes and Solutions
+
+### Mistake 1: Overly Complex Schemas
+
+```java
+// ❌ BAD: Too many nested levels, optional fields everywhere
+public record OverlyComplexAnalysis(
+    Optional<Level1> level1,
+    Optional<List<Optional<Level2>>> level2s,
+    Map<String, Optional<Level3>> level3Map
+    // ... 50 more fields
+) {}
+
+// ✅ GOOD: Flat, required fields, clear purpose
+public record FocusedAnalysis(
+    @JsonProperty(required = true) String category,
+    @JsonProperty(required = true) Double score,
+    @JsonProperty(required = true) List<String> reasons
+) {}
+```
+
+### Mistake 2: Missing Schema Instructions
+
+```java
+// ❌ BAD: No format instructions
+return chatClient.prompt()
+    .user("Analyze this: " + content)
+    .call()
+    .entity(Analysis.class);  // Model doesn't know the schema!
+
+// ✅ GOOD: Include format instructions
+BeanOutputConverter<Analysis> converter = new BeanOutputConverter<>(Analysis.class);
+return chatClient.prompt()
+    .user(content + "\n\n" + converter.getFormat())  // Schema included
+    .call()
+    .entity(Analysis.class);
+```
+
+### Mistake 3: No Validation
+
+```java
+// ❌ BAD: Trust model output blindly
+Analysis result = chatClient.prompt().user(prompt).call().entity(Analysis.class);
+return result;  // What if confidence is -5 or 200?
+
+// ✅ GOOD: Validate output
+Analysis result = chatClient.prompt().user(prompt).call().entity(Analysis.class);
+
+if (result.confidence() < 0 || result.confidence() > 1) {
+    throw new InvalidOutputException("Confidence out of bounds: " + result.confidence());
+}
+if (result.categories().isEmpty()) {
+    throw new InvalidOutputException("At least one category required");
+}
+return result;
+```
+
+### Mistake 4: Ignoring Partial Failures
+
+```java
+// ❌ BAD: All-or-nothing
+public List<ProductAnalysis> analyzeProducts(List<String> products) {
+    return products.stream()
+        .map(p -> chatClient.prompt().user("Analyze: " + p).call().entity(ProductAnalysis.class))
+        .toList();  // One failure kills everything
+}
+
+// ✅ GOOD: Graceful degradation
+public AnalysisBatch analyzeProducts(List<String> products) {
+    List<ProductAnalysis> successes = new ArrayList<>();
+    List<FailedAnalysis> failures = new ArrayList<>();
+
+    for (String product : products) {
+        try {
+            successes.add(analyze(product));
+        } catch (Exception e) {
+            failures.add(new FailedAnalysis(product, e.getMessage()));
+        }
+    }
+
+    return new AnalysisBatch(successes, failures,
+        (double) successes.size() / products.size());
+}
+```
+
+---
+
+## 7. Structured Output Decision Tree
+
+```plaintext
+Need Structured Output?
+        │
+        ▼
+┌───────────────────────────────────────┐
+│ Do you need 100% schema compliance?   │
+└───────────────────────────────────────┘
+        │
+    ┌───┴───┐
+    │       │
+   Yes      No
+    │       │
+    ▼       ▼
+┌─────────┐ ┌─────────────────────────────┐
+│ OpenAI? │ │ Lightweight structure only? │
+└─────────┘ └─────────────────────────────┘
+    │               │
+┌───┴───┐       ┌───┴───┐
+│       │       │       │
+Yes     No     Yes      No
+│       │       │       │
+▼       ▼       ▼       ▼
+Use     Use     Use     Use
+Struct  Tool    XML     JSON
+Output  Use     Tags    Mode
+        (Any)   (Any)   +Retry
+```
+
+**Quick Reference**:
+
+| Scenario | Recommended Approach |
+|----------|---------------------|
+| OpenAI + critical reliability | Structured Outputs (100% guarantee) |
+| Anthropic + any structured need | Tool use as schema |
+| Multi-provider + portability | XML tags with parsing |
+| Simple JSON + acceptable retry | JSON mode + validation |
+| Spring AI + type safety | BeanOutputConverter |
+
+---
+
+## 8. Quick Reference
+
+### Format Instructions Template
+
+```plaintext
+Your response must be valid JSON matching this schema:
+
+{schema}
+
+Requirements:
+- Output ONLY the JSON object, no additional text
+- All required fields must be present
+- Enums must use exact values specified
+- Numbers must be within specified ranges
+- Arrays can be empty but must be present if required
+```
+
+### Validation Checklist
+
+- [ ] Schema complexity appropriate (≤5 nesting levels)
+- [ ] All fields have clear descriptions
+- [ ] Required vs optional clearly marked
+- [ ] Enums have complete value sets
+- [ ] Number ranges specified where applicable
+- [ ] Retry logic implemented
+- [ ] Validation layer after parsing
+- [ ] Error handling for parse failures
+- [ ] Logging for debugging
+
+---
+
+## References
+
+1. OpenAI. (2024). *Structured Outputs*. [OpenAI Documentation](https://platform.openai.com/docs/guides/structured-outputs)
+2. Anthropic. (2024). *Tool Use for Structured Output*. [Anthropic Documentation](https://docs.anthropic.com/en/docs/build-with-claude/tool-use)
+3. Google. (2024). *Gemini JSON Mode*. [Google AI Documentation](https://ai.google.dev/gemini-api/docs/json-mode)
+4. Spring AI. (2024). *Structured Output Converters*. [Spring AI Reference](https://docs.spring.io/spring-ai/reference/api/structured-output-converter.html)
+5. Willison, S. (2024). *Structured Output Comparison*. [Blog Post](https://simonwillison.net/2024/structured-outputs/)
+
+---
+
+**Previous**: [2.2 Core Reasoning Patterns](./03-reasoning-patterns.mdx) ←
+**Next**: [2.4 Spring AI Implementation](./05-spring-ai.mdx) →

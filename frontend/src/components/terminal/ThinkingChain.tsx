@@ -16,7 +16,7 @@ type Props = {
   steps: FunctionStep[];
 };
 
-// 根据函数名称获取对应的图标和显示名称
+// Get the corresponding icon and display name based on the function name
 function getFunctionMeta(name: string): { icon: typeof Search; label: string } {
   const nameLower = name.toLowerCase();
 
@@ -54,7 +54,7 @@ function getFunctionMeta(name: string): { icon: typeof Search; label: string } {
     return { icon: Cpu, label: "Processing" };
   }
 
-  // 默认：将 camelCase 转换为可读格式
+  // Default: Convert camelCase to readable format
   const readable = name
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (str) => str.toUpperCase())
@@ -63,7 +63,7 @@ function getFunctionMeta(name: string): { icon: typeof Search; label: string } {
   return { icon: Sparkles, label: readable };
 }
 
-// 将ItemStatus映射到CSS类名
+// Map ItemStatus to CSS class name
 function getStatusClass(status: ItemStatus): string {
   switch (status) {
     case "running":

@@ -1,0 +1,265 @@
+---
+id: index
+title: Prompt Engineering
+sidebar_label: Overview
+description: Fundamentals and advanced techniques for effective prompt engineering with Large Language Models
+---
+
+# Prompt Engineering
+
+Prompt engineering is the art and science of crafting effective inputs (prompts) to guide Large Language Models (LLMs) toward producing desired outputs. This discipline combines understanding of LLM behavior, linguistic precision, and iterative refinement.
+
+## Overview
+
+### What is Prompt Engineering?
+
+**Prompt engineering** is the practice of designing and optimizing prompts to elicit specific, high-quality responses from language models. It involves:
+
+- **Clear Instructions**: Articulating what you want the model to do
+- **Context Provision**: Giving relevant background information
+- **Format Specification**: Defining the expected output structure
+- **Example Provision**: Showing the model what good output looks like
+- **Constraint Setting**: Establishing boundaries and limitations
+
+### Why It Matters
+
+| Aspect | Impact |
+|--------|--------|
+| **Accuracy** | Well-crafted prompts significantly reduce hallucinations and errors |
+| **Consistency** | Reliable prompts produce repeatable results across sessions |
+| **Efficiency** | Good prompts reduce the need for multiple iterations |
+| **Capability** | Proper prompting unlocks advanced model capabilities |
+
+## Core Principles
+
+### 1. Be Specific and Explicit
+
+Vague prompts lead to vague outputs. Be precise about what you want.
+
+**Bad:**
+```
+Write something about AI.
+```
+
+**Good:**
+```
+Write a 3-paragraph technical introduction to Large Language Models,
+covering their architecture, training process, and common use cases.
+Target audience: software engineers.
+```
+
+### 2. Provide Context
+
+Give the model relevant background information to inform its response.
+
+```
+Context: You are a senior Java architect reviewing a Spring Boot application
+that processes payment transactions. The application uses Spring AI for
+fraud detection and needs to handle 10,000 transactions per second.
+
+Task: Review the following controller code for potential performance bottlenecks...
+```
+
+### 3. Use Examples (Few-Shot Learning)
+
+Show the model examples of the input-output pattern you expect.
+
+```
+Convert the following technical terms from formal to casual:
+
+Input: Asynchronous Programming
+Output: async code
+
+Input: Microservices Architecture
+Output: microservices
+
+Input: Event-Driven Architecture
+Output: event-based systems
+
+Input: Server-Side Rendering
+Output: SSR
+```
+
+### 4. Specify Output Format
+
+Tell the model exactly how you want the response structured.
+
+```
+Analyze the following code and provide your response in this format:
+
+## Security Issues
+- [List any security vulnerabilities]
+
+## Performance Issues
+- [List performance concerns]
+
+## Recommendations
+1. [First recommendation]
+2. [Second recommendation]
+3. [Third recommendation]
+```
+
+### 5. Set Constraints
+
+Establish clear boundaries for the response.
+
+```
+Write a Python function to validate email addresses.
+
+Constraints:
+- Maximum 50 lines of code
+- Use only standard library (no external packages)
+- Include docstring and type hints
+- Must handle edge cases (null input, empty string, invalid formats)
+- Provide 3 test cases
+```
+
+## Advanced Techniques
+
+### Chain-of-Thought Prompting
+
+Guide the model through step-by-step reasoning.
+
+```
+To solve this problem, let's think through it step by step:
+
+1. First, identify what the question is asking
+2. Then, break down the information given
+3. Consider different approaches
+4. Choose the best approach
+5. Verify your answer
+
+Question: [Your question here]
+```
+
+### Role Prompting
+
+Assign a specific persona to the model for consistent perspective.
+
+```
+You are a principal software architect with 15 years of experience
+building distributed systems at scale. You specialize in Spring Boot,
+event-driven architectures, and cloud-native applications. You favor
+pragmatic solutions over theoretical purity.
+
+Review the following system design proposal...
+```
+
+### Self-Consistency
+
+Ask the model to solve the same problem multiple times and compare.
+
+```
+Solve the following problem in three different ways, then identify
+the best approach and explain your reasoning.
+
+Problem: [Your problem here]
+```
+
+### Generated Knowledge Prompting
+
+Have the model generate relevant context before answering.
+
+```
+Step 1: Generate 5-7 key concepts about [topic] that are relevant to [question]
+
+Step 2: Using these concepts, answer: [your question]
+```
+
+## Prompt Patterns
+
+### The CO-STAR Framework
+
+1. **C**ontext - Background information
+2. **O**bjective - What you want to accomplish
+3. **S**tyle - Desired tone/format
+4. **T**one - Voice/attitude
+5. **A**udience - Who will read this
+6. **R**esponse - Output format
+
+```
+Context: I'm preparing a technical presentation for CTO-level executives
+about adopting Spring AI in our payment processing platform.
+
+Objective: Explain the business value and technical approach in 5 minutes
+of speaking time.
+
+Style: Executive summary with technical depth available on request
+
+Tone: Confident but realistic about challenges
+
+Audience: Technical decision-makers who understand software architecture
+
+Response: A structured outline with key points, supporting arguments, and
+risk mitigation strategies.
+```
+
+### The RTF Framework
+
+1. **R**ole - Who the model should be
+2. **T**ask - What needs to be done
+3. **F**ormat - How to present the output
+
+```
+Role: Senior DevOps engineer specializing in Kubernetes and AWS
+
+Task: Design a deployment strategy for a Spring Boot application using
+Spring AI, including CI/CD pipeline, monitoring, and disaster recovery
+
+Format: Architecture diagram with annotations, plus implementation checklist
+```
+
+## Common Pitfalls
+
+### Pitfall 1: Overly Long Prompts
+
+Long prompts can overwhelm the model's context window and lead to degraded performance.
+
+**Solution:** Be concise. Remove unnecessary information. Use references instead of inline data when possible.
+
+### Pitfall 2: Conflicting Instructions
+
+When prompts contain contradictory requirements, models may struggle to determine priority.
+
+**Solution:** Review prompts for internal consistency. Use clear hierarchies: "Primary goal: X. Secondary goal: Y. If conflict, prioritize X over Y."
+
+### Pitfall 3: Ambiguous Success Criteria
+
+Without clear criteria for "done," models may produce incomplete outputs.
+
+**Solution:** Define explicit completion conditions: "Your response is complete when you have provided X, Y, and Z."
+
+### Pitfall 4: Missing Negative Examples
+
+Showing only what to do, but not what NOT to do, can lead to common mistakes.
+
+**Solution:** Include anti-patterns: "Here's an example of poor output: [example]. Avoid these issues."
+
+## Best Practices
+
+### For Development
+
+1. **Version Your Prompts**: Treat prompts like code. Track changes and results
+2. **Test Systematically**: Evaluate prompts across diverse inputs
+3. **Measure Performance**: Track accuracy, latency, and cost metrics
+4. **Document Patterns**: Build a library of reusable prompt templates
+
+### For Production
+
+1. **Validate Inputs**: Check prompt templates before deployment
+2. **Monitor Outputs**: Track quality metrics in production
+3. **Handle Edge Cases**: Have fallback prompts for unusual inputs
+4. **A/B Test Prompts**: Continuously optimize for better results
+
+## Tools and Frameworks
+
+- **Promptfoo**: Open-source prompt testing framework
+- **PromptLayer**: Platform for prompt versioning and analytics
+- **LangChain**: Prompt templates and management
+- **Guidance**: Microsoft's structured prompting framework
+
+## Further Reading
+
+- [OpenAI Prompt Engineering Guide](https://platform.openai.com/docs/prompt-engineering)
+- [Anthropic Prompt Library](https://docs.anthropic.com/claude/prompt-library)
+- [Prompt Engineering Guide](https://www.promptingguide.ai/)

@@ -13,7 +13,7 @@ export interface TerminalInputRef {
   focus: () => void;
 }
 
-// 支持的命令列表
+// Supported commands
 const SUPPORTED_COMMANDS = [
   'ls', 'll',
   'cat', 'cd',
@@ -28,6 +28,17 @@ const SUPPORTED_COMMANDS = [
   'matrix'
 ];
 
+// Natural language suggestions (moved outside the component to avoid duplicate creation)
+const SUGGESTIONS = [
+  'Tell me about your experience',
+  'What projects have you built?',
+  'How do I contact you?',
+  'What tech stack do you use?',
+  'Show me your GitHub stats',
+  'What are your skills?',
+  'Tell me about yourself',
+] as const;
+
 export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
   ({ onSend, isStreaming, onFocusChange }, ref) => {
     const [input, setInput] = useState('');
@@ -38,14 +49,14 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
     const [matchedCommands, setMatchedCommands] = useState<string[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(-1);
 
-    // 暴露 focus 方法给父组件
+    // Expose focus method to parent component
     useImperativeHandle(ref, () => ({
       focus: () => {
         internalInputRef.current?.focus();
       }
     }));
 
-    // 自然语言建议列表
+    // Natural language suggestions
     const suggestions = [
       'Tell me about your experience',
       'What projects have you built?',
@@ -56,10 +67,10 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
       'Tell me about yourself',
     ];
 
-    // 调用 Hook 获取当前应该显示的打字动画文本
-    const ghostText = useTypewriter(suggestions, 100, 50, 2000);
+    // Call Hook to get the current text to display with typewriter effect
+    const ghostText = useTypewriter(SUGGESTIONS, 100, 50, 2000);
 
-    // 检测输入是否以支持的命令开头
+    // Detect if the input starts with a supported command
     const getCommandMatch = (text: string) => {
       const trimmed = text.trim();
       const parts = trimmed.split(' ');
@@ -85,7 +96,7 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
       setCursorLeft(0);
     };
 
-    // 处理键盘事件 - Tab 键自动补全和切换建议
+    // Handle keyboard events - Tab key for auto-completion and switching suggestions
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Tab') {
         e.preventDefault();
@@ -95,27 +106,27 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
         const trimmed = input.trim();
         const parts = trimmed.split(' ');
 
-        // 只在输入第一个单词时自动补全命令
+        // Only auto-complete commands when entering the first word
         if (parts.length === 1) {
           const partial = parts[0].toLowerCase();
 
-          // 查找匹配的命令
+          // Find matching commands
           const matches = SUPPORTED_COMMANDS.filter(cmd => cmd.startsWith(partial));
 
           if (matches.length === 1) {
-            // 只有一个匹配，直接补全
+            // Only one match, auto-complete directly
             setInput(matches[0] + ' ');
             setShowSuggestions(false);
             setSelectedIndex(-1);
           } else if (matches.length > 1) {
-            // 多个匹配
+            // Multiple matches
             if (!showSuggestions) {
-              // 首次按 Tab：显示建议列表，补全到公共前缀
+              // First press Tab: display suggestions, complete to common prefix
               setMatchedCommands(matches);
               setShowSuggestions(true);
               setSelectedIndex(0);
 
-              // 补全到最长公共前缀
+              // Complete to longest common prefix
               const firstMatch = matches[0];
               let commonPrefix = firstMatch;
 
@@ -129,17 +140,17 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
                 setInput(commonPrefix);
               }
             } else {
-              // 已经显示建议，Tab 键切换到下一个建议
+              // Already displaying suggestions, Tab key switches to the next suggestion
               setSelectedIndex(prev => (prev + 1) % matchedCommands.length);
             }
           }
         }
       } else if (e.key === 'Escape') {
-        // ESC 键隐藏建议列表
+        // ESC key hides suggestions
         setShowSuggestions(false);
         setSelectedIndex(-1);
       } else if (showSuggestions && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-        // 上下箭头选择命令
+        // Up and down arrows select commands
         e.preventDefault();
 
         if (e.key === 'ArrowUp') {
@@ -148,7 +159,7 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
           setSelectedIndex(prev => prev < matchedCommands.length - 1 ? prev + 1 : 0);
         }
       } else if (showSuggestions && e.key === 'Enter') {
-        // 如果显示建议且选中了某项，使用选中的命令
+        // If suggestions are displayed and an item is selected, use the selected command
         e.preventDefault();
         setInput(matchedCommands[selectedIndex] + ' ');
         setShowSuggestions(false);
@@ -157,16 +168,16 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
     };
 
 
-    // 隐藏建议列表
+    // Hide suggestions
     const hideSuggestions = () => {
-      // 延迟隐藏，以便点击事件能先触发
+      // Delay hiding to allow click events to trigger first
       setTimeout(() => {
         setShowSuggestions(false);
         setSelectedIndex(-1);
       }, 200);
     };
 
-    // 处理焦点变化
+    // Handle focus change
     const handleFocus = () => {
       setIsFocused(true);
       onFocusChange?.(true);
@@ -178,20 +189,20 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
       hideSuggestions();
     };
 
-    // 当输入变化时，隐藏建议列表
+    // When input changes, hide suggestions
     useEffect(() => {
       if (input.includes(' ')) {
-        // 输入了空格，说明已开始输入参数，隐藏建议
+        // Inputted a space, indicating parameters have started, hide suggestions
         setShowSuggestions(false);
         setSelectedIndex(-1);
       }
     }, [input]);
 
-    // 计算光标位置
+    // Calculate cursor position
     const updateCursorPosition = () => {
       if (!internalInputRef.current) return;
 
-      // 使用 canvas 测量文本宽度
+      // Use canvas to measure text width
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       if (!context) return;
@@ -199,17 +210,17 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
       const styles = window.getComputedStyle(internalInputRef.current);
       context.font = `${styles.fontWeight} ${styles.fontSize} ${styles.fontFamily}`;
 
-      // 测量文本宽度
+      // Measure text width
       const textWidth = context.measureText(input).width;
       setCursorLeft(textWidth);
     };
 
-    // 当输入内容变化时，更新光标位置
+    // When input changes, update cursor position
     useEffect(() => {
       updateCursorPosition();
     }, [input]);
 
-    // 自动聚焦 - 使用双重RAF确保DOM完全更新
+    // Auto-focus - Use double RAF to ensure DOM is fully updated
     useEffect(() => {
       if (!isStreaming && internalInputRef.current) {
         const rafId = requestAnimationFrame(() => {
@@ -221,14 +232,14 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
       }
     }, [isStreaming]);
 
-    // 渲染高亮的输入文本
+    // Render highlighted input text
     const renderHighlightedText = () => {
       if (!input) return null;
 
       const match = getCommandMatch(input);
 
       if (match) {
-        // 有命令匹配，命令部分用高亮颜色
+        // Command matched, use highlight color for command part
         return (
           <div className="cli-input-highlight">
             <span className="cli-command-highlight">{match.command}</span>
@@ -237,7 +248,7 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
         );
       }
 
-      // 没有命令匹配，正常显示
+      //  No command matched, display normally
       return (
         <div className="cli-input-highlight">
           <span className="cli-normal-text">{input}</span>
@@ -248,13 +259,13 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
     return (
       <div className="cli-input-section">
         <form onSubmit={handleSubmit} className="cli-input-line-wrapper">
-          {/* Prompt 提示符 */}
+          {/* Prompt */}
           <div className="cli-prompt-arrow">➜</div>
           <div className="cli-prompt-path">~</div>
 
           <div className="cli-input-wrapper">
             <div className="cli-input-container">
-              {/* === Layer 1: Ghost Typewriter (幽灵层) === */}
+              {/* === Layer 1: Ghost Typewriter (Ghost Layer) === */}
               {input === '' && !isStreaming && (
                 <div className="cli-ghost-text">
                   <span>{ghostText}</span>
@@ -262,10 +273,10 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
                 </div>
               )}
 
-              {/* === Layer 2: Highlighted Text (高亮文本层) === */}
+              {/* === Layer 2: Highlighted Text (Highlighted Text Layer) === */}
               {input && renderHighlightedText()}
 
-              {/* === Layer 3: Real Input (真实交互层) === */}
+              {/* === Layer 3: Real Input (Real Input Layer) === */}
               <input
                 ref={internalInputRef}
                 type="text"
@@ -282,7 +293,7 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
                 disabled={isStreaming}
               />
 
-              {/* Block Cursor - 始终显示（只要聚焦且不在流式输出） */}
+              {/* Block Cursor - Always displayed (as long as focused and not streaming) */}
               {isFocused && !isStreaming && (
                 <div
                   className="cli-block-cursor"
@@ -293,7 +304,7 @@ export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
           </div>
         </form>
 
-        {/* === Command Suggestions (命令建议列表) === */}
+        {/* === Command Suggestions (Command Suggestions) === */}
         {showSuggestions && matchedCommands.length > 1 && (
           <div className="cli-command-suggestions-inline">
             {matchedCommands.map((cmd, index) => (

@@ -1,6 +1,7 @@
 // @ts-check
 import { themes } from "prism-react-renderer";
 const npm2yarn = require("@docusaurus/remark-plugin-npm2yarn");
+const math = require('remark-math');
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -45,7 +46,8 @@ const config = {
           // Remove this to remove the "edit this page" links.
           editUrl: "https://github.com/YiWang24/portfolio/tree/main/docs/",
           // npm2yarn: auto-generate npm/yarn/pnpm tabs for install commands
-          remarkPlugins: [[npm2yarn, { sync: true }]],
+          remarkPlugins: [[npm2yarn, { sync: true }], [math, { strict: false }]],
+          rehypePlugins: [require('rehype-katex')],
         },
         blog: {
           showReadingTime: true,
@@ -57,7 +59,8 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl: "https://github.com/YiWang24/portfolio/tree/main/docs/",
-          remarkPlugins: [[npm2yarn, { sync: true }]],
+          remarkPlugins: [[npm2yarn, { sync: true }], [math, { strict: false }]],
+          rehypePlugins: [require('rehype-katex')],
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),

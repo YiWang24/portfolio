@@ -13,10 +13,10 @@ interface ExperienceSectionProps {
 
 export function ExperienceSection({ experience }: ExperienceSectionProps) {
     return (
-        <section className="relative w-full min-h-screen flex items-center justify-center py-20 px-4">
+        <section className="relative w-full min-h-screen flex items-center justify-center py-12 md:py-20 px-4">
             <div className="w-full max-w-4xl">
                 {/* Section Header */}
-                <div className="flex flex-row items-center justify-between w-full mb-16">
+                <div className="flex flex-row items-center justify-between w-full mb-8 md:mb-16">
                     {/* Left: Real Badge */}
                     <div className="flex-1 flex justify-end pr-4">
                         <SectionBadge icon="experience">System Log</SectionBadge>
@@ -28,7 +28,7 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.2 }}
-                        className="text-3xl md:text-4xl font-bold text-center m-0 shrink-0 font-mono tracking-tight"
+                        className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center m-0 shrink-0 font-mono tracking-tight"
                     >
                         <span className="text-slate-900 dark:text-white">EXECUTION_</span>
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-500 to-cyan-500 dark:from-teal-400 dark:to-cyan-300">HISTORY</span>

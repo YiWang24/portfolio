@@ -2,6 +2,10 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Enable instrumentation hook for server-side profile sync
+  experimental: {
+    instrumentationHook: true,
+  },
   images: {
     remotePatterns: [
       {

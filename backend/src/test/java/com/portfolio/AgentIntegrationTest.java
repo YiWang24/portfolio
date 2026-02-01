@@ -13,7 +13,7 @@ import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Agent 集成测试
+ * Agent Integration Test - Tests Profile RAG + GitHub functionality
  * 需要配置 GOOGLE_API_KEY 才能运行
  * 运行: ./mvnw test -Dtest=AgentIntegrationTest
  */
@@ -25,8 +25,6 @@ class AgentIntegrationTest {
 
     @BeforeAll
     static void setup() {
-
-
         runner = new InMemoryRunner(PortfolioAgents.getRootAgent());
         session = runner.sessionService().createSession(runner.appName(), "test-user").blockingGet();
     }
@@ -43,9 +41,7 @@ class AgentIntegrationTest {
         return response.toString();
     }
 
-    // ==================== 第一阶段：功能测试 ====================
-
-    // --- 1. Digital Twin Agent ---
+    // ==================== Tech Lead Agent Tests ====================
 
     @Test
     @Order(1)
@@ -54,7 +50,6 @@ class AgentIntegrationTest {
         System.out.println("[自我介绍] " + response);
         assertNotNull(response);
         assertFalse(response.isEmpty());
-        // 应包含职位或技术相关内容
     }
 
     @Test
@@ -92,7 +87,7 @@ class AgentIntegrationTest {
         // 应包含 email 或 linkedin
     }
 
-    // --- 2. Tech Lead Agent ---
+    // --- GitHub Tests ---
 
     @Test
     @Order(10)
@@ -166,10 +161,10 @@ class AgentIntegrationTest {
         assertNotNull(response);
     }
 
-    // --- 3. RAG 知识库测试 ---
+    // --- Profile RAG Tests ---
 
     @Test
-    @Order(19)
+    @Order(20)
     void testEducation() {
         String response = chat("你在哪里上的大学？");
         System.out.println("[教育背景] " + response);
@@ -177,7 +172,7 @@ class AgentIntegrationTest {
     }
 
     @Test
-    @Order(20)
+    @Order(21)
     void testSkills() {
         String response = chat("你会哪些编程语言？");
         System.out.println("[技能] " + response);
@@ -185,30 +180,14 @@ class AgentIntegrationTest {
     }
 
     @Test
-    @Order(21)
-    void testBlogMicroservices() {
-        String response = chat("你对微服务架构有什么看法？");
-        System.out.println("[博客-微服务] " + response);
-        assertNotNull(response);
-    }
-
-    @Test
     @Order(22)
-    void testBlogVectorSearch() {
-        String response = chat("你了解向量搜索吗？");
-        System.out.println("[博客-向量搜索] " + response);
-        assertNotNull(response);
-    }
-
-    @Test
-    @Order(23)
     void testProjectCS61B() {
         String response = chat("介绍一下你的 CS61B 项目");
         System.out.println("[项目-CS61B] " + response);
         assertNotNull(response);
     }
 
-    // ==================== 第二阶段：安全测试 ====================
+    // ==================== Security Tests ====================
 
     @Test
     @Order(30)
@@ -238,7 +217,7 @@ class AgentIntegrationTest {
         assertFalse(response.matches(".*\\d{3}[-.]?\\d{3}[-.]?\\d{4}.*"));
     }
 
-    // ==================== 第三阶段：体验测试 ====================
+    // ==================== User Experience Tests ====================
 
     @Test
     @Order(40)
@@ -289,40 +268,6 @@ class AgentIntegrationTest {
     void testScheduleMeeting() {
         String response = chat("我想约你聊聊，怎么预约？");
         System.out.println("[预约面试] " + response);
-        assertNotNull(response);
-    }
-
-    // ==================== 第六阶段：Knowledge Agent 测试 ====================
-
-    @Test
-    @Order(50)
-    void testSemanticSearch() {
-        String response = chat("用语义搜索找一下关于 RAG 的内容");
-        System.out.println("[语义搜索] " + response);
-        assertNotNull(response);
-    }
-
-    @Test
-    @Order(51)
-    void testKnowledgeBaseList() {
-        String response = chat("你的知识库里有哪些文档？");
-        System.out.println("[知识库列表] " + response);
-        assertNotNull(response);
-    }
-
-    @Test
-    @Order(52)
-    void testWebSearch() {
-        String response = chat("最新的 Spring Boot 3.3 有什么新特性？帮我搜索一下");
-        System.out.println("[联网搜索] " + response);
-        assertNotNull(response);
-    }
-
-    @Test
-    @Order(53)
-    void testCombinedKnowledge() {
-        String response = chat("关于 Agent 架构，你自己的看法是什么？");
-        System.out.println("[知识+搜索] " + response);
         assertNotNull(response);
     }
 }

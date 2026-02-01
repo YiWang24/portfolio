@@ -1,7 +1,7 @@
 package com.portfolio;
 
 import com.portfolio.agent.PortfolioAgents;
-import com.portfolio.service.RagSyncService;
+import com.portfolio.service.ProfileSyncService;
 import com.portfolio.service.VectorQueryService;
 import com.google.adk.agents.RunConfig;
 import com.google.adk.events.Event;
@@ -21,18 +21,18 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * RAG Integration Test - Tests the complete RAG pipeline
+ * Profile RAG Integration Test - Tests Profile RAG functionality
  *
  * Prerequisites:
  * 1. PostgreSQL with pgvector extension must be running
  * 2. vector_store table must exist (run DDL first)
- * 3. Documents should be synced via POST /api/rag/sync
+ * 3. Profile should be synced via POST /api/rag/sync-profile
  *
  * Run: ./mvnw test -Dtest=RagIntegrationTest
  */
 @SpringBootTest
 @TestPropertySource(properties = {
-        "POSTGRES_HOST=10.0.0.178",
+        "POSTGRES_HOST=10.0.0.4",
         "POSTGRES_PORT=15432",
         "POSTGRES_DB=test_db",
         "POSTGRES_USER=postgres",
@@ -45,7 +45,7 @@ class RagIntegrationTest {
     private VectorQueryService vectorQueryService;
 
     @Autowired(required = false)
-    private RagSyncService ragSyncService;
+    private ProfileSyncService profileSyncService;
 
     private static InMemoryRunner runner;
     private static Session session;
@@ -79,9 +79,9 @@ class RagIntegrationTest {
 
     @Test
     @Order(2)
-    @DisplayName("2. RagSyncService should be available")
-    void testRagSyncServiceAvailable() {
-        assertNotNull(ragSyncService, "RagSyncService should be autowired");
+    @DisplayName("2. ProfileSyncService should be available")
+    void testProfileSyncServiceAvailable() {
+        assertNotNull(profileSyncService, "ProfileSyncService should be autowired");
     }
 
     @Test
@@ -124,33 +124,11 @@ class RagIntegrationTest {
         assertNotNull(docs);
     }
 
-    @Test
-    @Order(5)
-    @DisplayName("5. Semantic search across all documents")
-    void testSemanticSearch() {
-        assertNotNull(vectorQueryService, "VectorQueryService required");
-
-        String testQuery = "Java development experience";
-        List<VectorQueryService.VectorSearchResult> results = vectorQueryService.semanticSearch(testQuery, 3);
-
-        System.out.println("═══════════════════════════════════════════════════════════");
-        System.out.println("Semantic Search Results for: \"" + testQuery + "\"");
-        for (int i = 0; i < results.size(); i++) {
-            VectorQueryService.VectorSearchResult result = results.get(i);
-            System.out.println("  Result #" + (i + 1));
-            System.out.println("    Source:     " + result.path());
-            System.out.println("    Similarity: " + result.similarity());
-            System.out.println("    Content:    " + result.content().substring(0, Math.min(150, result.content().length())) + "...");
-            System.out.println();
-        }
-        System.out.println("═══════════════════════════════════════════════════════════");
-
-        assertNotNull(results);
-    }
+    // ==================== Category Search Tests ====================
 
     @Test
-    @Order(6)
-    @DisplayName("6. Category-specific search (personal)")
+    @Order(10)
+    @DisplayName("10. Category-specific search (personal)")
     void testCategorySearchPersonal() {
         assertNotNull(vectorQueryService, "VectorQueryService required");
 
@@ -169,8 +147,8 @@ class RagIntegrationTest {
     }
 
     @Test
-    @Order(7)
-    @DisplayName("7. Category-specific search (projects)")
+    @Order(11)
+    @DisplayName("11. Category-specific search (projects)")
     void testCategorySearchProjects() {
         assertNotNull(vectorQueryService, "VectorQueryService required");
 
@@ -188,56 +166,36 @@ class RagIntegrationTest {
         assertNotNull(results);
     }
 
-    // ==================== UnifiedRAGTools Tests ====================
+    // ==================== Profile RAG Tools Tests ====================
 
     @Test
-    @Order(10)
-    @DisplayName("10. UnifiedRAGTools.getVectorStoreStats()")
-    void testUnifiedRagToolsStats() {
-        Map<String, Object> result = com.portfolio.tools.UnifiedRAGTools.getVectorStoreStats();
+    @Order(20)
+    @DisplayName("20. ProfileRAGTools.queryPersonalInfo()")
+    void testProfileRagToolsQueryPersonalInfo() {
+        Map<String, Object> result = com.portfolio.tools.UnifiedRAGTools.queryPersonalInfo("skills and experience");
 
         System.out.println("═══════════════════════════════════════════════════════════");
-        System.out.println("UnifiedRAGTools.getVectorStoreStats():");
-        System.out.println("  " + result);
-        System.out.println("═══════════════════════════════════════════════════════════");
-
-        assertNotNull(result);
-        assertTrue(result.containsKey("total_chunks"));
-        assertTrue(result.containsKey("total_documents"));
-    }
-
-    @Test
-    @Order(11)
-    @DisplayName("11. UnifiedRAGTools.listDocuments()")
-    void testUnifiedRagToolsListDocuments() {
-        Map<String, Object> result = com.portfolio.tools.UnifiedRAGTools.listDocuments();
-
-        System.out.println("═══════════════════════════════════════════════════════════");
-        System.out.println("UnifiedRAGTools.listDocuments():");
-        System.out.println("  " + result);
-        System.out.println("═══════════════════════════════════════════════════════════");
-
-        assertNotNull(result);
-        assertTrue(result.containsKey("documents"));
-    }
-
-    @Test
-    @Order(12)
-    @DisplayName("12. UnifiedRAGTools.semanticSearch()")
-    void testUnifiedRagToolsSemanticSearch() {
-        Map<String, Object> result = com.portfolio.tools.UnifiedRAGTools.semanticSearch("programming experience", 3);
-
-        System.out.println("═══════════════════════════════════════════════════════════");
-        System.out.println("UnifiedRAGTools.semanticSearch():");
+        System.out.println("ProfileRAGTools.queryPersonalInfo():");
         System.out.println("  Query: " + result.get("query"));
         System.out.println("  Total Found: " + result.get("total_found"));
-        System.out.println("  Results:");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> results = (List<Map<String, Object>>) result.get("results");
-        for (int i = 0; i < results.size(); i++) {
-            Map<String, Object> r = results.get(i);
-            System.out.println("    [" + (i + 1) + "] " + r.get("source") + " (similarity: " + r.get("similarity") + ")");
-        }
+        System.out.println("  Category: " + result.get("category"));
+        System.out.println("═══════════════════════════════════════════════════════════");
+
+        assertNotNull(result);
+        assertTrue(result.containsKey("results"));
+    }
+
+    @Test
+    @Order(21)
+    @DisplayName("21. ProfileRAGTools.queryProjects()")
+    void testProfileRagToolsQueryProjects() {
+        Map<String, Object> result = com.portfolio.tools.UnifiedRAGTools.queryProjects("portfolio");
+
+        System.out.println("═══════════════════════════════════════════════════════════");
+        System.out.println("ProfileRAGTools.queryProjects():");
+        System.out.println("  Query: " + result.get("query"));
+        System.out.println("  Total Found: " + result.get("total_found"));
+        System.out.println("  Category: " + result.get("category"));
         System.out.println("═══════════════════════════════════════════════════════════");
 
         assertNotNull(result);
@@ -247,8 +205,8 @@ class RagIntegrationTest {
     // ==================== Agent Integration Tests ====================
 
     @Test
-    @Order(20)
-    @DisplayName("20. Agent: Query personal info via RAG")
+    @Order(30)
+    @DisplayName("30. Agent: Query personal info via Profile RAG")
     void testAgentQueryPersonalInfo() {
         String response = chat("What is your work experience?");
 
@@ -262,8 +220,8 @@ class RagIntegrationTest {
     }
 
     @Test
-    @Order(21)
-    @DisplayName("21. Agent: Query projects via RAG")
+    @Order(31)
+    @DisplayName("31. Agent: Query projects via Profile RAG")
     void testAgentQueryProjects() {
         String response = chat("What projects have you worked on?");
 
@@ -277,23 +235,8 @@ class RagIntegrationTest {
     }
 
     @Test
-    @Order(22)
-    @DisplayName("22. Agent: Semantic search query")
-    void testAgentSemanticSearch() {
-        String response = chat("What do you know about backend development?");
-
-        System.out.println("═══════════════════════════════════════════════════════════");
-        System.out.println("Agent Response [Semantic Search]:");
-        System.out.println("  " + response);
-        System.out.println("═══════════════════════════════════════════════════════════");
-
-        assertNotNull(response);
-        assertFalse(response.isEmpty());
-    }
-
-    @Test
-    @Order(23)
-    @DisplayName("23. Agent: Query education background")
+    @Order(32)
+    @DisplayName("32. Agent: Query education background")
     void testAgentQueryEducation() {
         String response = chat("Where did you study?");
 
@@ -307,8 +250,8 @@ class RagIntegrationTest {
     }
 
     @Test
-    @Order(24)
-    @DisplayName("24. Agent: Query skills")
+    @Order(33)
+    @DisplayName("33. Agent: Query skills")
     void testAgentQuerySkills() {
         String response = chat("What programming languages do you know?");
 
@@ -324,121 +267,30 @@ class RagIntegrationTest {
     // ==================== Sync API Tests ====================
 
     @Test
-    @Order(30)
-    @DisplayName("30. Test document sync (requires valid RAG_SYNC_KEY)")
-    void testDocumentSync() {
-        assertNotNull(ragSyncService, "RagSyncService required");
-
-        // First check current stats
-        VectorQueryService.VectorStoreStats beforeStats = vectorQueryService.getStats();
+    @Order(40)
+    @DisplayName("40. Test profile sync key validation")
+    void testProfileSyncKeyValidation() {
+        assertNotNull(profileSyncService, "ProfileSyncService required");
 
         // Test sync key validation
-        boolean validKey = ragSyncService.validateSyncKey("test-key");
+        boolean validKey = profileSyncService.validateSyncKey("test-key");
         System.out.println("═══════════════════════════════════════════════════════════");
-        System.out.println("Before Sync:");
-        System.out.println("  Chunks: " + beforeStats.totalChunks());
-        System.out.println("  Documents: " + beforeStats.totalDocuments());
+        System.out.println("Profile Sync Key Validation:");
         System.out.println("  Sync Key Validation (test-key): " + validKey);
         System.out.println("═══════════════════════════════════════════════════════════");
-    }
-
-    @Test
-    @Order(31)
-    @DisplayName("31. Test semantic search with actual data")
-    void testSemanticSearchWithData() {
-        assertNotNull(vectorQueryService, "VectorQueryService required");
-
-        VectorQueryService.VectorStoreStats stats = vectorQueryService.getStats();
-        System.out.println("═══════════════════════════════════════════════════════════");
-        System.out.println("Current Vector Store Status:");
-        System.out.println("  Total Chunks: " + stats.totalChunks());
-        System.out.println("  Total Documents: " + stats.totalDocuments());
-        System.out.println("═══════════════════════════════════════════════════════════");
-
-        // Only run search tests if we have data
-        if (stats.totalChunks() > 0) {
-            // Test multiple search queries
-            String[] queries = {
-                "Java Spring Boot",
-                "backend development",
-                "machine learning",
-                "database experience",
-                "Python programming"
-            };
-
-            for (String query : queries) {
-                List<VectorQueryService.VectorSearchResult> results =
-                        vectorQueryService.semanticSearch(query, 3);
-
-                System.out.println("Search for \"" + query + "\":");
-                for (int i = 0; i < results.size(); i++) {
-                    VectorQueryService.VectorSearchResult result = results.get(i);
-                    System.out.println("  [" + (i + 1) + "] " + result.path() +
-                            " (similarity: " + String.format("%.3f", result.similarity()) + ")");
-                }
-                System.out.println();
-
-                // Verify we got results
-                assertTrue(results.size() >= 0, "Should return results (possibly empty)");
-            }
-        } else {
-            System.out.println("⚠️  No data in vector store. Run rag-sync first:");
-            System.out.println("   doppler run --project portfolio-web --config dev_personal -- npm run rag-sync");
-        }
-        System.out.println("═══════════════════════════════════════════════════════════");
-
-        assertNotNull(stats);
-    }
-
-    @Test
-    @Order(32)
-    @DisplayName("32. Test category-based search")
-    void testCategoryBasedSearch() {
-        assertNotNull(vectorQueryService, "VectorQueryService required");
-
-        VectorQueryService.VectorStoreStats stats = vectorQueryService.getStats();
-
-        if (stats.totalChunks() > 0) {
-            // Test personal category
-            List<VectorQueryService.VectorSearchResult> personalResults =
-                    vectorQueryService.searchByCategory("personal", "experience skills", 5);
-
-            System.out.println("═══════════════════════════════════════════════════════════");
-            System.out.println("Category [personal] Search Results:");
-            for (int i = 0; i < personalResults.size(); i++) {
-                System.out.println("  [" + (i + 1) + "] " + personalResults.get(i).path());
-            }
-            System.out.println("═══════════════════════════════════════════════════════════");
-
-            // Test projects category
-            List<VectorQueryService.VectorSearchResult> projectResults =
-                    vectorQueryService.searchByCategory("projects", "portfolio ecommerce", 5);
-
-            System.out.println("═══════════════════════════════════════════════════════════");
-            System.out.println("Category [projects] Search Results:");
-            for (int i = 0; i < projectResults.size(); i++) {
-                System.out.println("  [" + (i + 1) + "] " + projectResults.get(i).path());
-            }
-            System.out.println("═══════════════════════════════════════════════════════════");
-
-            assertTrue(personalResults.size() >= 0);
-            assertTrue(projectResults.size() >= 0);
-        } else {
-            System.out.println("⚠️  No data in vector store. Run rag-sync first.");
-        }
     }
 
     // ==================== Empty Vector Store Handling ====================
 
     @Test
-    @Order(40)
-    @DisplayName("40. Handle empty vector store gracefully")
+    @Order(50)
+    @DisplayName("50. Handle empty vector store gracefully")
     void testEmptyVectorStore() {
         assertNotNull(vectorQueryService, "VectorQueryService required");
 
         // This should not throw an exception even if vector store is empty
         List<VectorQueryService.VectorSearchResult> results =
-                vectorQueryService.semanticSearch("nonexistent content xyz123", 3);
+                vectorQueryService.searchByCategory("personal", "nonexistent content xyz123", 3);
 
         assertNotNull(results);
         // Empty result is acceptable

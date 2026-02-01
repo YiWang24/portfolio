@@ -15,10 +15,8 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '')
 
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = [
-  'https://docs.yiw.me',
   'https://www.yiw.me',
-  'http://localhost:3000',
-  'http://localhost:3001',
+  'http://localhost:3000'
 ];
 
 export const runtime = "nodejs";

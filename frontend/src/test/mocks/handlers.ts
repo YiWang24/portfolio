@@ -3,6 +3,7 @@
  * Provides mock responses for SSE streaming and contact API
  */
 
+import { vi } from "vitest";
 import type { StreamHandlers, ToolExecution } from "@/types/stream";
 
 /**

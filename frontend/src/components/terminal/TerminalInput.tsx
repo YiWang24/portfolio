@@ -37,7 +37,7 @@ const SUGGESTIONS = [
   'Show me your GitHub stats',
   'What are your skills?',
   'Tell me about yourself',
-] as const;
+];
 
 export const TerminalInput = forwardRef<TerminalInputRef, TerminalInputProps>(
   ({ onSend, isStreaming, onFocusChange }, ref) => {

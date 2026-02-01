@@ -104,20 +104,30 @@ export const mockProfileData: ProfileData = {
       twitter: "https://twitter.com/yiwang",
     },
   },
+  education: [
+    {
+      school: "Stanford University",
+      degree: "BS Computer Science",
+      period: "2015 - 2019",
+      logo: "https://example.com/stanford-logo.png",
+    },
+  ],
+  modules: [],
   experience: [
     {
-      id: "exp-1",
       company: "Tech Corp",
-      role: "Senior Software Engineer",
+      title: "Senior Software Engineer",
       period: "2022 - Present",
-      description: "Leading AI agent development initiatives",
-      technologies: ["Python", "LangChain", "FastAPI"],
-      logo: "https://example.com/logo.png",
+      location: "San Francisco, CA",
+      achievements: [
+        "Leading AI agent development initiatives",
+        "Built scalable microservices architecture",
+      ],
+      tech: ["Python", "LangChain", "FastAPI"],
     },
   ],
   projects: [
     {
-      id: "proj-1",
       title: "AI Chat Platform",
       summary: "Real-time AI chat with streaming responses",
       tech: ["Next.js", "Spring Boot", "OpenAI"],
@@ -127,11 +137,10 @@ export const mockProfileData: ProfileData = {
         website: "https://chat.example.com",
       },
       metrics: {
-        stars: 123,
+        stars: "123",
       },
     },
     {
-      id: "proj-2",
       title: "Resume Parser",
       summary: "AI-powered resume parsing and analysis",
       tech: ["Python", "NLP", "FastAPI"],
@@ -145,6 +154,9 @@ export const mockProfileData: ProfileData = {
       id: "cert-1",
       name: "AWS Solutions Architect",
       provider: "Amazon Web Services",
+      date: "2023-01",
+      validUntil: "2026-01",
+      logo: "https://example.com/aws-logo.png",
       link: "https://aws.amazon.com/certification/",
       color: "bg-gradient-to-br from-orange-500/20 to-red-500/20",
       iconColor: "text-orange-500",
@@ -160,12 +172,6 @@ export const mockProfileData: ProfileData = {
       grade: "A",
     },
   ],
-  stack: {
-    languages: ["TypeScript", "Python", "Java"],
-    frameworks: ["Next.js", "Spring Boot", "React"],
-    databases: ["PostgreSQL", "MongoDB", "Redis"],
-    tools: ["Docker", "Kubernetes", "Git"],
-  },
 };
 
 /**

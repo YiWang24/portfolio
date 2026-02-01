@@ -51,6 +51,13 @@ jobs:
         working-directory: ./backend
         run: ./mvnw clean compile -B
 
+      # Copy profile.json from frontend to backend resources
+      - name: Copy profile.json
+        run: |
+          mkdir -p ./backend/src/main/resources
+          cp ./frontend/src/data/profile.json ./backend/src/main/resources/profile.json
+          echo "✅ Copied profile.json to backend/src/main/resources/"
+
       - name: Package application
         working-directory: ./backend
         run: ./mvnw package -DskipTests -B

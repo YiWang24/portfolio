@@ -2,10 +2,6 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable instrumentation hook for server-side profile sync
-  experimental: {
-    instrumentationHook: true,
-  },
   images: {
     remotePatterns: [
       {
@@ -13,22 +9,6 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
       },
     ],
-  },
-  // Rewrite /documentation to Docusaurus in development only
-  async rewrites() {
-    // Only apply rewrites in development
-    if (process.env.NODE_ENV === 'production') {
-      return [];
-    }
-    
-    // In dev, proxy to local Docusaurus server
-    const docsUrl = "http://localhost:3001";
-    return [
-      {
-        source: "/documentation/:path*",
-        destination: `${docsUrl}/documentation/:path*`,
-      },
-    ];
   },
 };
 

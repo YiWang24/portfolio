@@ -59,6 +59,21 @@ echo -e "  Config:  ${CONFIG}"
 echo -e "  Sentry:  $([ "$SKIP_SENTRY" = "true" ] && echo "skipped" || echo "enabled")"
 echo ""
 
+# Copy profile.json to backend resources
+echo -e "${GREEN}Copying profile.json to backend resources...${NC}"
+FRONTEND_PROFILE="../frontend/src/data/profile.json"
+BACKEND_RESOURCES="src/main/resources/profile.json"
+
+if [ ! -f "$FRONTEND_PROFILE" ]; then
+    echo -e "${RED}Error: Frontend profile.json not found at $FRONTEND_PROFILE${NC}"
+    exit 1
+fi
+
+mkdir -p src/main/resources
+cp "$FRONTEND_PROFILE" "$BACKEND_RESOURCES"
+echo -e "${GREEN}✅ Copied profile.json to $BACKEND_RESOURCES${NC}"
+echo ""
+
 # Build Maven arguments
 MAVEN_ARGS="spring-boot:run"
 if [ "$SKIP_SENTRY" = "true" ]; then

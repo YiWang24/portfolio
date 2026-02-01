@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "doppler run -- next dev",
+    "build": "npm run copy-profile && next build",
+    "copy-profile": "mkdir -p ../backend/src/main/resources && cp src/data/profile.json ../backend/src/main/resources/profile.json",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest --run",

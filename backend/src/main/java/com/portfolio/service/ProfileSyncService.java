@@ -13,7 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
-import java.nio.file.Files;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,7 +85,10 @@ public class ProfileSyncService {
             );
         }
 
-        String profileJson = Files.readString(resource.getFile().toPath());
+        String profileJson;
+        try (InputStream is = resource.getInputStream()) {
+            profileJson = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
         log.info("Successfully loaded profile.json ({} chars)", profileJson.length());
 
         return profileJson;

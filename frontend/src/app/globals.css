@@ -1176,15 +1176,23 @@ main {
   color: #93c5fd;
 }
 .cli-response-content strong {
-  color: #e5e5e5;
+  color: #0f172a;
   font-weight: 600;
+}
+.dark .cli-response-content strong {
+  color: #e5e5e5;
 }
 .cli-response-content h1,
 .cli-response-content h2,
 .cli-response-content h3 {
-  color: #e5e5e5;
+  color: #0f172a;
   margin: 12px 0 8px;
   font-weight: 600;
+}
+.dark .cli-response-content h1,
+.dark .cli-response-content h2,
+.dark .cli-response-content h3 {
+  color: #e5e5e5;
 }
 
 /* Streaming Cursor */

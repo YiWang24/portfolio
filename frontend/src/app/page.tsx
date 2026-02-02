@@ -72,7 +72,7 @@ export default function Home() {
           }}
           // 修改 1: 使用 flex-col, items-center (水平居中), justify-center (垂直居中)
           // pt-32 (increased from pt-16) to prevent overlap with navbar on mobile
-          className="mobile-hero-no-blur relative w-full h-screen flex flex-col items-center justify-center pt-32 md:pt-16 overflow-hidden"
+          className="mobile-hero-no-blur relative w-full h-screen shrink-0 flex flex-col items-center justify-center pt-32 md:pt-16 overflow-hidden"
         >
 
           {/* Terminal Frame */}

@@ -57,4 +57,12 @@ describe("Home hero layout", () => {
     expect(hero).toBeInTheDocument();
     expect(hero).toHaveClass("shrink-0");
   });
+
+  test("hero container uses tighter top padding on mobile", () => {
+    const { container } = render(<Home />);
+    const hero = container.querySelector(".mobile-hero-no-blur");
+
+    expect(hero).toBeInTheDocument();
+    expect(hero).toHaveClass("pt-20");
+  });
 });

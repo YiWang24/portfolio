@@ -3156,9 +3156,3 @@ html {
   transform: translateZ(0);
   backface-visibility: hidden;
 }
-
-/* Smooth scroll snap with proximity instead of mandatory */
-.snap-proximity-smooth {
-  scroll-snap-type: y proximity;
-  scroll-behavior: smooth;
-}

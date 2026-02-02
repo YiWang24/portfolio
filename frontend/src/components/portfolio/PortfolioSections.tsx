@@ -27,7 +27,7 @@ export default function PortfolioSections({ data }: PortfolioSectionsProps) {
       <div className="relative z-10 w-full">
         {/* About Section - Full Viewport with Scroll Snap */}
         <ScrollReveal width="full">
-          <div id="about" className="min-h-screen w-full flex items-center justify-center snap-start pt-20 relative">
+          <div id="about" className="min-h-screen w-full flex items-center justify-center pt-20 relative">
             <AboutSection about={data.about} education={data.education} />
 
             {/* Connecting Line to Next Section */}

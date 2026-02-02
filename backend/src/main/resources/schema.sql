@@ -41,3 +41,24 @@ CREATE TABLE IF NOT EXISTS contact_messages (
 
 -- Create index for contact messages
 CREATE INDEX IF NOT EXISTS idx_contact_messages_created_at ON contact_messages(created_at DESC);
+
+-- Create api_logs table for API call tracking
+CREATE TABLE IF NOT EXISTS api_logs (
+    id BIGSERIAL PRIMARY KEY,
+    request_method VARCHAR(10) NOT NULL,
+    request_path VARCHAR(500) NOT NULL,
+    request_params TEXT,
+    request_body TEXT,
+    response_body TEXT,
+    status_code INTEGER NOT NULL,
+    duration_ms BIGINT NOT NULL,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Indexes for common query patterns
+CREATE INDEX IF NOT EXISTS idx_api_logs_created_at ON api_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_api_logs_path_method ON api_logs(request_path, request_method);
+CREATE INDEX IF NOT EXISTS idx_api_logs_status_code ON api_logs(status_code);
+CREATE INDEX IF NOT EXISTS idx_api_logs_ip_address ON api_logs(ip_address);

@@ -49,19 +49,19 @@
       "degree": "B.S. Computer Science",
       "school": "York University",
       "period": "2024 - 2027",
-      "logo": "https://media.licdn.com/dms/image/v2/D560BAQFI_4JbiEOmPQ/company-logo_200_200/company-logo_200_200/0/1688670035445?e=1770249600&v=beta&t=LNZ1YvdUmOP8UX65jmzWjLw2MJN5a_SG7OeU8xKSQfA"
+      "logo": "/york.png"
     },
     {
       "degree": "M.S. Statistics",
       "school": "Henan University of Economics and Law",
       "period": "2020 - 2022",
-      "logo": "https://media.licdn.com/dms/image/v2/C510BAQF9MujiNJ81Cw/company-logo_100_100/company-logo_100_100/0/1631415516998/henan_university_of_economics_and_law_logo?e=1770249600&v=beta&t=q-tRhdNQGaBywLTZaPW4KelwkQEUs38SevGmScUrvpc"
+      "logo": "/huel.png"
     },
     {
       "degree": "B.S. Economics",
       "school": "Zhengzhou University",
       "period": "2016 - 2020",
-      "logo": "https://media.licdn.com/dms/image/v2/C560BAQHjxVjUniEPdg/company-logo_100_100/company-logo_100_100/0/1631362913675?e=1770249600&v=beta&t=dEzpdk7gJAuhy25Dlwot7xgUFuFgrMvq7Oymj1xwfpY"
+      "logo": "/zzu.png"
     }
   ],
   "experience": [

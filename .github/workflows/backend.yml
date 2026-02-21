@@ -78,11 +78,12 @@ jobs:
             image=moby/buildkit:latest
             network=host
 
-      # 5. Build and push Docker image
+      # 5. Build and push Docker image (multi-arch)
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ env.IMAGE_TAG }}
           cache-from: type=registry,ref=${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:buildcache
@@ -151,7 +152,7 @@ jobs:
             docker run -d \
               --name $IMG_NAME \
               --restart unless-stopped \
-              -p 8080:8080 \
+              -p 8888:8888 \
               --env-file "$ENV_FILE" \
               --memory=700m \
               --memory-reservation=200m \
@@ -166,7 +167,7 @@ jobs:
             # 8. Health check
             echo "Waiting for service to start..."
             sleep 10
-            if curl -s http://localhost:8080/actuator/health > /dev/null; then
+            if curl -s http://localhost:8888/api/v1/health > /dev/null; then
               echo "✅ Health check passed!"
             else
               echo "⚠️ Health check warning: Endpoint not reachable yet."

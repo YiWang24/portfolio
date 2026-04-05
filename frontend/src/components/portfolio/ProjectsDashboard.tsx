@@ -165,11 +165,11 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                                     </div>
 
                                     <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-6 sm:mt-8">
-                                        {featuredProject.links?.demo && (
+                                        {(featuredProject.links?.website || featuredProject.links?.demo) && (
                                             <Button
                                                 variant="default"
                                                 className="min-h-[44px] px-6 bg-teal-600 hover:bg-teal-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white dark:text-black font-bold font-mono tracking-wide cursor-pointer"
-                                                onClick={() => safeOpenUrl(featuredProject.links?.website ?? '')}
+                                                onClick={() => safeOpenUrl(featuredProject.links?.website || featuredProject.links?.demo || '')}
                                             >
                                                 <Globe className="w-4 h-4 mr-2" />
                                                 LAUNCH_
@@ -235,7 +235,7 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                             >
                                 <Card
                                     onClick={() => {
-                                        const url = project.links?.demo || project.links?.repo;
+                                        const url = project.links?.website || project.links?.demo || project.links?.repo;
                                         if (url) safeOpenUrl(url);
                                     }}
                                     className="group h-full flex flex-col bg-white dark:bg-zinc-900/20 backdrop-blur-md border border-slate-300 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-none hover:border-teal-500/50 dark:hover:border-cyan-500/50 transition-all duration-300 hover:-translate-y-1 overflow-hidden relative cursor-pointer"
@@ -282,6 +282,11 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                                                     {project.links?.demo && (
                                                         <a href={project.links.demo} target="_blank" onClick={(e) => e.stopPropagation()} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-primary transition-colors">
                                                             <ExternalLink className="w-4 h-4" />
+                                                        </a>
+                                                    )}
+                                                    {project.links?.website && (
+                                                        <a href={project.links.website} target="_blank" onClick={(e) => e.stopPropagation()} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-primary transition-colors">
+                                                            <Globe className="w-4 h-4" />
                                                         </a>
                                                     )}
                                                 </div>

@@ -66,6 +66,18 @@
   ],
   "experience": [
     {
+      "company": "Morphace",
+      "title": "AI Full Stack Developer",
+      "period": "Feb 2026 - Present",
+      "achievements": [
+        "Implemented intelligent failover mechanisms in model-fallback services, improving system stability and reducing user latency during model outages.",
+        "Engineered RAG-based scientific insight pipelines using LangGraph and LangChain to enhance wearable skin-tech analytical capabilities.",
+        "Authored secure authentication services utilizing OAuth 2.0 and JWT to protect sensitive biometric and skincare data."
+      ],
+      "location": "Toronto, ON",
+      "tech": ["TypeScript", "Node.js", "FastAPI", "LangChain", "LangGraph"]
+    },
+    {
       "company": "SREDSimplify",
       "title": "Co-Founder & Full Stack Developer",
       "period": "Jul 2025 - Present",
@@ -113,27 +125,27 @@
       }
     },
     {
-      "title": "Nand2Tetris",
-      "summary": "This repository contains implementations of the projects from the book The Elements of Computing Systems, also known as Nand2Tetris. It involves building a full computer system from logic gates up to an operating system. This was a deep dive into computer architecture!",
-      "tech": ["JavaScript", "Assembly", "Hack", "Java"],
+      "title": "FitLogic",
+      "summary": "AI-driven full-stack fitness ecosystem that leverages GPT-4 Vision and biometric data integration to provide real-time personalized nutrition and training protocols.",
+      "tech": ["Next.js", "TypeScript", "Tailwind CSS", "OpenAI API", "PostgreSQL"],
       "links": {
-        "repo": "https://github.com/YiWang24/Nand2Tetris"
+        "website": "https://fitlogic.vercel.app/"
       }
     },
     {
-      "title": "CS61B-21SP: Data Structures",
-      "summary": "This repository showcases my solutions and implementations for UC Berkeley's CS61B: Data Structures course. It was a rigorous exploration of fundamental data structures and algorithms, primarily implemented in Java.",
-      "tech": ["Java", "Python"],
+      "title": "SmartDiet Copilot",
+      "summary": "Agentic nutrition platform that transforms available ingredients into personalized meal plans, optimizing for macros, spoilage reduction, and dietary constraints.",
+      "tech": ["Next.js", "TypeScript", "Tailwind CSS", "OpenAI API", "OCR"],
       "links": {
-        "repo": "https://github.com/YiWang24/CS61B-21SP"
+        "website": "https://dietcopilot.vercel.app/"
       }
     },
     {
-      "title": "DbHub",
-      "summary": "DbHub is a lightweight solution for running and managing multiple databases using Docker. I built it using shell scripting and JavaScript to create a robust and easy-to-use database hub.",
-      "tech": ["Shell Scripting", "Docker", "JavaScript"],
+      "title": "SplitBase",
+      "summary": "Bill-splitting platform on Base network, facilitating instant settlement using USDC and creating NFT-based receipts for transactions.",
+      "tech": ["Next.js", "TypeScript", "Tailwind CSS", "Base Network", "Solidity", "USDC"],
       "links": {
-        "repo": "https://github.com/YiWang24/DbHub"
+        "website": "https://split.yiw.me/"
       }
     }
   ],

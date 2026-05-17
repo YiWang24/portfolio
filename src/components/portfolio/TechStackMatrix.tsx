@@ -6,14 +6,17 @@ import { SectionBadge } from "./SectionBadge";
 import { cn } from "@/lib/utils";
 import type { ProfileData } from "@/types/profile";
 
-// Import specific brand icons from react-icons/si
-// Note: Only importing standard ones to avoid version conflicts
-import {
+// Namespace import works around a Turbopack bug on Vercel where named
+// imports from react-icons/si's aggregate index.mjs are reported as
+// missing despite existing in the file. The `* as` form forces
+// Turbopack to load the module shape as a whole.
+import * as Si from "react-icons/si";
+const {
     SiPython, SiOpenai, SiPytorch,
     SiReact, SiNextdotjs, SiTypescript, SiTailwindcss, SiFramer,
     SiNodedotjs, SiFastapi, SiPostgresql, SiRedis, SiSocketdotio,
-    SiDocker, SiKubernetes, SiAmazon, SiGithubactions, SiTerraform
-} from "react-icons/si";
+    SiDocker, SiKubernetes, SiAmazon, SiGithubactions, SiTerraform,
+} = Si;
 
 // Mock LangChain icon component (since it might be missing in some versions)
 const LangChainIcon = ({ className }: { className?: string }) => (

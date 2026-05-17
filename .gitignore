@@ -63,8 +63,10 @@ yarn-error.log*
 # Vercel
 .vercel
 
-# Misc allowlists
+# Misc allowlists (override common global ignores like ~/.gitignore_global)
 !content/docs/
 !content/docs/**
 !src/app/docs/
 !src/app/docs/**
+!src/lib/
+!src/lib/**

@@ -3152,21 +3152,30 @@ main {
   }
 }
 
-/* ========== Smooth Scroll Enhancements ========== */
-/* Enable smooth scrolling for the entire page */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Enhance scroll smoothness for main container */
+/* ========== Scroll & motion performance ==========
+ *
+ * `scroll-behavior: smooth` on the scroll container was fighting framer-motion's
+ * spring-driven progress reads, producing micro-stutter on every gesture. We
+ * now own smooth-scrolling via JS only when explicitly invoked
+ * (`smoothScrollTo`), and let native wheel/trackpad input feel native.
+ *
+ * `overscroll-behavior` keeps wheel events from bubbling to <html> so the
+ * scroll position stays stable when a section is fully scrolled.
+ */
 #main-scroll-container {
-  scroll-behavior: smooth !important;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scroll-padding-top: 80px;
 }
 
-/* Hardware acceleration for smooth animations */
-.smooth-scroll-section {
-  will-change: scroll-position;
-  transform: translateZ(0);
-  backface-visibility: hidden;
+/* Respect users who explicitly prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

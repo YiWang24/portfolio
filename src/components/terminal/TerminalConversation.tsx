@@ -309,9 +309,13 @@ const TerminalConversation = forwardRef<
               <div className="cli-system-line">{msg.content}</div>
             ) : (
               <div className="cli-agent-response">
-                {shouldShowThinking(msg) && msg.functionSteps && (
+                {msg.functionSteps && msg.functionSteps.length > 0 ? (
                   <ThinkingChain steps={msg.functionSteps} />
-                )}
+                ) : msg.status === "thinking" &&
+                  !msg.content &&
+                  !msg.thoughts?.length ? (
+                  <ThinkingChain steps={[]} />
+                ) : null}
 
                 {shouldShowThinking(msg) &&
                   msg.thoughts &&
@@ -349,6 +353,15 @@ const TerminalConversation = forwardRef<
             )}
           </div>
         ))}
+
+        {isStreaming &&
+          localMessages[localMessages.length - 1]?.role !== "agent" && (
+            <div className="cli-message">
+              <div className="cli-agent-response">
+                <ThinkingChain steps={[]} />
+              </div>
+            </div>
+          )}
 
         {displayError && (
           <div className="cli-error-line">

@@ -11,6 +11,3 @@ export function captureError(err: unknown, context?: Record<string, unknown>): v
   }
 }
 
-export function logEvent(name: string, data?: Record<string, unknown>): void {
-  Sentry.addBreadcrumb({ category: "app", message: name, data, level: "info" });
-}

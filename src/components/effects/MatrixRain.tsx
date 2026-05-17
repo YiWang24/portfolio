@@ -36,9 +36,10 @@ export function MatrixRain() {
       drops[x] = Math.floor(Math.random() * -100); // start from different positions above the screen
     }
 
-    // 4. drawing loop - use requestAnimationFrame to improve smoothness
+    // 4. drawing loop - 30fps is plenty for the matrix-rain look and halves
+    // the per-frame fillText work compared to 60fps.
     let lastTime = 0;
-    const fps = 60;
+    const fps = 30;
     const frameInterval = 1000 / fps;
 
     const draw = (currentTime: number) => {
@@ -64,9 +65,9 @@ export function MatrixRain() {
           // x = column number * font width, y = current drop height * font height
           const y = drops[i] * fontSize;
 
-          // increase character display density: draw multiple characters per column instead of just one
-          // draw 8 characters from the current position upwards to form a raindrop effect
-          for (let j = 0; j < 8; j++) {
+          // draw 5 trailing characters per column (was 8) — visually
+          // indistinguishable but ~40% less fillText work each frame.
+          for (let j = 0; j < 5; j++) {
             const dropY = y - j * fontSize;
             if (dropY > 0 && dropY < canvas.height) {
               // the earlier the character, the brighter it is, and the tail characters gradually dim

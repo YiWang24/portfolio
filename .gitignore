@@ -70,3 +70,4 @@ yarn-error.log*
 !src/app/docs/**
 !src/lib/
 !src/lib/**
+.gstack/

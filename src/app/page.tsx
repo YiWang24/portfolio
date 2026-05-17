@@ -18,25 +18,16 @@ export default function Home() {
   const containerRef = useRef<HTMLElement>(null);
   const { scrollY } = useScroll({ container: containerRef });
 
-  // Parallax exit effect for Hero
-  const heroOpacity = useTransform(scrollY, [0, 400], [1, 0]);
-  const heroScale = useTransform(scrollY, [0, 400], [1, 0.9]);
-  const heroFilter = useTransform(scrollY, [0, 400], ["blur(0px)", "blur(10px)"]);
+  // Hero exit: transform + opacity only. No `filter: blur` — that property
+  // forces a full re-rasterization of the layer on every scroll frame and is
+  // the single largest cause of scroll jank on this page.
+  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0]);
+  const heroY = useTransform(scrollY, [0, 400], [0, -60]);
 
-  // Listen for custom event from NavBar
   useEffect(() => {
     const handleOpenContact = () => setIsContactOpen(true);
     window.addEventListener('openContact', handleOpenContact);
     return () => window.removeEventListener('openContact', handleOpenContact);
-  }, []);
-
-  // Detect mobile to disable blur effect on keyboard open
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   return (
@@ -65,14 +56,8 @@ export default function Home() {
       >
         {/* Hero Section */}
         <motion.div
-          style={{
-            opacity: heroOpacity,
-            scale: heroScale,
-            filter: isMobile ? "none" : heroFilter
-          }}
-          // 修改 1: 使用 flex-col, items-center (水平居中), justify-center (垂直居中)
-          // pt-32 (increased from pt-16) to prevent overlap with navbar on mobile
-          className="mobile-hero-no-blur relative w-full h-screen shrink-0 flex flex-col items-center justify-center pt-20 md:pt-16 overflow-hidden"
+          style={{ opacity: heroOpacity, y: heroY }}
+          className="mobile-hero-no-blur relative w-full h-screen shrink-0 flex flex-col items-center justify-center pt-20 md:pt-16 overflow-hidden will-change-transform"
         >
 
           {/* Terminal Frame */}

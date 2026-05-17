@@ -8,44 +8,27 @@ interface PerspectiveRevealProps {
     className?: string;
 }
 
-export default function PerspectiveReveal({ children, className = "" }: PerspectiveRevealProps) {
+// Used to apply rotateX + perspective(1200px), which created a 3D stacking
+// context over the fixed blurred background — every reveal forced the
+// rasterizer to re-composite the background subtree. Switched to 2D
+// transform+opacity for the same "rises into view" feel without the cost.
+export default function PerspectiveReveal({
+    children,
+    className = "",
+}: PerspectiveRevealProps) {
     const ref = useRef<HTMLDivElement>(null);
-
-    // 使用 useInView 替代 useScroll，不再依赖滚动容器的传递
-    // Detect when element appears in viewport
-    const isInView = useInView(ref, {
-        once: true, // Animation triggers only once
-        margin: "-10% 0px" // Trigger when element is slightly inside the viewport
-    });
+    const isInView = useInView(ref, { once: true, margin: "-12% 0px" });
 
     return (
-        <div
-            ref={ref}
-            className={`perspective-container ${className}`}
-            style={{ perspective: "1200px" }} // Define 3D space depth
-        >
+        <div ref={ref} className={className}>
             <motion.div
-                initial={{
-                    opacity: 0,
-                    rotateX: 20,
-                    scale: 0.9,
-                    y: 60
-                }}
-                animate={isInView ? {
-                    opacity: 1,
-                    rotateX: 0,
-                    scale: 1,
-                    y: 0
-                } : {}}
+                initial={{ opacity: 0, y: 48, scale: 0.97 }}
+                animate={isInView ? { opacity: 1, y: 0, scale: 1 } : undefined}
                 transition={{
-                    duration: 0.8,
-                    ease: [0.215, 0.61, 0.355, 1], // Cubic bezier for "out-cubic" easing
-                    delay: 0.1
+                    duration: 0.7,
+                    ease: [0.22, 1, 0.36, 1],
                 }}
-                style={{
-                    transformStyle: "preserve-3d"
-                }}
-                className="will-change-transform origin-bottom"
+                style={{ willChange: isInView ? "auto" : "transform, opacity" }}
             >
                 {children}
             </motion.div>

@@ -10,9 +10,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  experimental: {
-    optimizePackageImports: ["react-icons"],
-  },
+  transpilePackages: ["react-icons"],
 };
 
 export default withSentryConfig(nextConfig, {

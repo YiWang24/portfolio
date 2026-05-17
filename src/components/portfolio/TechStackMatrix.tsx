@@ -6,17 +6,19 @@ import { SectionBadge } from "./SectionBadge";
 import { cn } from "@/lib/utils";
 import type { ProfileData } from "@/types/profile";
 
-// Namespace import works around a Turbopack bug on Vercel where named
-// imports from react-icons/si's aggregate index.mjs are reported as
-// missing despite existing in the file. The `* as` form forces
-// Turbopack to load the module shape as a whole.
-import * as Si from "react-icons/si";
-const {
-    SiPython, SiOpenai, SiPytorch,
-    SiReact, SiNextdotjs, SiTypescript, SiTailwindcss, SiFramer,
-    SiNodedotjs, SiFastapi, SiPostgresql, SiRedis, SiSocketdotio,
-    SiDocker, SiKubernetes, SiAmazon, SiGithubactions, SiTerraform,
-} = Si;
+// Namespace import works around a Turbopack bug where named imports
+// from the aggregate si/index.mjs are reported as missing on Vercel.
+// The Si namespace is cast through `unknown` because the bundled type
+// declaration file has 3000+ named exports and individual destructured
+// access can produce per-name "does not exist" errors on Vercel's
+// TypeScript step even when each constant is declared.
+import type { ComponentType } from "react";
+import * as SiNamespace from "react-icons/si";
+
+const Si = SiNamespace as unknown as Record<
+    string,
+    ComponentType<{ className?: string }>
+>;
 
 // Mock LangChain icon component (since it might be missing in some versions)
 const LangChainIcon = ({ className }: { className?: string }) => (
@@ -27,31 +29,31 @@ const LangChainIcon = ({ className }: { className?: string }) => (
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
     // AI
-    "Python": SiPython,
+    "Python": Si.SiPython,
     "LangChain": LangChainIcon, // Custom fallback
-    "OpenAI": SiOpenai,
-    "PyTorch": SiPytorch,
+    "OpenAI": Si.SiOpenai,
+    "PyTorch": Si.SiPytorch,
 
     // Frontend
-    "React": SiReact,
-    "Nextjs": SiNextdotjs,
-    "TypeScript": SiTypescript,
-    "Tailwind": SiTailwindcss,
-    "Framer": SiFramer,
+    "React": Si.SiReact,
+    "Nextjs": Si.SiNextdotjs,
+    "TypeScript": Si.SiTypescript,
+    "Tailwind": Si.SiTailwindcss,
+    "Framer": Si.SiFramer,
 
     // Backend
-    "Nodejs": SiNodedotjs, // Note: SiNodedotjs
-    "FastAPI": SiFastapi,
-    "PostgreSQL": SiPostgresql,
-    "Redis": SiRedis,
-    "Socket": SiSocketdotio,
+    "Nodejs": Si.SiNodedotjs,
+    "FastAPI": Si.SiFastapi,
+    "PostgreSQL": Si.SiPostgresql,
+    "Redis": Si.SiRedis,
+    "Socket": Si.SiSocketdotio,
 
     // DevOps
-    "Docker": SiDocker,
-    "Kubernetes": SiKubernetes,
-    "AWS": SiAmazon,
-    "GitHub": SiGithubactions,
-    "Terraform": SiTerraform,
+    "Docker": Si.SiDocker,
+    "Kubernetes": Si.SiKubernetes,
+    "AWS": Si.SiAmazon,
+    "GitHub": Si.SiGithubactions,
+    "Terraform": Si.SiTerraform,
 
     // Generics
     "Database": Database,

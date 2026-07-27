@@ -59,7 +59,7 @@ export default function Navbar({ about }: Props) {
     { href: "#stack", label: "Stack" },
     { href: "#licenses", label: "Credentials" },
   ], []);
-  const docsUrl = process.env.NEXT_PUBLIC_DOCS_URL || "https://docs.yilab.tech";
+  const docsUrl = "https://docs.yilab.tech";
 
   return (
     <motion.header

@@ -59,6 +59,7 @@ export default function Navbar({ about }: Props) {
     { href: "#stack", label: "Stack" },
     { href: "#licenses", label: "Credentials" },
   ], []);
+  const docsUrl = process.env.NEXT_PUBLIC_DOCS_URL || "https://docs.yilab.tech";
 
   return (
     <motion.header
@@ -167,13 +168,26 @@ export default function Navbar({ about }: Props) {
 
           {/* Docs Button - Technical Manual Style */}
           <motion.a
-            href={process.env.NEXT_PUBLIC_DOCS_URL || '/documentation/'}
+            href={docsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg font-mono text-xs uppercase tracking-wider bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 dark:bg-slate-800 dark:text-amber-400 dark:border-slate-700 dark:hover:bg-slate-700 transition-all duration-200 whitespace-nowrap"
+            className="relative flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg font-mono text-xs uppercase tracking-wider bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 dark:bg-slate-800 dark:text-amber-400 dark:border-slate-700 dark:hover:bg-slate-700 transition-all duration-200 whitespace-nowrap"
+            animate={{
+              boxShadow: [
+                "0 0 0 0 rgba(245, 158, 11, 0.15)",
+                "0 0 0 8px rgba(245, 158, 11, 0)",
+                "0 0 0 0 rgba(245, 158, 11, 0.15)"
+              ]
+            }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
           >
+            <motion.span
+              className="pointer-events-none absolute inset-0 rounded-lg border border-amber-300/70 dark:border-amber-400/50"
+              animate={{ opacity: [0.35, 0.8, 0.35], scale: [1, 1.04, 1] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+            />
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
@@ -259,13 +273,26 @@ export default function Navbar({ about }: Props) {
               {/* Mobile Action Buttons */}
               <div className="flex flex-col gap-2">
                 <motion.a
-                  href={process.env.NEXT_PUBLIC_DOCS_URL || '/documentation/'}
+                  href={docsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="min-h-[48px] flex items-center justify-between px-4 py-3 font-mono text-sm uppercase tracking-wider rounded-xl bg-amber-50 text-amber-700 dark:bg-slate-800 dark:text-amber-400 border border-amber-200 dark:border-slate-700 cursor-pointer"
+                  className="relative min-h-[48px] flex items-center justify-between px-4 py-3 font-mono text-sm uppercase tracking-wider rounded-xl bg-amber-50 text-amber-700 dark:bg-slate-800 dark:text-amber-400 border border-amber-200 dark:border-slate-700 cursor-pointer"
+                  animate={{
+                    boxShadow: [
+                      "0 0 0 0 rgba(245, 158, 11, 0.2)",
+                      "0 0 0 10px rgba(245, 158, 11, 0)",
+                      "0 0 0 0 rgba(245, 158, 11, 0.2)"
+                    ]
+                  }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
+                  <motion.span
+                    className="pointer-events-none absolute inset-0 rounded-xl border border-amber-300/70 dark:border-amber-400/50"
+                    animate={{ opacity: [0.35, 0.8, 0.35], scale: [1, 1.03, 1] }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                  />
                   <span className="flex items-center gap-3">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />

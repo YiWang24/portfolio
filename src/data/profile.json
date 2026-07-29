@@ -66,16 +66,30 @@
   ],
   "experience": [
     {
-      "company": "Morphace",
-      "title": "AI Full Stack Developer",
-      "period": "Feb 2026 - Present",
+      "company": "PengLi Biotech (澎立生物 · CRO)",
+      "title": "Forward Deployed Engineer (AI Full Stack)",
+      "period": "May 2026 - Jul 2026",
       "achievements": [
-        "Implemented intelligent failover mechanisms in model-fallback services, improving system stability and reducing user latency during model outages.",
-        "Engineered RAG-based scientific insight pipelines using LangGraph and LangChain to enhance wearable skin-tech analytical capabilities.",
-        "Authored secure authentication services utilizing OAuth 2.0 and JWT to protect sensitive biometric and skincare data."
+        "Built an AI report-automation platform for preclinical CRO studies, compressing GLP report production from hours to minutes via a 9-step deterministic pipeline (extract → analyze → reconcile → numeric gate → render).",
+        "Designed a LangGraph narrative agent where every number binds to a computation trace and the LLM only writes prose — zero numeric hallucination with fail-closed numeric gates.",
+        "Delivered end-to-end observability with OpenTelemetry and Arize Phoenix LLM tracing; request_id spans user request → worker → LLM events → audit tables for compliance traceability.",
+        "Shipped at scale: FastAPI with 14 business domains, Celery workers, Next.js frontend, Prism charting service, 14 CI/CD workflows and 435 release iterations."
+      ],
+      "location": "Remote",
+      "tech": ["Python", "FastAPI", "LangGraph", "Celery", "Next.js", "OpenTelemetry"]
+    },
+    {
+      "company": "Morphace",
+      "title": "Full-Stack Engineer Intern",
+      "period": "Feb 2026 - Apr 2026",
+      "achievements": [
+        "Built a GPT-4o AI Skin Insight engine with a deterministic scoring layer plus generative narrative layer, keeping dashboard data stable while the LLM handles language only.",
+        "Shipped prompt versioning with 6 guardrail rules and reflection retries — violation feedback loops back into the prompt automatically.",
+        "Persisted full LLM call context for observability and cut ~70% repeat LLM cost via SHA256 input-hash snapshot caching with template fallback for SLA.",
+        "Backend on FastAPI + SQLAlchemy async (9 endpoints / 9 services / 10 repositories) with AWS Cognito, S3 + CloudFront, Lambda, and 48 tests across unit/integration/e2e."
       ],
       "location": "Toronto, ON",
-      "tech": ["TypeScript", "Node.js", "FastAPI", "LangChain", "LangGraph"]
+      "tech": ["FastAPI", "SQLAlchemy", "AWS", "SwiftUI", "GPT-4o"]
     },
     {
       "company": "SREDSimplify",
@@ -133,11 +147,12 @@
       }
     },
     {
-      "title": "SmartDiet Copilot",
-      "summary": "Agentic nutrition platform that transforms available ingredients into personalized meal plans, optimizing for macros, spoilage reduction, and dietary constraints.",
-      "tech": ["Next.js", "TypeScript", "Tailwind CSS", "OpenAI API", "OCR"],
+      "title": "Possibility",
+      "summary": "AI decision-companion 'Life OS' for young adults at career crossroads — an AI conversation absorbs uncertainty, then matches users with real human experiences at the decisive moment. iOS app with Supabase Edge Functions and Claude.",
+      "award": "1st Prize · AdventureX 2026 灵光赛道",
+      "tech": ["SwiftUI", "Supabase", "Claude API", "TypeScript", "PostgreSQL"],
       "links": {
-        "website": "https://dietcopilot.vercel.app/"
+        "repo": "https://github.com/YiWang24/possibility"
       }
     },
     {
@@ -296,6 +311,17 @@
     }
   ],
   "certifications": [
+    {
+      "id": "dkvfahtqjw42",
+      "name": "Claude Certified Architect – Foundations",
+      "provider": "Anthropic",
+      "date": "2026-07",
+      "validUntil": "Permanent",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/7/78/Anthropic_logo.svg",
+      "color": "from-orange-500/20 to-amber-600/20",
+      "iconColor": "text-orange-600",
+      "link": "https://verify.skilljar.com/c/dkvfahtqjw42"
+    },
     {
       "id": "UC-1e3dee61-0608-4b84-bcbb-bc318bf0f695",
       "name": "Spring Boot & AI eCommerce Masterclass",

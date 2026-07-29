@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Github, ExternalLink, Terminal, Cpu, Activity, Lock, Globe, Server, Hash } from "lucide-react";
+import { Github, ExternalLink, Terminal, Cpu, Activity, Lock, Globe, Server, Hash, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -253,6 +253,16 @@ export function ProjectsDashboard({ projects }: ProjectsDashboardProps) {
                                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/50 shadow-[0_0_5px_rgba(16,185,129,0.5)] animate-pulse" />
                                                 </div>
                                             </div>
+
+                                            {/* Award Badge */}
+                                            {project.award && (
+                                                <div className="flex items-center gap-1.5 mb-3 relative z-10">
+                                                    <Badge variant="outline" className="border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-mono text-[10px] gap-1.5 px-2 py-0.5">
+                                                        <Trophy className="w-3 h-3" />
+                                                        {project.award}
+                                                    </Badge>
+                                                </div>
+                                            )}
 
                                             {/* Description */}
                                             <p className="text-xs text-muted-foreground flex-1 mb-6 leading-relaxed line-clamp-3 relative z-10">

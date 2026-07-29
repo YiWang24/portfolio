@@ -72,6 +72,7 @@ export type ProfileData = {
   projects: {
     title: string;
     summary: string;
+    award?: string;
     tech: string[];
     links?: {
       demo?: string;

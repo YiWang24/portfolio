@@ -3179,3 +3179,18 @@ main {
     scroll-behavior: auto !important;
   }
 }
+
+/* Animated glow for the Docs button so it draws attention. */
+@keyframes docs-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.35), 0 0 14px rgba(245, 158, 11, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.65), 0 0 32px rgba(245, 158, 11, 0.35);
+  }
+}
+
+.docs-glow {
+  animation: docs-glow 2.2s ease-in-out infinite;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { StatusBar } from "./StatusBar";
 import TerminalConversation, {
@@ -8,11 +8,24 @@ import TerminalConversation, {
 } from "./TerminalConversation";
 import { useUIStore } from "@/stores/ui-store";
 
+const SESSION_STORAGE_KEY = "portfolio-chat-session";
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default function TerminalPanel() {
-  const sessionId = useMemo(
-    () => globalThis.crypto?.randomUUID?.() ?? `session-${Date.now()}`,
-    []
-  );
+  const [sessionId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      let id = window.localStorage.getItem(SESSION_STORAGE_KEY);
+      if (!id || !UUID_RE.test(id)) {
+        id = crypto.randomUUID();
+        window.localStorage.setItem(SESSION_STORAGE_KEY, id);
+      }
+      return id;
+    } catch {
+      return globalThis.crypto?.randomUUID?.() ?? null;
+    }
+  });
   const [isFocused, setIsFocused] = useState(true);
   const setMatrixActive = useUIStore((state) => state.setMatrixActive);
   const isMatrixActive = useUIStore((state) => state.isMatrixActive);
@@ -57,8 +70,9 @@ export default function TerminalPanel() {
       </div>
 
       <TerminalConversation
+        key={sessionId ?? "pending"}
         ref={conversationRef}
-        sessionId={sessionId}
+        sessionId={sessionId ?? undefined}
         isMatrixActive={isMatrixActive}
         setMatrixActive={setMatrixActive}
         onOpenContact={handleOpenContact}

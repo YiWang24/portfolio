@@ -3,7 +3,9 @@ import { z } from "zod";
 const serverEnvSchema = z.object({
   OPENAI_COMPAT_BASE_URL: z.string().url(),
   OPENAI_COMPAT_API_KEY: z.string().min(1),
-  GLM_CHAT_MODEL: z.string().default("glm-4.5"),
+  GLM_CHAT_MODEL: z.string().default("glm-5.2"),
+  GLM_ROUTER_MODEL: z.string().default("glm-5.2"),
+  GLM_FALLBACK_MODEL: z.string().default("glm-5.2"),
   GLM_EMBEDDING_MODEL: z.string().default("embedding-3"),
   GLM_EMBEDDING_DIM: z.coerce.number().int().positive().default(2048),
 

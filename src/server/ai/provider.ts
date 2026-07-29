@@ -1,5 +1,6 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { getServerEnv } from "@/server/env";
+import { withModelFallback } from "@/server/ai/fallback";
 
 let cached: ReturnType<typeof createOpenAICompatible> | undefined;
 
@@ -16,6 +17,22 @@ function getProvider() {
 
 export function chatModel() {
   return getProvider().chatModel(getServerEnv().GLM_CHAT_MODEL);
+}
+
+export function routerModel() {
+  return getProvider().chatModel(getServerEnv().GLM_ROUTER_MODEL);
+}
+
+export function fallbackModel() {
+  return getProvider().chatModel(getServerEnv().GLM_FALLBACK_MODEL);
+}
+
+export function resilientChatModel() {
+  return withModelFallback(chatModel(), fallbackModel());
+}
+
+export function resilientRouterModel() {
+  return withModelFallback(routerModel(), chatModel());
 }
 
 export function embeddingModel() {

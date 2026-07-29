@@ -24,6 +24,33 @@ CREATE INDEX IF NOT EXISTS idx_vector_store_path ON vector_store(path);
 -- path prefix), so sequential cosine scan is well under 10ms. If we later
 -- swap to a <=2000-dim embedding model, add an HNSW index here.
 
+-- Hybrid retrieval: full-text search column fused with vector scores via RRF
+ALTER TABLE vector_store
+    ADD COLUMN IF NOT EXISTS content_tsv tsvector
+    GENERATED ALWAYS AS (to_tsvector('english', content)) STORED;
+
+CREATE INDEX IF NOT EXISTS idx_vector_store_tsv
+    ON vector_store USING GIN(content_tsv);
+
+-- Chat session persistence (durable conversations + agent state)
+CREATE TABLE IF NOT EXISTS chat_sessions (
+    id UUID PRIMARY KEY,
+    agent VARCHAR(20) NOT NULL DEFAULT 'router',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id VARCHAR(64) PRIMARY KEY,
+    session_id UUID NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL,
+    parts JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_messages_session
+    ON chat_messages(session_id, created_at);
+
 -- Contact form submissions
 CREATE TABLE IF NOT EXISTS contact_messages (
     id SERIAL PRIMARY KEY,

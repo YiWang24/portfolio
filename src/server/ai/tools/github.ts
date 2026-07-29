@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Buffer } from "node:buffer";
 import { octokit, githubUsername } from "@/server/github-client";
 import { getGitHubStats } from "@/server/github";
+import { spotlight } from "@/server/ai/guardrails";
 
 const FILE_EXTENSION_ALLOWLIST = /\.(md|java|ts|tsx|js|json|py)$/i;
 const FILE_DENYLIST = /\.env|secret/i;
@@ -311,16 +312,20 @@ export const readRepoFileTool = tool({
       }
       const raw = Buffer.from(data.content, "base64").toString("utf8");
       const lines = raw.split("\n");
+      const origin = `github:${repoName}/${filePath}`;
       if (lines.length > 200) {
         const head = lines.slice(0, 50).join("\n");
         const tail = lines.slice(-50).join("\n");
         const truncated = lines.length - 100;
         return {
           file: filePath,
-          content: `${head}\n\n...[truncated ${truncated} lines]...\n\n${tail}\n`,
+          content: spotlight(
+            `${head}\n\n...[truncated ${truncated} lines]...\n\n${tail}\n`,
+            origin
+          ),
         };
       }
-      return { file: filePath, content: raw };
+      return { file: filePath, content: spotlight(raw, origin) };
     } catch (err) {
       return errorPayload(
         `Failed to read file: ${err instanceof Error ? err.message : "unknown"}`

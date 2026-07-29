@@ -12,7 +12,11 @@ import {
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, type UIMessage } from "ai";
+import {
+  DefaultChatTransport,
+  lastAssistantMessageIsCompleteWithToolCalls,
+  type UIMessage,
+} from "ai";
 import { createMessageId } from "../../utils/terminal";
 import {
   processLocalCommand,
@@ -143,12 +147,89 @@ const TerminalConversation = forwardRef<
       []
     );
 
-    const { messages: aiMessages, sendMessage, status, error } = useChat({
+    const {
+      messages: aiMessages,
+      sendMessage,
+      setMessages,
+      addToolResult,
+      status,
+      error,
+    } = useChat({
       id: sessionId,
       transport,
+      sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     });
 
     const isStreaming = status === "submitted" || status === "streaming";
+
+    const historyLoadedRef = useRef(false);
+    useEffect(() => {
+      if (!sessionIdProp || historyLoadedRef.current) return;
+      historyLoadedRef.current = true;
+      fetch(`/api/chat/history?sessionId=${encodeURIComponent(sessionIdProp)}`)
+        .then((res) => (res.ok ? res.json() : { messages: [] }))
+        .then((data: { messages?: UIMessage[] }) => {
+          const restored = data.messages ?? [];
+          if (restored.length === 0) return;
+          setMessages(restored);
+          setLocalMessages(
+            restored.map((m) =>
+              m.role === "user"
+                ? {
+                    id: m.id,
+                    role: "user" as const,
+                    content: m.parts
+                      .filter(
+                        (p): p is { type: "text"; text: string } =>
+                          p.type === "text"
+                      )
+                      .map((p) => p.text)
+                      .join(""),
+                    status: "completed" as MessageStatus,
+                  }
+                : uiMessageToTerminal(m, "completed")
+            )
+          );
+        })
+        .catch(() => {});
+    }, [sessionIdProp, setMessages]);
+
+    type PendingApproval = {
+      toolCallId: string;
+      message?: string;
+      replyTo?: string;
+    };
+
+    const findPendingApproval = (): PendingApproval | null => {
+      const last = aiMessages[aiMessages.length - 1];
+      if (!last || last.role !== "assistant") return null;
+      for (const part of last.parts) {
+        if (part.type !== "tool-sendContactMessage") continue;
+        const toolPart = part as {
+          state?: string;
+          toolCallId?: string;
+          input?: { message?: string; replyTo?: string };
+        };
+        if (toolPart.state === "input-available" && toolPart.toolCallId) {
+          return {
+            toolCallId: toolPart.toolCallId,
+            message: toolPart.input?.message,
+            replyTo: toolPart.input?.replyTo,
+          };
+        }
+      }
+      return null;
+    };
+    const pendingApproval = findPendingApproval();
+
+    const handleApproval = async (approved: boolean) => {
+      if (!pendingApproval) return;
+      await addToolResult({
+        tool: "sendContactMessage",
+        toolCallId: pendingApproval.toolCallId,
+        output: approved ? "approve" : "deny",
+      });
+    };
 
     useImperativeHandle(ref, () => ({
       focus: () => {
@@ -363,6 +444,44 @@ const TerminalConversation = forwardRef<
             </div>
           )}
 
+        {pendingApproval && (
+          <div className="cli-message">
+            <div className="cli-agent-response">
+              <div className="border border-emerald-500/40 rounded p-3 my-2 font-mono text-sm">
+                <div className="text-emerald-400 mb-1">
+                  Confirm: send this message to Yi Wang?
+                </div>
+                {pendingApproval.message && (
+                  <div className="text-zinc-300 mb-1">
+                    &quot;{pendingApproval.message}&quot;
+                  </div>
+                )}
+                {pendingApproval.replyTo && (
+                  <div className="text-zinc-500 mb-1">
+                    reply-to: {pendingApproval.replyTo}
+                  </div>
+                )}
+                <div className="flex gap-4 mt-2">
+                  <button
+                    type="button"
+                    className="text-emerald-400 hover:text-emerald-300 underline"
+                    onClick={() => handleApproval(true)}
+                  >
+                    [Y] Send it
+                  </button>
+                  <button
+                    type="button"
+                    className="text-red-400 hover:text-red-300 underline"
+                    onClick={() => handleApproval(false)}
+                  >
+                    [N] Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {displayError && (
           <div className="cli-error-line">
             <span className="cli-error-prefix">[ERROR]</span>
@@ -370,7 +489,7 @@ const TerminalConversation = forwardRef<
           </div>
         )}
 
-        {!isStreaming && !isMatrixActive && (
+        {!isStreaming && !isMatrixActive && !pendingApproval && (
           <TerminalInput
             ref={inputRef}
             onSend={handleSendMessage}

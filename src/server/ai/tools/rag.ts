@@ -1,18 +1,20 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { cosineSearch, type VectorSearchResult } from "@/server/db/vector";
+import { hybridSearch, type HybridSearchResult } from "@/server/db/vector";
 
-function formatResults(results: VectorSearchResult[], query: string, category: string) {
+function formatResults(results: HybridSearchResult[], query: string, category: string) {
   return {
     results: results.map((row) => ({
+      citation: `[${row.path}#${row.chunkIndex}]`,
       source: row.path,
-      file: row.path.includes("/") ? row.path.slice(row.path.lastIndexOf("/") + 1) : row.path,
       content: row.content,
-      similarity: Math.round(row.similarity * 1000) / 1000,
+      score: Math.round(row.score * 10000) / 10000,
+      matchedBy: row.matchedBy,
     })),
     query,
     category,
     total_found: results.length,
+    retrieval: "hybrid (vector + full-text, RRF fusion)",
   };
 }
 
@@ -20,44 +22,29 @@ function errorResponse(query: string, message: string) {
   return { error: message, query, results: [], total_found: 0 };
 }
 
-export const queryPersonalInfoTool = tool({
+export const searchProfileTool = tool({
   description:
-    "Search personal information including resume, experience, skills, education, and contact details",
+    "Hybrid semantic + keyword search over Yi Wang's long-form profile content (experience narratives, " +
+    "project descriptions). Use for open-ended questions; for exact facts (dates, lists, grades) prefer getProfileFacts. " +
+    "Each result carries a citation id — cite it when you use the content.",
   inputSchema: z.object({
-    question: z
-      .string()
-      .min(1)
-      .describe("Question about experience, skills, education, or contact info"),
+    question: z.string().min(1).describe("Natural-language question or keywords to search for"),
+    category: z
+      .enum(["personal", "projects", "all"])
+      .default("all")
+      .describe("Restrict search: personal (experience/skills/education) | projects | all"),
   }),
-  execute: async ({ question }) => {
+  execute: async ({ question, category }) => {
+    const prefix = category === "personal" ? "personal/" : category === "projects" ? "projects/" : "";
     try {
-      const results = await cosineSearch("personal/", question, 5);
-      return formatResults(results, question, "personal");
+      const results = await hybridSearch(prefix, question, 5);
+      return formatResults(results, question, category);
     } catch (err) {
       return errorResponse(question, err instanceof Error ? err.message : "rag error");
     }
   },
 });
 
-export const queryProjectsTool = tool({
-  description: "Search project descriptions and technical details",
-  inputSchema: z.object({
-    query: z
-      .string()
-      .min(1)
-      .describe("Project name or technology to search for"),
-  }),
-  execute: async ({ query }) => {
-    try {
-      const results = await cosineSearch("projects/", query, 5);
-      return formatResults(results, query, "projects");
-    } catch (err) {
-      return errorResponse(query, err instanceof Error ? err.message : "rag error");
-    }
-  },
-});
-
 export const ragTools = {
-  queryPersonalInfo: queryPersonalInfoTool,
-  queryProjects: queryProjectsTool,
+  searchProfile: searchProfileTool,
 };

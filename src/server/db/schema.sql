@@ -40,12 +40,15 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Message ids come from the client and are only unique within a session,
+-- so the primary key must be composite.
 CREATE TABLE IF NOT EXISTS chat_messages (
-    id VARCHAR(64) PRIMARY KEY,
+    id VARCHAR(64) NOT NULL,
     session_id UUID NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,
     role VARCHAR(20) NOT NULL,
     parts JSONB NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (session_id, id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_chat_messages_session

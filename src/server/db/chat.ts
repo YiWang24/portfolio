@@ -33,7 +33,7 @@ export async function saveMessages(sessionId: string, messages: UIMessage[]): Pr
       await client.query(
         `INSERT INTO chat_messages (id, session_id, role, parts)
          VALUES ($1, $2, $3, $4::jsonb)
-         ON CONFLICT (id) DO UPDATE SET parts = EXCLUDED.parts`,
+         ON CONFLICT (session_id, id) DO UPDATE SET parts = EXCLUDED.parts`,
         [message.id, sessionId, message.role, JSON.stringify(message.parts)]
       );
     }

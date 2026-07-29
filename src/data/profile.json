@@ -66,7 +66,7 @@
   ],
   "experience": [
     {
-      "company": "PengLi Biotech (澎立生物 · CRO)",
+      "company": "PharmaLegacy Laboratories (CRO)",
       "title": "Forward Deployed Engineer (AI Full Stack)",
       "period": "May 2026 - Jul 2026",
       "achievements": [
@@ -149,7 +149,7 @@
     {
       "title": "Possibility",
       "summary": "AI decision-companion 'Life OS' for young adults at career crossroads — an AI conversation absorbs uncertainty, then matches users with real human experiences at the decisive moment. iOS app with Supabase Edge Functions and Claude.",
-      "award": "1st Prize · AdventureX 2026 灵光赛道",
+      "award": "1st Prize · AdventureX 2026 Spark Track",
       "tech": ["SwiftUI", "Supabase", "Claude API", "TypeScript", "PostgreSQL"],
       "links": {
         "repo": "https://github.com/YiWang24/possibility"
@@ -315,6 +315,7 @@
       "id": "dkvfahtqjw42",
       "name": "Claude Certified Architect – Foundations",
       "provider": "Anthropic",
+      "featured": true,
       "date": "2026-07",
       "validUntil": "Permanent",
       "logo": "https://upload.wikimedia.org/wikipedia/commons/7/78/Anthropic_logo.svg",
@@ -523,8 +524,8 @@
       "id": "EECS-3101",
       "name": "Design and Analysis of Algorithms",
       "provider": "York University",
-      "date": "2025",
-      "grade": "In Progress",
+      "date": "2026",
+      "grade": "A",
       "type": "Algorithms"
     },
     {
@@ -547,8 +548,8 @@
       "id": "EECS-3311",
       "name": "Software Design",
       "provider": "York University",
-      "date": "2025",
-      "grade": "In Progress",
+      "date": "2026",
+      "grade": "A",
       "type": "Design"
     },
     {

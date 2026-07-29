@@ -91,7 +91,10 @@ export function CertificationsSection({ certifications, coursework }: Certificat
                             className="group relative h-40 w-full perspective-1000 cursor-pointer"
                             onClick={() => handleCardClick(cert.link)}
                         >
-                            <div className="relative w-full h-full bg-white dark:bg-zinc-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden hover:border-emerald-500/50 shadow-sm dark:shadow-none transition-all duration-500 hover:shadow-md dark:hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] group-hover:-translate-y-2">
+                            <div className={cn(
+                                "relative w-full h-full bg-white dark:bg-zinc-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden hover:border-emerald-500/50 shadow-sm dark:shadow-none transition-all duration-500 hover:shadow-md dark:hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] group-hover:-translate-y-2",
+                                cert.featured && "attention-glow border-amber-400/60 dark:border-amber-500/40"
+                            )}>
 
                                 {/* Holographic Gradient Overlay - Dark Mode Only */}
                                 <div className={cn("absolute inset-0 bg-gradient-to-br opacity-0 dark:group-hover:opacity-100 transition-opacity duration-500 pointer-events-none", cert.color)} />

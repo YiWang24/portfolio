@@ -170,7 +170,7 @@ export default function Navbar({ about }: Props) {
             href="https://docs.yilab.tech"
             target="_blank"
             rel="noopener noreferrer"
-            className="docs-glow flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg font-mono text-xs uppercase tracking-wider bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 dark:bg-slate-800 dark:text-amber-400 dark:border-slate-700 dark:hover:bg-slate-700 transition-all duration-200 whitespace-nowrap"
+            className="attention-glow flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg font-mono text-xs uppercase tracking-wider bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 dark:bg-slate-800 dark:text-amber-400 dark:border-slate-700 dark:hover:bg-slate-700 transition-all duration-200 whitespace-nowrap"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
           >
@@ -262,7 +262,7 @@ export default function Navbar({ about }: Props) {
                   href="https://docs.yilab.tech"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="docs-glow min-h-[48px] flex items-center justify-between px-4 py-3 font-mono text-sm uppercase tracking-wider rounded-xl bg-amber-50 text-amber-700 dark:bg-slate-800 dark:text-amber-400 border border-amber-200 dark:border-slate-700 cursor-pointer"
+                  className="attention-glow min-h-[48px] flex items-center justify-between px-4 py-3 font-mono text-sm uppercase tracking-wider rounded-xl bg-amber-50 text-amber-700 dark:bg-slate-800 dark:text-amber-400 border border-amber-200 dark:border-slate-700 cursor-pointer"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >

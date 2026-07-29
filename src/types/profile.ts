@@ -15,6 +15,7 @@ export interface Certification {
   id: string;
   name: string;
   provider: string;
+  featured?: boolean;
   date: string;
   validUntil: string;
   logo: string;

@@ -86,9 +86,9 @@ function systemFor(agent: AgentName): string {
 function activeToolsFor(agent: AgentName): string[] {
   switch (agent) {
     case "tech_lead":
-      return TECH_LEAD_TOOL_KEYS;
+      return [...TECH_LEAD_TOOL_KEYS, "transfer_to_contact"];
     case "contact":
-      return CONTACT_TOOL_KEYS;
+      return [...CONTACT_TOOL_KEYS, "transfer_to_tech_lead"];
     case "router":
     default:
       return [...TRANSFER_TOOL_KEYS];
